@@ -1,10 +1,10 @@
 [project]
 name = "pixlens"
 authors = [
-    {name = "Stefan Stefanache"},
-    {name = "Ernesto Sanchez"},
-    {name = "Julen Costa"},
-    {name = "Lluis Pastor Perez"},
+	{ name = "Stefan Stefanache" },
+	{ name = "Ernesto Sanchez" },
+	{ name = "Julen Costa" },
+	{ name = "Lluis Pastor Perez" },
 ]
 description = "Understanding & evaluating image editing models"
 readme = "README.md"
@@ -15,10 +15,10 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
-optional-dependencies.dev = {file = ["requirements-dev.txt"]}
+dependencies = { file = ["requirements.txt"] }
+optional-dependencies.dev = { file = ["requirements-dev.txt"] }
 
-[tools.setuptools.packages.find]
+[tool.setuptools.packages.find]
 where = ["pixlens"]
 
 [project.scripts]
