@@ -42,14 +42,14 @@ class PromptDetectAndBBoxSegmentModel(interfaces.PromptableSegmentationModel):
     def detect_and_segment(
         self, prompt: str, image_path: str
     ) -> tuple[interfaces.SegmentationOutput, interfaces.DetectionOutput]:
-        recognition_output = self.promptable_detection_model.detect(prompt, image_path)
-        recognition_output = self.filter_detection_output(recognition_output)
+        detection_output = self.promptable_detection_model.detect(prompt, image_path)
+        detection_output = self.filter_detection_output(detection_output)
 
         segmentation_output = self.bbox_segmentation_model.segment(
-            recognition_output.bounding_boxes, image_path
+            detection_output.bounding_boxes, image_path
         )
 
-        return segmentation_output, recognition_output
+        return segmentation_output, detection_output
 
     def segment(self, prompt: str, image_path: str) -> interfaces.SegmentationOutput:
         return self.detect_and_segment(prompt, image_path)[0]

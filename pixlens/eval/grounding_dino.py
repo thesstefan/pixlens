@@ -102,13 +102,12 @@ class GroundingDINO(interfaces.PromptableDetectionModel):
         self, bboxes: torch.Tensor, image: torch.Tensor
     ) -> torch.Tensor:
         height, width, _ = image.shape
-
         return box_ops.box_cxcywh_to_xyxy(bboxes) * torch.Tensor(
             [width, height, width, height]
         )
 
     def detect(self, prompt: str, image_path: str) -> interfaces.DetectionOutput:
-        _, image = inference.load_image(image_path)
+        image_source, image = inference.load_image(image_path)
 
         boxes, logits, phrases = inference.predict(
             model=self.grounding_dino_model,
@@ -120,5 +119,5 @@ class GroundingDINO(interfaces.PromptableDetectionModel):
         )
 
         return interfaces.DetectionOutput(
-            self._unnormalize_bboxes(boxes, image), logits, phrases
+            self._unnormalize_bboxes(boxes, image_source), logits, phrases
         )
