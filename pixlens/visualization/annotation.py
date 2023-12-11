@@ -26,14 +26,14 @@ def annotate_detection_output(
     return Image.fromarray(annotated_frame)
 
 
-def show_mask(mask: torch.Tensor, image: Image.Image):
+def annotate_mask(mask: torch.Tensor, image: Image.Image) -> Image.Image:
     color = np.concatenate([np.random.random(3), np.array([0.8])], axis=0)
 
     height, width = mask.shape[-2:]
-    mask_image = mask.reshape(height, width, 1) * color.reshape(1, 1, -1)
+    mask_image = mask.cpu().reshape(height, width, 1) * color.reshape(1, 1, -1)
 
     mask_image_pil = Image.fromarray(
-        (mask_image.cpu().numpy() * 255).astype(np.uint8)
+        (mask_image.numpy() * 255).astype(np.uint8)
     ).convert("RGBA")
 
     return Image.alpha_composite(image.convert("RGBA"), mask_image_pil)
