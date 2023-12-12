@@ -23,14 +23,13 @@ class PromptDetectAndBBoxSegmentModel(interfaces.PromptableSegmentationModel):
     ) -> interfaces.DetectionOutput:
         confident_predictions = torch.where(
             detection_output.logits > self.detection_confidence_threshold
-        )
+        )[0]
 
         detection_output.logits = detection_output.logits[confident_predictions]
         detection_output.bounding_boxes = detection_output.bounding_boxes[
             confident_predictions
         ]
 
-        # TODO: Change DetectionOutput.phrases to be a np.array[str]
         detection_output.phrases = [
             phrase
             for index, phrase in enumerate(detection_output.phrases)
