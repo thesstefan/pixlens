@@ -41,7 +41,7 @@ def download_file(
 
 def get_cache_dir() -> pathlib.Path:
     cache_dir = pathlib.Path(platformdirs.user_cache_dir(CACHE_DIR_NAME))
-    cache_dir.mkdir(parents=False, exist_ok=True)
+    cache_dir.mkdir(parents=True, exist_ok=True)
 
     return cache_dir
 
