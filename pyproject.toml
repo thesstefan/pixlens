@@ -9,6 +9,7 @@ authors = [
 description = "Understanding & evaluating image editing models"
 readme = "README.md"
 dynamic = ["dependencies", "optional-dependencies", "version"]
+requires-python = ">3.11"
 
 [build-system]
 requires = ["setuptools"]
