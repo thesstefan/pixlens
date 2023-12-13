@@ -21,24 +21,27 @@ def main() -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if args.objectdetection == "GroundedSAM":
         model = grounded_sam.GroundedSAM(device=device)
-        segmentation_output, detection_output = model.detect_and_segment(
-            args.prompt, args.image
-        )
-
-        image_source = np.asarray(Image.open(args.image).convert("RGB"))
-
-        annotated_image = annotation.annotate_detection_output(
-            image_source, detection_output
-        )
-
-        masked_annotated_image = annotation.annotate_mask(
-            segmentation_output.masks, annotated_image
-        )
-        masked_annotated_image.save(args.out)
     elif args.objectdetection == "Owl-vitSAM":
         model = owl_vit_SAM.OwlVitSam(device=device)
     else:
         raise NotImplementedError
+    breakpoint()
+    segmentation_output, detection_output = model.detect_and_segment(
+        args.prompt, args.image
+    )
+
+    image_source = np.asarray(Image.open(args.image).convert("RGB"))
+
+    annotated_image = annotation.annotate_detection_output(
+        image_source, detection_output
+    )
+
+    masked_annotated_image = annotation.annotate_mask(
+        segmentation_output.masks, annotated_image
+    )
+    masked_annotated_image.save(args.out)
+
+        
 
 
 if __name__ == "__main__":
