@@ -38,3 +38,8 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
 
         results = self.owlvit_processor.post_process_object_detection(outputs=outputs, threshold=self.detection_confidence_threshold, target_sizes=torch.Tensor([image.size[::-1]]).to(self.device))
         return results
+    
+    def detect_and_segment(self, prompt: str, image_path: str):
+        detection_output = self.detect_with_owlvit(prompt, image_path)
+        segmentation_output = self.bbox_segmentation_model.segment(detection_output["boxes"], image_path)
+        return segmentation_output, detection_output
