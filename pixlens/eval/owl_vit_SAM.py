@@ -28,7 +28,7 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
         super(OwlVitSam, self).__init__(
             model_owlvit, sam_predictor, detection_confidence_threshold
         )
-    def transform_owlvit_output(self, owlvit_results, prompt: list):
+    def transform_owlvit_output(self, owlvit_results: list, prompt: list) -> list:
         results_new = []
         for result in owlvit_results:
             scores = result['scores']
@@ -39,7 +39,7 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
             results_new.append(detection_output)
         return results_new
 
-    def detect_with_owlvit(self, prompt: str, image_path: str):
+    def detect_with_owlvit(self, prompt: str, image_path: str) -> list:
         image = Image.open(image_path)
         prompts = prompt.split(",")
         inputs = self.owlvit_processor(text=prompts, images=image, return_tensors="pt").to(self.device)
