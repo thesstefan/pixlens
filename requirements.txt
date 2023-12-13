@@ -1,2 +1,5 @@
+pytorch==2.1.0
+pytorch-cuda==12.1
+torchvision==0.16.0
 groundingdino-py==0.4.0
 segment-anything==1.0

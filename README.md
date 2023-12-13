@@ -22,7 +22,7 @@ pip install -e ".[dev]"
 
 ```shell
 # Create conda env
-conda create -n $ENVNAME "python>=3.11" --file requirements.txt
+conda create -n $ENVNAME "python>=3.11" --file requirements.txt -c pytorch -c nvidia -c conda-forge
 
 # Install dev packages if needed
 conda install --name $ENVNAME --freeze-installed --file requirements-dev.txt
