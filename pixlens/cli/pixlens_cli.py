@@ -25,7 +25,6 @@ def main() -> None:
         model = owl_vit_SAM.OwlVitSam(device=device)
     else:
         raise NotImplementedError
-    breakpoint()
     segmentation_output, detection_output = model.detect_and_segment(
         args.prompt, args.image
     )

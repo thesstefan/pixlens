@@ -14,7 +14,7 @@ class OwlViTType(enum.StrEnum):
     large = "google/owlvit-large-patch14"
 #They are automatically stored in users/$USER/.cache/huggingface/hub   
 
-def load_owlvit(OwlViTType: OwlViTType.base32 , device: str = 'cpu'):
+def load_owlvit(OwlViTType: OwlViTType.large , device: str = 'cpu'):
     processor = OwlViTProcessor.from_pretrained(OwlViTType)
     model = OwlViTForObjectDetection.from_pretrained(OwlViTType)
     model.to(device)

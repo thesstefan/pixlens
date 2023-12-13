@@ -12,9 +12,9 @@ from pixlens.eval.grounded_sam import PromptDetectAndBBoxSegmentModel
 class OwlVitSam(PromptDetectAndBBoxSegmentModel):
     def __init__(
         self,
-        owlvit_model_type: eval_owl_vit.OwlViTType = eval_owl_vit.OwlViTType.base32,
+        owlvit_model_type: eval_owl_vit.OwlViTType = eval_owl_vit.OwlViTType.base16,
         sam_type: eval_sam.SAMType = eval_sam.SAMType.VIT_H,
-        detection_confidence_threshold: float = 0.1,
+        detection_confidence_threshold: float = 0.2,
         device: str = 'cpu'
     ) -> None:
         logging.info(
@@ -28,11 +28,11 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
         super(OwlVitSam, self).__init__(
             model_owlvit, sam_predictor, detection_confidence_threshold
         )
-    def transform_owlvit_output(self, owlvit_results):
+    def transform_owlvit_output(self, owlvit_results, prompt: list):
         results_new = []
         for result in owlvit_results:
             scores = result['scores']
-            labels = result['labels']
+            labels = [prompt[id] for id in result['labels'].tolist()] 
             boxes = result['boxes']
 
             detection_output = interfaces.DetectionOutput(bounding_boxes=boxes, logits=scores, phrases=labels)
@@ -41,12 +41,13 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
 
     def detect_with_owlvit(self, prompt: str, image_path: str):
         image = Image.open(image_path)
-        inputs = self.owlvit_processor(text=[prompt], images=image, return_tensors="pt").to(self.device)
+        prompts = prompt.split(",")
+        inputs = self.owlvit_processor(text=prompts, images=image, return_tensors="pt").to(self.device)
         with torch.no_grad():
             outputs = self.promptable_detection_model(**inputs)
 
         results = self.owlvit_processor.post_process_object_detection(outputs=outputs, threshold=self.detection_confidence_threshold, target_sizes=torch.Tensor([image.size[::-1]]).to(self.device))
-        results = self.transform_owlvit_output(results)
+        results = self.transform_owlvit_output(results, prompts)
         return results
     
     def detect_and_segment(self, prompt: str, image_path: str):
