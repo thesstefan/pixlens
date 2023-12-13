@@ -1,12 +1,10 @@
 import logging
 import enum
-
-import numpy as np
-import torch
+from pathlib import Path
+import os
 from transformers import OwlViTProcessor, OwlViTForObjectDetection
 
 from pixlens import utils
-from pixlens.eval import sam as eval_sam
 
 class OwlViTType(enum.StrEnum):
     base32 = "google/owlvit-base-patch32"
@@ -14,14 +12,22 @@ class OwlViTType(enum.StrEnum):
     large = "google/owlvit-large-patch14"
 #They are automatically stored in users/$USER/.cache/huggingface/hub   
 
+def log_if_model_not_in_cache(model_name: str, cache_dir: Path) -> None:
+    folder_name = model_name.replace('/', '--')
+    folder_name = "models--" + folder_name
+    # Construct the full path to the model folder within the cache
+    full_path = cache_dir / folder_name
+    # Check if the folder exists
+    if not full_path.is_dir():
+        logging.info(f"Downloading OwlViT model from {model_name}...")
+
 def load_owlvit(OwlViTType: OwlViTType.large , device: str = 'cpu'):
-    processor = OwlViTProcessor.from_pretrained(OwlViTType)
-    model = OwlViTForObjectDetection.from_pretrained(OwlViTType)
+    path_to_cache = utils.get_cache_dir()
+    log_if_model_not_in_cache(OwlViTType, path_to_cache)
+    processor = OwlViTProcessor.from_pretrained(OwlViTType, cache_dir=path_to_cache)
+    model = OwlViTForObjectDetection.from_pretrained(OwlViTType, cache_dir=path_to_cache)
     model.to(device)
     model.eval()
     return model, processor
-
-
-
 
 
