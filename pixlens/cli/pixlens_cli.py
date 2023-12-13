@@ -30,8 +30,9 @@ def main() -> None:
     annotated_image = annotation.annotate_detection_output(
         image_source, detection_output
     )
+
     masked_annotated_image = annotation.annotate_mask(
-        segmentation_output.masks[0][0], annotated_image
+        segmentation_output.masks, annotated_image
     )
     masked_annotated_image.save(args.out)
 
