@@ -28,7 +28,7 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
         super(OwlVitSam, self).__init__(
             model_owlvit, sam_predictor, detection_confidence_threshold
         )
-    def transform_owlvit_output(owlvit_results):
+    def transform_owlvit_output(self, owlvit_results):
         results_new = []
         for result in owlvit_results:
             scores = result['scores']
@@ -37,13 +37,11 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
 
             detection_output = interfaces.DetectionOutput(bounding_boxes=boxes, logits=scores, phrases=labels)
             results_new.append(detection_output)
-
         return results_new
 
     def detect_with_owlvit(self, prompt: str, image_path: str):
         image = Image.open(image_path)
         inputs = self.owlvit_processor(text=[prompt], images=image, return_tensors="pt").to(self.device)
-        breakpoint()
         with torch.no_grad():
             outputs = self.promptable_detection_model(**inputs)
 
@@ -53,6 +51,5 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
     
     def detect_and_segment(self, prompt: str, image_path: str):
         detection_output = self.detect_with_owlvit(prompt, image_path)[0]
-        breakpoint()
-        segmentation_output = self.bbox_segmentation_model.segment(detection_output.boxes, image_path)
+        segmentation_output = self.bbox_segmentation_model.segment(detection_output.bounding_boxes, image_path)
         return segmentation_output, detection_output
