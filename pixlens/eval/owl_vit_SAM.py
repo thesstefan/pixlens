@@ -14,13 +14,13 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
         self,
         owlvit_model_type: eval_owl_vit.OwlViTType = eval_owl_vit.OwlViTType.base32,
         sam_type: eval_sam.SAMType = eval_sam.SAMType.VIT_H,
-        detection_confidence_threshold: float = 0.3,
+        detection_confidence_threshold: float = 0.1,
         device: str = 'cpu'
     ) -> None:
         logging.info(
             f"Loading OwlVitSam [OwlVitSam ({owlvit_model_type}) + SAM ({sam_type})]"
         )
-
+        self.device = device
         sam_predictor = eval_sam.BBoxSamPredictor(sam_type, device=device)
         model_owlvit, self.owlvit_processor = eval_owl_vit.load_owlvit(owlvit_model_type, device=device)
 
@@ -28,18 +28,31 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
         super(OwlVitSam, self).__init__(
             model_owlvit, sam_predictor, detection_confidence_threshold
         )
+    def transform_owlvit_output(owlvit_results):
+        results_new = []
+        for result in owlvit_results:
+            scores = result['scores']
+            labels = result['labels']
+            boxes = result['boxes']
 
+            detection_output = interfaces.DetectionOutput(bounding_boxes=boxes, logits=scores, phrases=labels)
+            results_new.append(detection_output)
+
+        return results_new
 
     def detect_with_owlvit(self, prompt: str, image_path: str):
         image = Image.open(image_path)
         inputs = self.owlvit_processor(text=[prompt], images=image, return_tensors="pt").to(self.device)
+        breakpoint()
         with torch.no_grad():
             outputs = self.promptable_detection_model(**inputs)
 
         results = self.owlvit_processor.post_process_object_detection(outputs=outputs, threshold=self.detection_confidence_threshold, target_sizes=torch.Tensor([image.size[::-1]]).to(self.device))
+        results = self.transform_owlvit_output(results)
         return results
     
     def detect_and_segment(self, prompt: str, image_path: str):
-        detection_output = self.detect_with_owlvit(prompt, image_path)
-        segmentation_output = self.bbox_segmentation_model.segment(detection_output["boxes"], image_path)
+        detection_output = self.detect_with_owlvit(prompt, image_path)[0]
+        breakpoint()
+        segmentation_output = self.bbox_segmentation_model.segment(detection_output.boxes, image_path)
         return segmentation_output, detection_output
