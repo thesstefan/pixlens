@@ -34,7 +34,7 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
         image = Image.open(image_path)
         inputs = self.owlvit_processor(text=[prompt], images=image, return_tensors="pt").to(self.device)
         with torch.no_grad():
-            outputs = self.owlvit_model(**inputs)
+            outputs = self.promptable_detection_model(**inputs)
 
         results = self.owlvit_processor.post_process_object_detection(outputs=outputs, threshold=self.detection_confidence_threshold, target_sizes=torch.Tensor([image.size[::-1]]).to(self.device))
         return results
