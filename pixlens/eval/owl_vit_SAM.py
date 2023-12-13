@@ -12,7 +12,7 @@ from pixlens.eval.grounded_sam import PromptDetectAndBBoxSegmentModel
 class OwlVitSam(PromptDetectAndBBoxSegmentModel):
     def __init__(
         self,
-        owlvit_model_type: eval_owl_vit.OwlViTType = eval_owl_vit.OwlViTType.base16,
+        owlvit_model_type: eval_owl_vit.OwlViTType = eval_owl_vit.OwlViTType.large,
         sam_type: eval_sam.SAMType = eval_sam.SAMType.VIT_H,
         detection_confidence_threshold: float = 0.2,
         device: str = 'cpu'
