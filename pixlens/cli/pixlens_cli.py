@@ -36,7 +36,7 @@ def main() -> None:
         )
         masked_annotated_image.save(args.out)
     elif args.objectdetection == "Owl-vitSAM":
-        
+        model = owl_vit_SAM.OwlVitSam(device=device)
     else:
         raise NotImplementedError
 
