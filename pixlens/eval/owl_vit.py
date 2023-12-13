@@ -12,6 +12,7 @@ class OwlViTType(enum.StrEnum):
     base32 = "google/owlvit-base-patch32"
     base16 = "google/owlvit-base-patch16"
     large = "google/owlvit-large-patch14"
+#They are automatically stored in users/$USER/.cache/huggingface/hub   
 
 def load_owlvit(OwlViTType: OwlViTType.base32 , device: str = 'cpu'):
     processor = OwlViTProcessor.from_pretrained(OwlViTType)
@@ -19,5 +20,8 @@ def load_owlvit(OwlViTType: OwlViTType.base32 , device: str = 'cpu'):
     model.to(device)
     model.eval()
     return model, processor
+
+
+
 
 

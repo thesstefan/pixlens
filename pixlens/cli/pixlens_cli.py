@@ -4,9 +4,8 @@ import numpy as np
 import torch
 from PIL import Image
 
-from pixlens.eval import grounded_sam
+from pixlens.eval import grounded_sam, owl_vit_SAM
 from pixlens.visualization import annotation
-
 parser = argparse.ArgumentParser(
     description="PixLens - Evaluate & understand image editing models"
 )
@@ -37,7 +36,7 @@ def main() -> None:
         )
         masked_annotated_image.save(args.out)
     elif args.objectdetection == "Owl-vitSAM":
-        raise NotImplementedError
+        
     else:
         raise NotImplementedError
 
