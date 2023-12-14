@@ -14,7 +14,7 @@ parser.add_argument(
     "--object-detection",
     type=str,
     default="GroundedSAM",
-    help=("Detector, either GroundedSAM or OwlViT+SAM"),
+    help=("Detector, either GroundedSAM or Owl-ViT+SAM"),
 )
 parser.add_argument("--out", type=str, help=("Path of output annotated image"))
 parser.add_argument("--image", type=str, help=("Image to detect objects in"))
@@ -35,7 +35,7 @@ def main() -> None:
         model = grounded_sam.GroundedSAM(
             device=device, detection_confidence_threshold=args.detection_threshold
         )
-    elif args.object_detection == "Owl-vit+SAM":
+    elif args.object_detection == "Owl-Vit+SAM":
         model = owl_vit_SAM.OwlVitSam(
             device=device, detection_confidence_threshold=args.detection_threshold
         )

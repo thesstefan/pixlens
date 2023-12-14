@@ -64,9 +64,11 @@ class OwLViT(interfaces.PromptableDetectionModel):
         self,
         owlvit_type: OwlViTType,
         device: torch.device | None = None,
+        detection_confidence_threshold: float = 0.3,
     ) -> None:
         self.device = device
         self.model, self.processor = load_owlvit(owlvit_type, device)
+        self.detection_confidence_threshold = detection_confidence_threshold
 
     def output_into_detection_output(
         self, owlvit_results: list[dict], prompt: list[str]
@@ -86,13 +88,13 @@ class OwLViT(interfaces.PromptableDetectionModel):
     def detect(self, prompt: str, image_path: str) -> list:
         image = Image.open(image_path)
         prompts = prompt.split(",")
-        inputs = self.owlvit_processor(
+        inputs = self.processor(
             text=prompts, images=image, return_tensors="pt"
         ).to(self.device)
         with torch.no_grad():
-            outputs = self.promptable_detection_model(**inputs)
+            outputs = self.model(**inputs)
 
-        results = self.owlvit_processor.post_process_object_detection(
+        results = self.processor.post_process_object_detection(
             outputs=outputs,
             threshold=self.detection_confidence_threshold,
             target_sizes=torch.Tensor([image.size[::-1]]).to(self.device),

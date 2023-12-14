@@ -22,7 +22,7 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
         )
         self.device = device
         sam_predictor = eval_sam.BBoxSamPredictor(sam_type, device=device)
-        owlvit = eval_owl_vit.OwLViT(owlvit_type, device=device)
+        owlvit = eval_owl_vit.OwLViT(owlvit_type, device=device, detection_confidence_threshold=detection_confidence_threshold)
 
         super(OwlVitSam, self).__init__(
             owlvit, sam_predictor, detection_confidence_threshold
