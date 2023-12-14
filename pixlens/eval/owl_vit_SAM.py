@@ -1,10 +1,8 @@
 import logging
 
-from PIL import Image
 import torch
 
 from pixlens.eval import owl_vit as eval_owl_vit
-from pixlens.eval import interfaces
 from pixlens.eval import sam as eval_sam
 from pixlens.eval.grounded_sam import PromptDetectAndBBoxSegmentModel
 

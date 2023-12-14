@@ -1,7 +1,6 @@
 import logging
 import enum
 from pathlib import Path
-import os
 
 from transformers import (
     OwlViTProcessor,
