@@ -6,13 +6,25 @@ from PIL import Image
 
 from pixlens.eval import grounded_sam, owl_vit_SAM
 from pixlens.visualization import annotation
+
 parser = argparse.ArgumentParser(
     description="PixLens - Evaluate & understand image editing models"
 )
-parser.add_argument("--objectdetection", type=str, default="GroundedSAM", help=("Detector, either GroundedSAM or Owl-vitSAM"))
+parser.add_argument(
+    "--objectdetection",
+    type=str,
+    default="GroundedSAM",
+    help=("Detector, either GroundedSAM or Owl-vitSAM"),
+)
 parser.add_argument("--out", type=str, help=("Path of output annotated image"))
 parser.add_argument("--image", type=str, help=("Image to detect objects in"))
 parser.add_argument("--prompt", type=str, help=("Prompt to guide detection"))
+parser.add_argument(
+    "--detection_threshold",
+    type=float,
+    default=0.3,
+    help=("Detection threshold for object detection"),
+)
 
 
 def main() -> None:
@@ -20,9 +32,13 @@ def main() -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if args.objectdetection == "GroundedSAM":
-        model = grounded_sam.GroundedSAM(device=device)
+        model = grounded_sam.GroundedSAM(
+            device=device, detection_confidence_threshold=args.detection_threshold
+        )
     elif args.objectdetection == "Owl-vitSAM":
-        model = owl_vit_SAM.OwlVitSam(device=device)
+        model = owl_vit_SAM.OwlVitSam(
+            device=device, detection_confidence_threshold=args.detection_threshold
+        )
     else:
         raise NotImplementedError
     segmentation_output, detection_output = model.detect_and_segment(
@@ -39,8 +55,6 @@ def main() -> None:
         segmentation_output.masks, annotated_image
     )
     masked_annotated_image.save(args.out)
-
-        
 
 
 if __name__ == "__main__":
