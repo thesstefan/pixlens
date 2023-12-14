@@ -10,8 +10,10 @@ from transformers import (
     Owlv2ForObjectDetection,
 )
 import torch
+from PIL import Image
 
 from pixlens import utils
+from pixlens.eval import interfaces
 
 
 class OwlViTType(enum.StrEnum):
@@ -53,3 +55,47 @@ def load_owlvit(owlvit_type: OwlViTType, device: torch.device | None = None):
     model.to(device)
     model.eval()
     return model, processor
+
+
+class OwLViT(interfaces.PromptableDetectionModel):
+    device: torch.device | None
+
+    def __init__(
+        self,
+        owlvit_type: OwlViTType,
+        device: torch.device | None = None,
+    ) -> None:
+        self.device = device
+        self.model, self.processor = load_owlvit(owlvit_type, device)
+
+    def output_into_detection_output(
+        self, owlvit_results: list[dict], prompt: list[str]
+    ) -> list:
+        results_new = []
+        for result in owlvit_results:
+            scores = result["scores"]
+            labels = [prompt[id] for id in result["labels"].tolist()]
+            boxes = result["boxes"]
+
+            detection_output = interfaces.DetectionOutput(
+                bounding_boxes=boxes, logits=scores, phrases=labels
+            )
+            results_new.append(detection_output)
+        return results_new
+
+    def detect(self, prompt: str, image_path: str) -> list:
+        image = Image.open(image_path)
+        prompts = prompt.split(",")
+        inputs = self.owlvit_processor(
+            text=prompts, images=image, return_tensors="pt"
+        ).to(self.device)
+        with torch.no_grad():
+            outputs = self.promptable_detection_model(**inputs)
+
+        results = self.owlvit_processor.post_process_object_detection(
+            outputs=outputs,
+            threshold=self.detection_confidence_threshold,
+            target_sizes=torch.Tensor([image.size[::-1]]).to(self.device),
+        )
+        results = self.output_into_detection_output(results, prompts)
+        return results
