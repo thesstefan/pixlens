@@ -11,16 +11,16 @@ parser = argparse.ArgumentParser(
     description="PixLens - Evaluate & understand image editing models"
 )
 parser.add_argument(
-    "--objectdetection",
+    "--object-detection",
     type=str,
     default="GroundedSAM",
-    help=("Detector, either GroundedSAM or Owl-vitSAM"),
+    help=("Detector, either GroundedSAM or OwlViT+SAM"),
 )
 parser.add_argument("--out", type=str, help=("Path of output annotated image"))
 parser.add_argument("--image", type=str, help=("Image to detect objects in"))
 parser.add_argument("--prompt", type=str, help=("Prompt to guide detection"))
 parser.add_argument(
-    "--detection_threshold",
+    "--detection-threshold",
     type=float,
     default=0.3,
     help=("Detection threshold for object detection"),
@@ -31,11 +31,11 @@ def main() -> None:
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if args.objectdetection == "GroundedSAM":
+    if args.object_detection == "GroundedSAM":
         model = grounded_sam.GroundedSAM(
             device=device, detection_confidence_threshold=args.detection_threshold
         )
-    elif args.objectdetection == "Owl-vitSAM":
+    elif args.object_detection == "Owl-vit+SAM":
         model = owl_vit_SAM.OwlVitSam(
             device=device, detection_confidence_threshold=args.detection_threshold
         )

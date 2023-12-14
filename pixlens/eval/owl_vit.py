@@ -24,10 +24,10 @@ class OwlViTType(enum.StrEnum):
 
 
 def log_if_model_not_in_cache(model_name: str, cache_dir: Path) -> None:
-    folder_name = model_name.replace("/", "--")
-    folder_name = "models--" + folder_name
+    model_dir = model_name.replace("/", "--")
+    model_dir = "models--" + model_dir
     # Construct the full path to the model folder within the cache
-    full_path = cache_dir / folder_name
+    full_path = cache_dir / model_dir
     # Check if the folder exists
     if not full_path.is_dir():
         logging.info(f"Downloading OwlViT model from {model_name}...")
