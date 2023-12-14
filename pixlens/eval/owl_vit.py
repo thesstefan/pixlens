@@ -98,4 +98,4 @@ class OwLViT(interfaces.PromptableDetectionModel):
             target_sizes=torch.Tensor([image.size[::-1]]).to(self.device),
         )
         results = self.output_into_detection_output(results, prompts)
-        return results
+        return results[0]
