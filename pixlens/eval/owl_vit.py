@@ -2,12 +2,14 @@ import logging
 import enum
 from pathlib import Path
 import os
+
 from transformers import (
     OwlViTProcessor,
     OwlViTForObjectDetection,
     Owlv2Processor,
     Owlv2ForObjectDetection,
 )
+import torch
 
 from pixlens import utils
 
@@ -33,7 +35,7 @@ def log_if_model_not_in_cache(model_name: str, cache_dir: Path) -> None:
         logging.info(f"Downloading OwlViT model from {model_name}...")
 
 
-def load_owlvit(owlvit_type: OwlViTType, device: str = "cpu"):
+def load_owlvit(owlvit_type: OwlViTType, device: torch.device | None = None):
     path_to_cache = utils.get_cache_dir()
     log_if_model_not_in_cache(owlvit_type, path_to_cache)
     if owlvit_type in [OwlViTType.BASE16_V2, OwlViTType.LARGE_V2]:

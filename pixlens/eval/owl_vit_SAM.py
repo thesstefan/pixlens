@@ -15,7 +15,7 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
         owlvit_type: eval_owl_vit.OwlViTType = eval_owl_vit.OwlViTType.LARGE,
         sam_type: eval_sam.SAMType = eval_sam.SAMType.VIT_H,
         detection_confidence_threshold: float = 0.3,
-        device: str = "cpu",
+        device: torch.device | None = None,
     ) -> None:
         logging.info(
             f"Loading OwlVitSam [OwlVitSam ({owlvit_type}) + SAM ({sam_type})]"
