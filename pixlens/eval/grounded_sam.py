@@ -76,7 +76,9 @@ class GroundedSAM(PromptDetectAndBBoxSegmentModel):
         device: torch.device | None = None,
     ) -> None:
         logging.info(
-            f"Loading GroundedSAM [GroundingDINO ({grounding_dino_type}) + SAM ({sam_type})]"
+            "Loading GroundedSAM [GroundingDINO (%s) + SAM (%s)]",
+            grounding_dino_type,
+            sam_type,
         )
 
         sam_predictor = eval_sam.BBoxSamPredictor(sam_type, device=device)
