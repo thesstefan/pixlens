@@ -34,10 +34,12 @@ def get_sam_ckpt(sam_type: SAMType) -> pathlib.Path:
 
     if not ckpt_path.exists():
         logging.info(
-            f"Downloading SAM {sam_type} weights from {SAM_CKPT_URLS[sam_type]}..."
+            f"Downloading SAM {sam_type} weights from {SAM_CKPT_URLS[sam_type]}...",
         )
         utils.download_file(
-            SAM_CKPT_URLS[sam_type], ckpt_path, desc=f"SAM {sam_type}"
+            SAM_CKPT_URLS[sam_type],
+            ckpt_path,
+            desc=f"SAM {sam_type}",
         )
 
     return ckpt_path
@@ -51,7 +53,7 @@ def load_sam_predictor(
     logging.info(f"Loading SAM {sam_type} from {sam_ckpt}...")
 
     sam = segment_anything.sam_model_registry[sam_type](checkpoint=sam_ckpt).to(
-        device
+        device,
     )
     predictor = segment_anything.SamPredictor(sam)
 
@@ -69,14 +71,17 @@ class BBoxSamPredictor(interfaces.BBoxSegmentationModel):
         self.sam_predictor = load_sam_predictor(sam_type, device)
 
     def segment(
-        self, bbox: torch.Tensor, image_path: str
+        self,
+        bbox: torch.Tensor,
+        image_path: str,
     ) -> interfaces.SegmentationOutput:
         image = np.asarray(Image.open(image_path).convert("RGB"))
 
         self.sam_predictor.set_image(image)
 
         transformed_boxes = self.sam_predictor.transform.apply_boxes_torch(
-            bbox, image.shape[:2]
+            bbox,
+            image.shape[:2],
         ).to(self.sam_predictor.device)
 
         masks, logits, _ = self.sam_predictor.predict_torch(
