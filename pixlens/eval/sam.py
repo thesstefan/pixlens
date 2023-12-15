@@ -36,7 +36,9 @@ def get_sam_ckpt(sam_type: SAMType) -> pathlib.Path:
         logging.info(
             f"Downloading SAM {sam_type} weights from {SAM_CKPT_URLS[sam_type]}..."
         )
-        utils.download_file(SAM_CKPT_URLS[sam_type], ckpt_path, desc=f"SAM {sam_type}")
+        utils.download_file(
+            SAM_CKPT_URLS[sam_type], ckpt_path, desc=f"SAM {sam_type}"
+        )
 
     return ckpt_path
 
@@ -48,7 +50,9 @@ def load_sam_predictor(
 
     logging.info(f"Loading SAM {sam_type} from {sam_ckpt}...")
 
-    sam = segment_anything.sam_model_registry[sam_type](checkpoint=sam_ckpt).to(device)
+    sam = segment_anything.sam_model_registry[sam_type](checkpoint=sam_ckpt).to(
+        device
+    )
     predictor = segment_anything.SamPredictor(sam)
 
     return predictor
@@ -58,7 +62,9 @@ class BBoxSamPredictor(interfaces.BBoxSegmentationModel):
     sam_predictor: segment_anything.SamPredictor
 
     def __init__(
-        self, sam_type: SAMType = SAMType.VIT_H, device: torch.device | None = None
+        self,
+        sam_type: SAMType = SAMType.VIT_H,
+        device: torch.device | None = None,
     ):
         self.sam_predictor = load_sam_predictor(sam_type, device)
 

@@ -29,11 +29,17 @@ GROUNDING_DINO_CONFIG_URLS = {
     GroundingDINOType.SWIN_B: "https://raw.githubusercontent.com/IDEA-Research/GroundingDINO/"
     "main/groundingdino/config/GroundingDINO_SwinB_cfg.py",
 }
-GROUNDING_DINO_CONFIG_NAMES = utils.get_basename_dict(GROUNDING_DINO_CONFIG_URLS)
+GROUNDING_DINO_CONFIG_NAMES = utils.get_basename_dict(
+    GROUNDING_DINO_CONFIG_URLS
+)
 
 
-def get_grounding_dino_ckpt(grounding_dino_type: GroundingDINOType) -> pathlib.Path:
-    ckpt_path = utils.get_cache_dir() / GROUNDING_DINO_CKPT_NAMES[grounding_dino_type]
+def get_grounding_dino_ckpt(
+    grounding_dino_type: GroundingDINOType,
+) -> pathlib.Path:
+    ckpt_path = (
+        utils.get_cache_dir() / GROUNDING_DINO_CKPT_NAMES[grounding_dino_type]
+    )
 
     if not ckpt_path.exists():
         logging.info(
@@ -49,7 +55,9 @@ def get_grounding_dino_ckpt(grounding_dino_type: GroundingDINOType) -> pathlib.P
     return ckpt_path
 
 
-def get_grounding_dino_config(grounding_dino_type: GroundingDINOType) -> pathlib.Path:
+def get_grounding_dino_config(
+    grounding_dino_type: GroundingDINOType,
+) -> pathlib.Path:
     config_path = (
         utils.get_cache_dir() / GROUNDING_DINO_CONFIG_NAMES[grounding_dino_type]
     )
@@ -60,7 +68,9 @@ def get_grounding_dino_config(grounding_dino_type: GroundingDINOType) -> pathlib
             f"{GROUNDING_DINO_CONFIG_URLS[grounding_dino_type]}"
         )
         utils.download_file(
-            GROUNDING_DINO_CONFIG_URLS[grounding_dino_type], config_path, text=True
+            GROUNDING_DINO_CONFIG_URLS[grounding_dino_type],
+            config_path,
+            text=True,
         )
 
     return config_path
@@ -72,9 +82,13 @@ def load_grounding_dino(
     model_ckpt = get_grounding_dino_ckpt(grounding_dino_type)
     model_config = get_grounding_dino_config(grounding_dino_type)
 
-    logging.info(f"Loading GroundingDINO {grounding_dino_type} from {model_ckpt}...")
+    logging.info(
+        f"Loading GroundingDINO {grounding_dino_type} from {model_ckpt}..."
+    )
 
-    return inference.load_model(str(model_config), str(model_ckpt), device=str(device))
+    return inference.load_model(
+        str(model_config), str(model_ckpt), device=str(device)
+    )
 
 
 class GroundingDINO(interfaces.PromptableDetectionModel):
@@ -92,7 +106,9 @@ class GroundingDINO(interfaces.PromptableDetectionModel):
         text_threshold: float = 0.3,
         device: torch.device | None = None,
     ) -> None:
-        self.grounding_dino_model = load_grounding_dino(grounding_dino_type, device)
+        self.grounding_dino_model = load_grounding_dino(
+            grounding_dino_type, device
+        )
         self.device = device
 
         self.box_threshold = box_threshold
@@ -106,7 +122,9 @@ class GroundingDINO(interfaces.PromptableDetectionModel):
             [width, height, width, height]
         )
 
-    def detect(self, prompt: str, image_path: str) -> interfaces.DetectionOutput:
+    def detect(
+        self, prompt: str, image_path: str
+    ) -> interfaces.DetectionOutput:
         image_source, image = inference.load_image(image_path)
 
         boxes, logits, phrases = inference.predict(

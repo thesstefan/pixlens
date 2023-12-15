@@ -33,10 +33,13 @@ def annotate_mask(masks: torch.Tensor, image: Image.Image) -> Image.Image:
 
     mask_image = torch.zeros(height, width, 1)
     for mask in masks:
-        color = np.concatenate([np.random.random(3), np.array([MASK_ALPHA])], axis=0)
+        color = np.concatenate(
+            [np.random.random(3), np.array([MASK_ALPHA])], axis=0
+        )
 
         mask_image = torch.max(
-            mask_image, mask.cpu().reshape(height, width, 1) * color.reshape(1, 1, -1)
+            mask_image,
+            mask.cpu().reshape(height, width, 1) * color.reshape(1, 1, -1),
         )
 
     mask_image_pil = Image.fromarray(

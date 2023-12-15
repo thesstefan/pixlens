@@ -23,7 +23,9 @@ class PromptableDetectionModel(Protocol):
 
 
 class BBoxSegmentationModel(Protocol):
-    def segment(self, bbox: torch.Tensor, image_path: str) -> SegmentationOutput:
+    def segment(
+        self, bbox: torch.Tensor, image_path: str
+    ) -> SegmentationOutput:
         ...
 
 
