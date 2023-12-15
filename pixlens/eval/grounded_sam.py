@@ -87,7 +87,7 @@ class GroundedSAM(PromptDetectAndBBoxSegmentModel):
             device=device,
         )
 
-        super(GroundedSAM, self).__init__(
+        super().__init__(
             grounding_dino,
             sam_predictor,
             detection_confidence_threshold,
