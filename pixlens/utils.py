@@ -13,14 +13,17 @@ T = typing.TypeVar("T")
 
 
 def download_file(
-    url: str, path: pathlib.Path, text: bool = False, desc: str = ""
+    url: str,
+    path: pathlib.Path,
+    text: bool = False,
+    desc: str = "",
 ) -> None:
     request = requests.get(url, stream=True, allow_redirects=True)
 
     if request.status_code != 200:
         request.raise_for_status()
         raise RuntimeError(
-            f"Request to {url} returned status code {request.status_code}"
+            f"Request to {url} returned status code {request.status_code}",
         )
 
     if text:
@@ -33,7 +36,10 @@ def download_file(
     request.raw.head = functools.partial(request.raw.read, decode_content=True)
 
     with tqdm.tqdm.wrapattr(
-        request.raw, "read", total=file_size, desc=desc
+        request.raw,
+        "read",
+        total=file_size,
+        desc=desc,
     ) as request_raw:
         with path.open("wb") as file:
             shutil.copyfileobj(request_raw, file)
