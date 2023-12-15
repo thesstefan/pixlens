@@ -43,8 +43,9 @@ def get_grounding_dino_ckpt(
 
     if not ckpt_path.exists():
         logging.info(
-            f"Downloading GroundingDINO ({grounding_dino_type}) weights from "
-            f"{GROUNDING_DINO_CKPT_URLS[grounding_dino_type]}...",
+            "Downloading GroundingDINO (%s) weights from %s...",
+            grounding_dino_type,
+            GROUNDING_DINO_CKPT_URLS[grounding_dino_type],
         )
         utils.download_file(
             GROUNDING_DINO_CKPT_URLS[grounding_dino_type],
@@ -64,8 +65,9 @@ def get_grounding_dino_config(
 
     if not config_path.exists():
         logging.info(
-            f"Downloading GroundingDINO ({grounding_dino_type}) config from "
-            f"{GROUNDING_DINO_CONFIG_URLS[grounding_dino_type]}",
+            "Downloading GroundingDINO (%s) config from %s...",
+            grounding_dino_type,
+            GROUNDING_DINO_CONFIG_URLS[grounding_dino_type],
         )
         utils.download_file(
             GROUNDING_DINO_CONFIG_URLS[grounding_dino_type],
@@ -84,7 +86,9 @@ def load_grounding_dino(
     model_config = get_grounding_dino_config(grounding_dino_type)
 
     logging.info(
-        f"Loading GroundingDINO {grounding_dino_type} from {model_ckpt}...",
+        "Loading GroundingDINO %s from %s...",
+        grounding_dino_type,
+        model_ckpt,
     )
 
     return inference.load_model(

@@ -34,7 +34,9 @@ def get_sam_ckpt(sam_type: SAMType) -> pathlib.Path:
 
     if not ckpt_path.exists():
         logging.info(
-            f"Downloading SAM {sam_type} weights from {SAM_CKPT_URLS[sam_type]}...",
+            "Downloading SAM %s weights from %s...",
+            sam_type,
+            SAM_CKPT_URLS[sam_type],
         )
         utils.download_file(
             SAM_CKPT_URLS[sam_type],
@@ -46,11 +48,12 @@ def get_sam_ckpt(sam_type: SAMType) -> pathlib.Path:
 
 
 def load_sam_predictor(
-    sam_type: SAMType = SAMType.VIT_H, device: torch.device | None = None
+    sam_type: SAMType = SAMType.VIT_H,
+    device: torch.device | None = None,
 ):
     sam_ckpt = get_sam_ckpt(sam_type)
 
-    logging.info(f"Loading SAM {sam_type} from {sam_ckpt}...")
+    logging.info("Loading SAM %s from %s...", sam_type, sam_ckpt)
 
     sam = segment_anything.sam_model_registry[sam_type](checkpoint=sam_ckpt).to(
         device,
