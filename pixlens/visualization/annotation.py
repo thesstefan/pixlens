@@ -1,4 +1,4 @@
-import numpy as np
+import numpy.typing as npt
 import torch
 from groundingdino.util import box_ops, inference
 from PIL import Image
@@ -8,7 +8,7 @@ from pixlens.eval import interfaces
 
 # TODO: Decouple this from GroundingDINO, it should work for any bounding boxes.
 def annotate_detection_output(
-    image_source: np.ndarray,
+    image_source: npt.ArrayLike,
     detection_output: interfaces.DetectionOutput,
 ) -> Image.Image:
     height, width, _ = image_source.shape
