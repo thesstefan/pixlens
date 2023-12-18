@@ -2,8 +2,8 @@ import enum
 import logging
 import pathlib
 
+import numpy.typing as npt
 import torch
-from groundingdino import models
 from groundingdino.util import box_ops, inference
 
 from pixlens import utils
@@ -69,10 +69,9 @@ def get_grounding_dino_config(
             grounding_dino_type,
             GROUNDING_DINO_CONFIG_URLS[grounding_dino_type],
         )
-        utils.download_file(
+        utils.download_text_file(
             GROUNDING_DINO_CONFIG_URLS[grounding_dino_type],
             config_path,
-            text=True,
         )
 
     return config_path
@@ -81,7 +80,7 @@ def get_grounding_dino_config(
 def load_grounding_dino(
     grounding_dino_type: GroundingDINOType,
     device: torch.device | None = None,
-) -> models.GroundingDINO.groundingdino.GroundingDINO:
+) -> torch.nn.Module:
     model_ckpt = get_grounding_dino_ckpt(grounding_dino_type)
     model_config = get_grounding_dino_config(grounding_dino_type)
 
@@ -99,7 +98,7 @@ def load_grounding_dino(
 
 
 class GroundingDINO(interfaces.PromptableDetectionModel):
-    grounding_dino_model: models.GroundingDINO.groundingdino.GroundingDINO
+    grounding_dino_model: torch.nn.Module
 
     box_threshold: float
     text_threshold: float
@@ -125,7 +124,7 @@ class GroundingDINO(interfaces.PromptableDetectionModel):
     def _unnormalize_bboxes(
         self,
         bboxes: torch.Tensor,
-        image: torch.Tensor,
+        image: npt.ArrayLike,
     ) -> torch.Tensor:
         height, width, _ = image.shape
         return box_ops.box_cxcywh_to_xyxy(bboxes) * torch.Tensor(
