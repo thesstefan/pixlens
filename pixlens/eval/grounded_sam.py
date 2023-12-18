@@ -3,7 +3,7 @@ import logging
 import torch
 
 from pixlens.eval import grounding_dino as eval_grounding_dino
-from pixlens.eval import interfaces
+from pixlens.utils import interfaces
 from pixlens.eval import sam as eval_sam
 
 

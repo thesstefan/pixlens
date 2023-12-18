@@ -11,8 +11,8 @@ from transformers import (
 import torch
 from PIL import Image
 
-from pixlens import utils
-from pixlens.eval import interfaces
+from pixlens.utils import utils
+from pixlens.utils import interfaces
 
 
 class OwlViTType(enum.StrEnum):

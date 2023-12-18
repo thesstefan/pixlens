@@ -6,8 +6,8 @@ import torch
 from groundingdino import models
 from groundingdino.util import box_ops, inference
 
-from pixlens import utils
-from pixlens.eval import interfaces
+from pixlens.utils import utils
+from pixlens.utils import interfaces
 
 
 class GroundingDINOType(enum.StrEnum):

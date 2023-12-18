@@ -9,8 +9,8 @@ from diffusers import (
 )
 
 
-from pixlens import utils
-from pixlens.eval import interfaces
+from pixlens.utils import utils
+from pixlens.utils import interfaces
 from pixlens.image_editing_models.utils import log_model_if_not_in_cache
 
 
