@@ -46,7 +46,7 @@
             "justMyCode": true
         },
         {
-            "name": "Pixlens Edit CLI",
+            "name": "Pixlens Edit CLI - Controlnet",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_edit_cli.py",
@@ -55,7 +55,20 @@
                 "--edit-model",
                 "controlnet",
                 "--output",
-                "${workspaceFolder}/results/edit_output.png",
+                "${workspaceFolder}/results/edit_output_controlnet.png",
+            ]
+        },
+        {
+            "name": "Pixlens Edit CLI - Pix2pix",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_edit_cli.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--edit-model",
+                "pix2pix",
+                "--output",
+                "${workspaceFolder}/results/edit_output_pix2pix.png",
             ]
         }
     ]
