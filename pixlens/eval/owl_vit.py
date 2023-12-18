@@ -87,9 +87,9 @@ class OwLViT(interfaces.PromptableDetectionModel):
     def detect(self, prompt: str, image_path: str) -> list:
         image = Image.open(image_path)
         prompts = prompt.split(",")
-        inputs = self.processor(
-            text=prompts, images=image, return_tensors="pt"
-        ).to(self.device)
+        inputs = self.processor(text=prompts, images=image, return_tensors="pt").to(
+            self.device
+        )
         with torch.no_grad():
             outputs = self.model(**inputs)
 
@@ -99,4 +99,10 @@ class OwLViT(interfaces.PromptableDetectionModel):
             target_sizes=torch.Tensor([image.size[::-1]]).to(self.device),
         )
         results = self.output_into_detection_output(results, prompts)
+
+        # Move all tensors to CPU
+        for result in results:
+            result.bounding_boxes = result.bounding_boxes.cpu()
+            result.logits = result.logits.cpu()
+
         return results[0]
