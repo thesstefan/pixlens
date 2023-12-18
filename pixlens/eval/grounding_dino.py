@@ -4,6 +4,7 @@ import pathlib
 
 import numpy.typing as npt
 import torch
+from typing import Any
 from groundingdino.util import box_ops, inference
 
 from pixlens import utils
@@ -124,7 +125,7 @@ class GroundingDINO(interfaces.PromptableDetectionModel):
     def _unnormalize_bboxes(
         self,
         bboxes: torch.Tensor,
-        image: npt.ArrayLike,
+        image: npt.NDArray[Any],
     ) -> torch.Tensor:
         height, width, _ = image.shape
         return box_ops.box_cxcywh_to_xyxy(bboxes) * torch.Tensor(
