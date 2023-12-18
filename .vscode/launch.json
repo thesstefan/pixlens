@@ -53,7 +53,7 @@
             "console": "integratedTerminal",
             "args": [
                 "--edit-model",
-                "pix2pix",
+                "controlnet",
                 "--output",
                 "${workspaceFolder}/results/edit_output.png",
             ]

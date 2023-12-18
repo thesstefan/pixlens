@@ -3,7 +3,7 @@ import torch
 import PIL
 import requests
 
-from pixlens.image_editing_models import pix2pix
+from pixlens.image_editing_models import pix2pix, controlnet
 
 parser = argparse.ArgumentParser(
     description="PixLens - Evaluate & understand image editing models"
@@ -49,6 +49,8 @@ def main() -> None:
     # code to instantiate and run pix2pix
     if args.edit_model == "pix2pix":
         model = pix2pix.Pix2pix(pix2pix.Pix2pixType.BASE, device)
+    elif args.edit_model == "controlnet":
+        model = controlnet.ControlNet(controlnet.ControlNetType.BASE, device)
     else:
         raise NotImplementedError
 
