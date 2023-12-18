@@ -1,6 +1,5 @@
 import PIL
 import logging
-import requests
 import enum
 import torch
 from pathlib import Path
@@ -49,44 +48,25 @@ class Pix2pix(interfaces.PromptableImageEditingModel):
         self,
         pix2pix_type: Pix2pixType,
         device: torch.device | None = None,
+        *,
+        num_inference_steps: int = 100,
+        image_guidance_scale: float = 1.0,
     ) -> None:
         self.device = device
         self.model = load_pix2pix(pix2pix_type, device)
+        self.num_inference_steps = num_inference_steps
+        self.image_guidance_scale = image_guidance_scale
 
     def edit_image(
         self,
         prompt: str,
         image_path: str,
-        *,
-        num_inference_steps: int = 100,
-        image_guidance_scale: float = 1.0,
     ) -> interfaces.ImageEditingOutput:
         input_image = PIL.Image.open(image_path)
         output_image = self.model(
             prompt,
             input_image,
-            num_inference_steps=num_inference_steps,
-            image_guidance_scale=image_guidance_scale,
+            num_inference_steps=self.num_inference_steps,
+            image_guidance_scale=self.image_guidance_scale,
         ).images[0]
         return interfaces.ImageEditingOutput(output_image, prompt)
-
-
-def test_pix2pix():
-    url = "https://raw.githubusercontent.com/timothybrooks/instruct-pix2pix/main/imgs/example.jpg"
-
-    def download_image(url):
-        image = PIL.Image.open(requests.get(url, stream=True).raw)
-        image = PIL.ImageOps.exif_transpose(image)
-        image = image.convert("RGB")
-        return image
-
-    image = download_image(url)
-    image.save("example_input.jpg")
-
-    prompt = "turn him into cyborg"
-
-    # code to intantiate and run pix2pix
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    pix2pix_model = Pix2pix(Pix2pixType.BASE, device)
-    output = pix2pix_model.edit_image(prompt, "example_input.jpg")
-    output.image.save("example_output.jpg")

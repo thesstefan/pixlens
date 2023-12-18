@@ -44,6 +44,19 @@
             "stopOnEntry": false,
             "jinja": false,
             "justMyCode": true
+        },
+        {
+            "name": "Pixlens Edit CLI",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_edit_cli.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--edit-model",
+                "pix2pix",
+                "--output",
+                "${workspaceFolder}/results/edit_output.png",
+            ]
         }
     ]
 }

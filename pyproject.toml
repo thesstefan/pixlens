@@ -23,4 +23,5 @@ optional-dependencies.dev = { file = ["requirements-dev.txt"] }
 where = ["."]
 
 [project.scripts]
-pixlens = "pixlens.cli.pixlens_cli:main"
+pixlens-eval = "pixlens.cli.pixlens_eval_cli:main"
+pixlens-edit = "pixlens.cli.pixlens_edit_cli:main"
