@@ -4,7 +4,7 @@ import torch
 
 from pixlens.eval import owl_vit as eval_owl_vit
 from pixlens.eval import sam as eval_sam
-from pixlens.eval.grounded_sam import PromptDetectAndBBoxSegmentModel
+from pixlens.eval.detect_and_segment import PromptDetectAndBBoxSegmentModel
 
 
 class OwlVitSam(PromptDetectAndBBoxSegmentModel):
@@ -20,7 +20,11 @@ class OwlVitSam(PromptDetectAndBBoxSegmentModel):
         )
         self.device = device
         sam_predictor = eval_sam.BBoxSamPredictor(sam_type, device=device)
-        owlvit = eval_owl_vit.OwLViT(owlvit_type, device=device, detection_confidence_threshold=detection_confidence_threshold)
+        owlvit = eval_owl_vit.OwLViT(
+            owlvit_type,
+            device=device,
+            detection_confidence_threshold=detection_confidence_threshold,
+        )
 
         super(OwlVitSam, self).__init__(
             owlvit, sam_predictor, detection_confidence_threshold
