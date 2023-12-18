@@ -160,6 +160,7 @@ cython_debug/
 .idea/
 
 # Images
+.editval_instances
 
 # JPEG
 *.jpg
