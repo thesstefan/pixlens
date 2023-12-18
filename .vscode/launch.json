@@ -1,0 +1,49 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug GroundedSAM",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_cli.py",
+            "args": [
+                "--object-detection",
+                "GroundedSAM",
+                "--image",
+                "editval_instances/backpack/000000163866.jpg",
+                "--prompt",
+                "suitcase . backpack",
+                "--out",
+                "${workspaceFolder}/results/result_suitcase_backpack_grounded_sam.png"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        },
+        {
+            "name": "Debug OwL-ViT+SAM",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_cli.py",
+            "args": [
+                "--object-detection",
+                "Owl-Vit+SAM",
+                "--image",
+                "editval_instances/backpack/000000163866.jpg",
+                "--prompt",
+                "backpack",
+                "--out",
+                "${workspaceFolder}/results/result_suitcase_backpack_owlvit_sam.png"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        }
+    ]
+}
