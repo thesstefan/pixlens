@@ -12,8 +12,10 @@ from diffusers import (
 import cv2
 from PIL import Image
 import numpy as np
+
 from pixlens import utils
 from pixlens.eval import interfaces
+from pixlens.image_editing_models.utils import log_model_if_not_in_cache
 
 
 class ControlNetType(enum.StrEnum):
@@ -22,14 +24,6 @@ class ControlNetType(enum.StrEnum):
 
 class StableDiffusionType(enum.StrEnum):
     BASE = "runwayml/stable-diffusion-v1-5"
-
-
-def log_model_if_not_in_cache(model_name: str, cache_dir: Path) -> None:
-    model_dir = model_name.replace("/", "--")
-    model_dir = "models--" + model_dir
-    full_path = cache_dir / model_dir
-    if not full_path.is_dir():
-        logging.info(f"Downloading ControlNet model from {model_name}...")
 
 
 def load_controlnet(

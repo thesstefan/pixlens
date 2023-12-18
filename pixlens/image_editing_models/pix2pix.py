@@ -8,20 +8,14 @@ from diffusers import (
     EulerAncestralDiscreteScheduler,
 )
 
+
 from pixlens import utils
 from pixlens.eval import interfaces
+from pixlens.image_editing_models.utils import log_model_if_not_in_cache
 
 
 class Pix2pixType(enum.StrEnum):
     BASE = "timbrooks/instruct-pix2pix"
-
-
-def log_model_if_not_in_cache(model_name: str, cache_dir: Path) -> None:
-    model_dir = model_name.replace("/", "--")
-    model_dir = "models--" + model_dir
-    full_path = cache_dir / model_dir
-    if not full_path.is_dir():
-        logging.info(f"Downloading Pix2pix model from {model_name}...")
 
 
 def load_pix2pix(
