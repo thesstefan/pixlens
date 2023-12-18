@@ -1,10 +1,10 @@
 import enum
 import logging
 import pathlib
+from typing import Any
 
 import numpy.typing as npt
 import torch
-from typing import Any
 from groundingdino.util import box_ops, inference
 
 from pixlens import utils
