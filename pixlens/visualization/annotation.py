@@ -1,9 +1,10 @@
-import numpy.typing as npt
+from typing import Any
+
 import numpy as np
+import numpy.typing as npt
 import torch
 from groundingdino.util import box_ops, inference
 from PIL import Image
-from typing import Any
 
 from pixlens.eval import interfaces
 
