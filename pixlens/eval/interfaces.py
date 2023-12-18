@@ -1,6 +1,6 @@
 import dataclasses
 from typing import Protocol
-
+from PIL import Image
 import torch
 
 
@@ -17,6 +17,13 @@ class SegmentationOutput:
     logits: torch.Tensor
 
 
+@dataclasses.dataclass
+class ImageEditingOutput:
+    image: Image.Image
+    prompt: str
+    # we could maybe add more stuff?
+
+
 class PromptableDetectionModel(Protocol):
     def detect(self, prompt: str, image_path: str) -> DetectionOutput:
         ...
@@ -29,4 +36,9 @@ class BBoxSegmentationModel(Protocol):
 
 class PromptableSegmentationModel(Protocol):
     def segment(self, prompt: str, image_path: str) -> SegmentationOutput:
+        ...
+
+
+class PromptableImageEditingModel(Protocol):
+    def edit(self, prompt: str, image_path: str) -> ImageEditingOutput:
         ...
