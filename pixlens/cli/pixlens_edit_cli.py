@@ -1,6 +1,7 @@
 import argparse
 import torch
 import PIL
+import os
 import requests
 
 from pixlens.image_editing_models import pix2pix, controlnet
@@ -24,6 +25,11 @@ parser.add_argument("--prompt", type=str, help=("Prompt with edit instruction"))
 
 def main() -> None:
     args = parser.parse_args()
+
+    # check that at least the output arg is defined, else print the usage and exit
+    if args.output is None:
+        parser.print_usage()
+        exit(1)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -55,6 +61,9 @@ def main() -> None:
         raise NotImplementedError
 
     output = model.edit_image(prompt, in_path)
+    if args.input is None:
+        os.remove(in_path)
+
     output.image.save(args.output)
 
 
