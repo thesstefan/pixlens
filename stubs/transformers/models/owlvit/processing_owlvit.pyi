@@ -1,0 +1,3 @@
+from transformers.processing_utils import ProcessorMixin
+
+class OwlViTProcessor(ProcessorMixin): ...
