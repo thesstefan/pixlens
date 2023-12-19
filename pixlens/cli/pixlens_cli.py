@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from pixlens.eval import grounded_sam, owl_vit_SAM
+from pixlens.eval import grounded_sam, owl_vit_sam
 from pixlens.visualization import annotation
 
 parser = argparse.ArgumentParser(
@@ -34,11 +34,13 @@ def main() -> None:
     print(f"Using device: {device}")
     if args.object_detection == "GroundedSAM":
         model = grounded_sam.GroundedSAM(
-            device=device, detection_confidence_threshold=args.detection_threshold
+            device=device,
+            detection_confidence_threshold=args.detection_threshold,
         )
-    elif args.object_detection == "Owl-Vit+SAM":
-        model = owl_vit_SAM.OwlVitSam(
-            device=device, detection_confidence_threshold=args.detection_threshold
+    elif args.object_detection == "OwlViT+SAM":
+        model = owl_vit_sam.OwlViTSAM(
+            device=device,
+            detection_confidence_threshold=args.detection_threshold,
         )
     else:
         raise NotImplementedError

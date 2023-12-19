@@ -40,7 +40,9 @@ def load_owlvit(owlvit_type: OwlViTType, device: torch.device | None = None):
     path_to_cache = utils.get_cache_dir()
     log_if_model_not_in_cache(owlvit_type, path_to_cache)
     if owlvit_type in [OwlViTType.BASE16_V2, OwlViTType.LARGE_V2]:
-        processor = Owlv2Processor.from_pretrained(owlvit_type, cache_dir=path_to_cache)
+        processor = Owlv2Processor.from_pretrained(
+            owlvit_type, cache_dir=path_to_cache
+        )
         model = Owlv2ForObjectDetection.from_pretrained(
             owlvit_type, cache_dir=path_to_cache
         )
@@ -56,7 +58,7 @@ def load_owlvit(owlvit_type: OwlViTType, device: torch.device | None = None):
     return model, processor
 
 
-class OwLViT(interfaces.PromptableDetectionModel):
+class OwlViT(interfaces.PromptableDetectionModel):
     device: torch.device | None
 
     def __init__(
@@ -87,9 +89,9 @@ class OwLViT(interfaces.PromptableDetectionModel):
     def detect(self, prompt: str, image_path: str) -> list:
         image = Image.open(image_path)
         prompts = prompt.split(",")
-        inputs = self.processor(text=prompts, images=image, return_tensors="pt").to(
-            self.device
-        )
+        inputs = self.processor(
+            text=prompts, images=image, return_tensors="pt"
+        ).to(self.device)
         with torch.no_grad():
             outputs = self.model(**inputs)
 
