@@ -16,7 +16,9 @@ class OwlViTSAM(interfaces.PromptDetectAndBBoxSegmentModel):
         device: torch.device | None = None,
     ) -> None:
         logging.info(
-            f"Loading OwlViT+SAM [OwlViT+SAM ({owlvit_type}) + SAM ({sam_type})]",
+            "Loading OwlViT+SAM [OwlViT (%s) + SAM (%s)]",
+            owlvit_type,
+            sam_type,
         )
         self.device = device
         sam_predictor = eval_sam.BBoxSamPredictor(sam_type, device=device)
@@ -26,6 +28,8 @@ class OwlViTSAM(interfaces.PromptDetectAndBBoxSegmentModel):
             detection_confidence_threshold=detection_confidence_threshold,
         )
 
-        super(OwlViTSAM, self).__init__(
-            owlvit, sam_predictor, detection_confidence_threshold,
+        super().__init__(
+            owlvit,
+            sam_predictor,
+            detection_confidence_threshold,
         )
