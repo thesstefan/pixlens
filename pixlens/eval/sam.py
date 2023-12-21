@@ -34,43 +34,56 @@ def get_sam_ckpt(sam_type: SAMType) -> pathlib.Path:
 
     if not ckpt_path.exists():
         logging.info(
-            f"Downloading SAM {sam_type} weights from {SAM_CKPT_URLS[sam_type]}..."
+            "Downloading SAM %s weights from %s...",
+            sam_type,
+            SAM_CKPT_URLS[sam_type],
         )
-        utils.download_file(SAM_CKPT_URLS[sam_type], ckpt_path, desc=f"SAM {sam_type}")
+        utils.download_file(
+            SAM_CKPT_URLS[sam_type],
+            ckpt_path,
+            desc=f"SAM {sam_type}",
+        )
 
     return ckpt_path
 
 
 def load_sam_predictor(
-    sam_type: SAMType = SAMType.VIT_H, device: torch.device | None = None
-):
+    sam_type: SAMType = SAMType.VIT_H,
+    device: torch.device | None = None,
+) -> segment_anything.SamPredictor:
     sam_ckpt = get_sam_ckpt(sam_type)
 
-    logging.info(f"Loading SAM {sam_type} from {sam_ckpt}...")
+    logging.info("Loading SAM %s from %s...", sam_type, sam_ckpt)
 
-    sam = segment_anything.sam_model_registry[sam_type](checkpoint=sam_ckpt).to(device)
-    predictor = segment_anything.SamPredictor(sam)
+    sam = segment_anything.sam_model_registry[sam_type](checkpoint=sam_ckpt).to(
+        device,
+    )
 
-    return predictor
+    return segment_anything.SamPredictor(sam)
 
 
 class BBoxSamPredictor(interfaces.BBoxSegmentationModel):
     sam_predictor: segment_anything.SamPredictor
 
     def __init__(
-        self, sam_type: SAMType = SAMType.VIT_H, device: torch.device | None = None
-    ):
+        self,
+        sam_type: SAMType = SAMType.VIT_H,
+        device: torch.device | None = None,
+    ) -> None:
         self.sam_predictor = load_sam_predictor(sam_type, device)
 
     def segment(
-        self, bbox: torch.Tensor, image_path: str
+        self,
+        bbox: torch.Tensor,
+        image_path: str,
     ) -> interfaces.SegmentationOutput:
         image = np.asarray(Image.open(image_path).convert("RGB"))
 
         self.sam_predictor.set_image(image)
 
         transformed_boxes = self.sam_predictor.transform.apply_boxes_torch(
-            bbox, image.shape[:2]
+            bbox,
+            image.shape[:2],
         ).to(self.sam_predictor.device)
 
         masks, logits, _ = self.sam_predictor.predict_torch(

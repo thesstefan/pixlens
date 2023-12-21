@@ -1,9 +1,10 @@
 import enum
 import logging
 import pathlib
+from typing import Any
 
+import numpy.typing as npt
 import torch
-from groundingdino import models
 from groundingdino.util import box_ops, inference
 
 from pixlens import utils
@@ -29,16 +30,23 @@ GROUNDING_DINO_CONFIG_URLS = {
     GroundingDINOType.SWIN_B: "https://raw.githubusercontent.com/IDEA-Research/GroundingDINO/"
     "main/groundingdino/config/GroundingDINO_SwinB_cfg.py",
 }
-GROUNDING_DINO_CONFIG_NAMES = utils.get_basename_dict(GROUNDING_DINO_CONFIG_URLS)
+GROUNDING_DINO_CONFIG_NAMES = utils.get_basename_dict(
+    GROUNDING_DINO_CONFIG_URLS,
+)
 
 
-def get_grounding_dino_ckpt(grounding_dino_type: GroundingDINOType) -> pathlib.Path:
-    ckpt_path = utils.get_cache_dir() / GROUNDING_DINO_CKPT_NAMES[grounding_dino_type]
+def get_grounding_dino_ckpt(
+    grounding_dino_type: GroundingDINOType,
+) -> pathlib.Path:
+    ckpt_path = (
+        utils.get_cache_dir() / GROUNDING_DINO_CKPT_NAMES[grounding_dino_type]
+    )
 
     if not ckpt_path.exists():
         logging.info(
-            f"Downloading GroundingDINO ({grounding_dino_type}) weights from "
-            f"{GROUNDING_DINO_CKPT_URLS[grounding_dino_type]}..."
+            "Downloading GroundingDINO (%s) weights from %s...",
+            grounding_dino_type,
+            GROUNDING_DINO_CKPT_URLS[grounding_dino_type],
         )
         utils.download_file(
             GROUNDING_DINO_CKPT_URLS[grounding_dino_type],
@@ -49,36 +57,49 @@ def get_grounding_dino_ckpt(grounding_dino_type: GroundingDINOType) -> pathlib.P
     return ckpt_path
 
 
-def get_grounding_dino_config(grounding_dino_type: GroundingDINOType) -> pathlib.Path:
+def get_grounding_dino_config(
+    grounding_dino_type: GroundingDINOType,
+) -> pathlib.Path:
     config_path = (
         utils.get_cache_dir() / GROUNDING_DINO_CONFIG_NAMES[grounding_dino_type]
     )
 
     if not config_path.exists():
         logging.info(
-            f"Downloading GroundingDINO ({grounding_dino_type}) config from "
-            f"{GROUNDING_DINO_CONFIG_URLS[grounding_dino_type]}"
+            "Downloading GroundingDINO (%s) config from %s...",
+            grounding_dino_type,
+            GROUNDING_DINO_CONFIG_URLS[grounding_dino_type],
         )
-        utils.download_file(
-            GROUNDING_DINO_CONFIG_URLS[grounding_dino_type], config_path, text=True
+        utils.download_text_file(
+            GROUNDING_DINO_CONFIG_URLS[grounding_dino_type],
+            config_path,
         )
 
     return config_path
 
 
 def load_grounding_dino(
-    grounding_dino_type: GroundingDINOType, device: torch.device | None = None
-) -> models.GroundingDINO.groundingdino.GroundingDINO:
+    grounding_dino_type: GroundingDINOType,
+    device: torch.device | None = None,
+) -> torch.nn.Module:
     model_ckpt = get_grounding_dino_ckpt(grounding_dino_type)
     model_config = get_grounding_dino_config(grounding_dino_type)
 
-    logging.info(f"Loading GroundingDINO {grounding_dino_type} from {model_ckpt}...")
+    logging.info(
+        "Loading GroundingDINO %s from %s...",
+        grounding_dino_type,
+        model_ckpt,
+    )
 
-    return inference.load_model(str(model_config), str(model_ckpt), device=str(device))
+    return inference.load_model(
+        str(model_config),
+        str(model_ckpt),
+        device=str(device),
+    )
 
 
 class GroundingDINO(interfaces.PromptableDetectionModel):
-    grounding_dino_model: models.GroundingDINO.groundingdino.GroundingDINO
+    grounding_dino_model: torch.nn.Module
 
     box_threshold: float
     text_threshold: float
@@ -92,21 +113,30 @@ class GroundingDINO(interfaces.PromptableDetectionModel):
         text_threshold: float = 0.3,
         device: torch.device | None = None,
     ) -> None:
-        self.grounding_dino_model = load_grounding_dino(grounding_dino_type, device)
+        self.grounding_dino_model = load_grounding_dino(
+            grounding_dino_type,
+            device,
+        )
         self.device = device
 
         self.box_threshold = box_threshold
         self.text_threshold = text_threshold
 
     def _unnormalize_bboxes(
-        self, bboxes: torch.Tensor, image: torch.Tensor
+        self,
+        bboxes: torch.Tensor,
+        image: npt.NDArray[Any],
     ) -> torch.Tensor:
         height, width, _ = image.shape
         return box_ops.box_cxcywh_to_xyxy(bboxes) * torch.Tensor(
-            [width, height, width, height]
+            [width, height, width, height],
         )
 
-    def detect(self, prompt: str, image_path: str) -> interfaces.DetectionOutput:
+    def detect(
+        self,
+        prompt: str,
+        image_path: str,
+    ) -> interfaces.DetectionOutput:
         image_source, image = inference.load_image(image_path)
 
         boxes, logits, phrases = inference.predict(
@@ -119,5 +149,7 @@ class GroundingDINO(interfaces.PromptableDetectionModel):
         )
 
         return interfaces.DetectionOutput(
-            self._unnormalize_bboxes(boxes, image_source), logits, phrases
+            self._unnormalize_bboxes(boxes, image_source),
+            logits,
+            phrases,
         )

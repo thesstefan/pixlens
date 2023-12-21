@@ -9,7 +9,7 @@ authors = [
 description = "Understanding & evaluating image editing models"
 readme = "README.md"
 dynamic = ["dependencies", "optional-dependencies", "version"]
-requires-python = ">3.11"
+requires-python = ">=3.11"
 
 [build-system]
 requires = ["setuptools"]
@@ -24,3 +24,33 @@ where = ["."]
 
 [project.scripts]
 pixlens = "pixlens.cli.pixlens_cli:main"
+
+[tool.ruff]
+line-length = 80
+target-version = "py311"
+select = ["ALL"]
+ignore = [
+    # Make docs not mandatory
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+
+    # Don't enforce typing annotations for self & cls
+    "ANN101",
+    "ANN102",
+]
+
+[tool.mypy]
+plugins = "numpy.typing.mypy_plugin"
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+show_error_codes = true
+mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
