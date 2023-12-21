@@ -18,6 +18,12 @@ class SegmentationOutput:
     logits: torch.Tensor
 
 
+@dataclasses.dataclass
+class DetectionSegmentationResult:
+    detection_output: DetectionOutput
+    segmentation_output: SegmentationOutput
+
+
 class PromptableDetectionModel(Protocol):
     def detect(
         self,
