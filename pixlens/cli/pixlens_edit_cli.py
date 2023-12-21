@@ -1,10 +1,11 @@
 import argparse
-import torch
-import os
 import logging
+from pathlib import Path
 
+import torch
+
+from pixlens.editing import controlnet, pix2pix
 from pixlens.utils import utils
-from pixlens.editing import pix2pix, controlnet
 
 parser = argparse.ArgumentParser(
     description="PixLens - Evaluate & understand image editing models"
@@ -15,7 +16,9 @@ parser.add_argument(
     default="pix2pix",
     help=("Image editing model: pix2pix, dreambooth, etc."),
 )
-parser.add_argument("--output", required=True, type=str, help=("Path of output image"))
+parser.add_argument(
+    "--output", required=True, type=str, help=("Path of output image")
+)
 parser.add_argument(
     "--input", type=str, help="Path of input image", nargs="?", default=None
 )
@@ -50,7 +53,7 @@ def main() -> None:
 
     output = model.edit(prompt, in_path)
     if args.input is None:
-        os.remove(in_path)
+        Path(in_path).unlink()
 
     output.image.save(args.output)
 
