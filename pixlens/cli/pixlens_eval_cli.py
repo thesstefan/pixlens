@@ -1,5 +1,5 @@
 import argparse
-
+import logging
 import numpy as np
 import torch
 from PIL import Image
@@ -31,7 +31,7 @@ def main() -> None:
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    logging.info(f"Using device: {device}")
     if args.object_detection == "GroundedSAM":
         model = grounded_sam.GroundedSAM(
             device=device, detection_confidence_threshold=args.detection_threshold
