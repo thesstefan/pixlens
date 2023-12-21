@@ -11,8 +11,8 @@ from transformers import (
     OwlViTProcessor,
 )
 
+from pixlens.detection import interfaces
 from pixlens.utils import utils
-from pixlens.eval import interfaces
 
 
 class OwlViTType(enum.StrEnum):

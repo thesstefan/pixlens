@@ -7,7 +7,7 @@ import numpy.typing as npt
 import torch
 from groundingdino.util import box_ops, inference
 
-from pixlens.eval import interfaces
+from pixlens.detection import interfaces
 from pixlens.utils import utils
 
 

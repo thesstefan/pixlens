@@ -2,9 +2,9 @@ import logging
 
 import torch
 
-from pixlens.eval import interfaces
-from pixlens.eval import owl_vit as eval_owl_vit
-from pixlens.eval import sam as eval_sam
+from pixlens.detection import interfaces
+from pixlens.detection import owl_vit as eval_owl_vit
+from pixlens.detection import sam as eval_sam
 
 
 class OwlViTSAM(interfaces.PromptDetectAndBBoxSegmentModel):

@@ -7,8 +7,8 @@ import segment_anything
 import torch
 from PIL import Image
 
+from pixlens.detection import interfaces
 from pixlens.utils import utils
-from pixlens.eval import interfaces
 
 
 class SAMType(enum.StrEnum):

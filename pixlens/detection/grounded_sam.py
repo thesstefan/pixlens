@@ -2,9 +2,9 @@ import logging
 
 import torch
 
-from pixlens.eval import grounding_dino as eval_grounding_dino
-from pixlens.eval import interfaces
-from pixlens.eval import sam as eval_sam
+from pixlens.detection import grounding_dino as eval_grounding_dino
+from pixlens.detection import interfaces
+from pixlens.detection import sam as eval_sam
 
 
 class GroundedSAM(interfaces.PromptDetectAndBBoxSegmentModel):

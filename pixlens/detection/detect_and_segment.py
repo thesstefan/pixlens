@@ -1,6 +1,6 @@
 import torch
 
-from pixlens.eval import interfaces
+from pixlens.detection import interfaces
 
 
 class PromptDetectAndBBoxSegmentModel(interfaces.PromptableSegmentationModel):
@@ -37,7 +37,9 @@ class PromptDetectAndBBoxSegmentModel(interfaces.PromptableSegmentationModel):
     def detect_and_segment(
         self, prompt: str, image_path: str
     ) -> tuple[interfaces.SegmentationOutput, interfaces.DetectionOutput]:
-        detection_output = self.promptable_detection_model.detect(prompt, image_path)
+        detection_output = self.promptable_detection_model.detect(
+            prompt, image_path
+        )
         detection_output = self.filter_detection_output(detection_output)
 
         segmentation_output = self.bbox_segmentation_model.segment(
@@ -46,5 +48,7 @@ class PromptDetectAndBBoxSegmentModel(interfaces.PromptableSegmentationModel):
 
         return segmentation_output, detection_output
 
-    def segment(self, prompt: str, image_path: str) -> interfaces.SegmentationOutput:
+    def segment(
+        self, prompt: str, image_path: str
+    ) -> interfaces.SegmentationOutput:
         return self.detect_and_segment(prompt, image_path)[0]

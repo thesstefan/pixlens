@@ -1,21 +1,19 @@
-import PIL
-import logging
-import requests
 import enum
+
+import cv2
+import numpy as np
+import PIL
 import torch
-from pathlib import Path
 from diffusers import (
-    StableDiffusionControlNetPipeline,
     ControlNetModel,
+    StableDiffusionControlNetPipeline,
     UniPCMultistepScheduler,
 )
-import cv2
 from PIL import Image
-import numpy as np
 
-from pixlens.utils import utils
 from pixlens.editing import interfaces
 from pixlens.editing.utils import log_model_if_not_in_cache
+from pixlens.utils import utils
 
 
 class ControlNetType(enum.StrEnum):
@@ -31,7 +29,9 @@ def load_controlnet(
 ) -> StableDiffusionControlNetPipeline:
     path_to_cache = utils.get_cache_dir()
     log_model_if_not_in_cache(model_type, path_to_cache)
-    controlnet = ControlNetModel.from_pretrained(model_type, torch_dtype=torch.float16)
+    controlnet = ControlNetModel.from_pretrained(
+        model_type, torch_dtype=torch.float16
+    )
     pipe = StableDiffusionControlNetPipeline.from_pretrained(
         StableDiffusionType.BASE,
         controlnet=controlnet,

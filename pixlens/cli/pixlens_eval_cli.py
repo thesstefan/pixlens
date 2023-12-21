@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from pixlens.eval import grounded_sam, owl_vit_sam
+from pixlens.detection import grounded_sam, owl_vit_sam
 from pixlens.visualization import annotation
 
 parser = argparse.ArgumentParser(
