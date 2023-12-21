@@ -1,6 +1,7 @@
 import abc
 import dataclasses
 from typing import Protocol
+
 import torch
 
 

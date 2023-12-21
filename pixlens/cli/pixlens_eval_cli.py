@@ -1,10 +1,11 @@
 import argparse
 import logging
+
 import numpy as np
 import torch
 from PIL import Image
 
-from pixlens.eval import grounded_sam, owl_vit_SAM
+from pixlens.eval import grounded_sam, owl_vit_sam
 from pixlens.visualization import annotation
 
 parser = argparse.ArgumentParser(
@@ -38,7 +39,7 @@ def main() -> None:
             detection_confidence_threshold=args.detection_threshold,
         )
     elif args.object_detection == "Owl-Vit+SAM":
-        model = owl_vit_SAM.OwlVitSam(
+        model = owl_vit_sam.OwlViTSAM(
             device=device,
             detection_confidence_threshold=args.detection_threshold,
         )

@@ -7,8 +7,8 @@ import numpy.typing as npt
 import torch
 from groundingdino.util import box_ops, inference
 
-from pixlens.utils import utils
 from pixlens.eval import interfaces
+from pixlens.utils import utils
 
 
 class GroundingDINOType(enum.StrEnum):
