@@ -1,10 +1,11 @@
 import argparse
+import logging
 
 import numpy as np
 import torch
 from PIL import Image
 
-from pixlens.eval import grounded_sam, owl_vit_SAM
+from pixlens.eval import grounded_sam, owl_vit_sam
 from pixlens.visualization import annotation
 
 parser = argparse.ArgumentParser(
@@ -14,7 +15,7 @@ parser.add_argument(
     "--object-detection",
     type=str,
     default="GroundedSAM",
-    help=("Detector, either GroundedSAM or Owl-ViT+SAM"),
+    help=("Detector, either GroundedSAM or OwlViT+SAM"),
 )
 parser.add_argument("--out", type=str, help=("Path of output annotated image"))
 parser.add_argument("--image", type=str, help=("Image to detect objects in"))
@@ -27,21 +28,23 @@ parser.add_argument(
 )
 
 
+NAME_TO_MODEL = {
+    "GroundedSAM": grounded_sam.GroundedSAM,
+    "OwlViT+SAM": owl_vit_sam.OwlViTSAM,
+}
+
+
 def main() -> None:
     args = parser.parse_args()
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
-    if args.object_detection == "GroundedSAM":
-        model = grounded_sam.GroundedSAM(
-            device=device, detection_confidence_threshold=args.detection_threshold
-        )
-    elif args.object_detection == "Owl-Vit+SAM":
-        model = owl_vit_SAM.OwlVitSam(
-            device=device, detection_confidence_threshold=args.detection_threshold
-        )
-    else:
-        raise NotImplementedError
+
+    logging.info("Using device: %s", device)
+
+    model = NAME_TO_MODEL[args.object_detection](
+        device=device,
+        detection_confidence_threshold=args.detection_threshold,
+    )
+
     segmentation_output, detection_output = model.detect_and_segment(
         args.prompt,
         args.image,
