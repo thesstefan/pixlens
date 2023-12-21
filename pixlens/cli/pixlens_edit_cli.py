@@ -42,15 +42,13 @@ def main() -> None:
 
     # code to instantiate and run pix2pix
     if args.edit_model == "pix2pix":
-        model: pix2pix.Pix2pix = pix2pix.Pix2pix(pix2pix.Pix2pixType.BASE, device)
+        model = pix2pix.Pix2pix(pix2pix.Pix2pixType.BASE, device)
     elif args.edit_model == "controlnet":
-        model: controlnet.ControlNet = controlnet.ControlNet(
-            controlnet.ControlNetType.BASE, device
-        )
+        model = controlnet.ControlNet(controlnet.ControlNetType.BASE, device)
     else:
         raise NotImplementedError
 
-    output = model.edit_image(prompt, in_path)
+    output = model.edit(prompt, in_path)
     if args.input is None:
         os.remove(in_path)
 

@@ -51,7 +51,7 @@ class Pix2pix(interfaces.PromptableImageEditingModel):
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
 
-    def edit_image(
+    def edit(
         self,
         prompt: str,
         image_path: str,

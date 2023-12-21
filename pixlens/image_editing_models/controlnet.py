@@ -67,7 +67,7 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         canny_image = Image.fromarray(image)
         return canny_image
 
-    def edit_image(
+    def edit(
         self,
         prompt: str,
         image_path: str,
