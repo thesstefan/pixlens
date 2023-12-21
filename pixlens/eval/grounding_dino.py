@@ -7,7 +7,7 @@ from groundingdino import models
 from groundingdino.util import box_ops, inference
 
 from pixlens.utils import utils
-from pixlens.utils import interfaces
+from pixlens.eval import interfaces
 
 
 class GroundingDINOType(enum.StrEnum):

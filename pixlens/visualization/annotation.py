@@ -3,7 +3,7 @@ import torch
 from groundingdino.util import box_ops, inference
 from PIL import Image
 
-from pixlens.utils import interfaces
+from pixlens.eval import interfaces
 
 
 # TODO: Decouple this from GroundingDINO, it should work for any bounding boxes.

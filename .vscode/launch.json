@@ -5,7 +5,7 @@
             "name": "Debug GroundedSAM",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/pixlens/cli/pixlens_cli.py",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_cli.py",
             "args": [
                 "--object-detection",
                 "GroundedSAM",
@@ -27,14 +27,14 @@
             "name": "Debug OwL-ViT+SAM",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/pixlens/cli/pixlens_cli.py",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_cli.py",
             "args": [
                 "--object-detection",
                 "Owl-Vit+SAM",
                 "--image",
                 "editval_instances/backpack/000000163866.jpg",
                 "--prompt",
-                "backpack",
+                "suitcase,backpack",
                 "--out",
                 "${workspaceFolder}/results/result_suitcase_backpack_owlvit_sam.png"
             ],

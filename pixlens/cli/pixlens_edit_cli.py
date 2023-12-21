@@ -4,7 +4,7 @@ import os
 import logging
 
 from pixlens.utils import utils
-from pixlens.image_editing_models import pix2pix, controlnet
+from pixlens.editing import pix2pix, controlnet
 
 parser = argparse.ArgumentParser(
     description="PixLens - Evaluate & understand image editing models"

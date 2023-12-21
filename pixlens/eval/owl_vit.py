@@ -12,7 +12,7 @@ import torch
 from PIL import Image
 
 from pixlens.utils import utils
-from pixlens.utils import interfaces
+from pixlens.eval import interfaces
 
 
 class OwlViTType(enum.StrEnum):

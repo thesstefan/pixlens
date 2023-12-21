@@ -14,8 +14,8 @@ from PIL import Image
 import numpy as np
 
 from pixlens.utils import utils
-from pixlens.utils import interfaces
-from pixlens.image_editing_models.utils import log_model_if_not_in_cache
+from pixlens.editing import interfaces
+from pixlens.editing.utils import log_model_if_not_in_cache
 
 
 class ControlNetType(enum.StrEnum):

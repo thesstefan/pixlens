@@ -1,6 +1,6 @@
 import torch
 
-from pixlens.utils import interfaces
+from pixlens.eval import interfaces
 
 
 class PromptDetectAndBBoxSegmentModel(interfaces.PromptableSegmentationModel):
