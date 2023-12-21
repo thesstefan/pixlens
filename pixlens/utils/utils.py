@@ -9,35 +9,54 @@ import PIL
 from PIL import Image
 
 CACHE_DIR_NAME = "pixlens"
+REQUEST_TIMEOUT = 10
 
 T = typing.TypeVar("T")
 
 
-def download_file(
-    url: str, path: pathlib.Path, text: bool = False, desc: str = ""
+def _request_file(url: str) -> requests.Response:
+    response = requests.get(
+        url,
+        stream=True,
+        allow_redirects=True,
+        timeout=REQUEST_TIMEOUT,
+    )
+
+    if not response.ok:
+        response.raise_for_status()
+
+    return response
+
+
+def download_text_file(
+    url: str,
+    path: pathlib.Path,
 ) -> None:
-    request = requests.get(url, stream=True, allow_redirects=True)
+    response = _request_file(url)
 
-    if request.status_code != 200:
-        request.raise_for_status()
-        raise RuntimeError(
-            f"Request to {url} returned status code {request.status_code}"
-        )
+    with path.open("w") as file:
+        file.write(response.text)
 
-    if text:
-        with path.open("w") as file:
-            file.write(request.text)
 
-        return
-
-    file_size = int(request.headers.get("Content-Length", 0))
-    request.raw.head = functools.partial(request.raw.read, decode_content=True)
+def download_file(
+    url: str,
+    path: pathlib.Path,
+    desc: str = "",
+) -> None:
+    response = _request_file(url)
+    file_size = int(response.headers.get("Content-Length", 0))
+    response.raw.head = functools.partial(
+        response.raw.read,
+        decode_content=True,
+    )
 
     with tqdm.tqdm.wrapattr(
-        request.raw, "read", total=file_size, desc=desc
-    ) as request_raw:
-        with path.open("wb") as file:
-            shutil.copyfileobj(request_raw, file)
+        response.raw,
+        "read",
+        total=file_size,
+        desc=desc,
+    ) as request_raw, path.open("wb") as file:
+        shutil.copyfileobj(request_raw, file)
 
 
 def get_cache_dir() -> pathlib.Path:

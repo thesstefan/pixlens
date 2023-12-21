@@ -34,11 +34,13 @@ def main() -> None:
     logging.info(f"Using device: {device}")
     if args.object_detection == "GroundedSAM":
         model = grounded_sam.GroundedSAM(
-            device=device, detection_confidence_threshold=args.detection_threshold
+            device=device,
+            detection_confidence_threshold=args.detection_threshold,
         )
     elif args.object_detection == "Owl-Vit+SAM":
         model = owl_vit_SAM.OwlVitSam(
-            device=device, detection_confidence_threshold=args.detection_threshold
+            device=device,
+            detection_confidence_threshold=args.detection_threshold,
         )
     else:
         raise NotImplementedError
