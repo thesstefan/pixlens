@@ -83,40 +83,81 @@ class EvaluationPipeline:
             for idx in self.edit_dataset.index:
                 edit = self.get_editfrom_attribute_edit_id(idx)
                 prompt = self.generate_prompt(edit)
+                print("prompt: ", prompt)
+                print("image_path: ", edit.image_path)
                 output = model.edit(prompt, edit.image_path)
-                score = 0
+                breakpoint()
 
     def generate_prompt(self, edit: interfaces.Edit) -> str:
-        prompt_formats = {
-            "object_addition": "Add a {} to the image",
-            "positional_addition": "Add {} the {}",
-            "size": "Change the size of {} to {}",
-            "shape": "Change the shape of {} to {}",
-            "alter_parts": "{} to {}",
-            "color": "Change the color of {} to {}",
-            "object_change": "Change {} to {}",
-            "object_removal": "Remove {}",
-            "object_replacement": "Replace {} with {}",
-            "position_replacement": "Move {} to {}",
-            "object_duplication": "Duplicate {}",
-            "texture": "Change the texture of {} to {}",
-            "action": "{} doing {}",
-            "viewpoint": "Change the viewpoint to {}",
-            "background": "Change the background to {}",
-            "style": "Change the style of {} to {}",
-        }
-
-        prompt_format = prompt_formats.get(edit.edit_type)
-        if prompt_format:
-            # Handle special cases where from_attribute is needed
-            if edit.edit_type in ["object_replacement", "position_replacement"]:
-                return prompt_format.format(
-                    edit.from_attribute, edit.to_attribute
-                )
-            else:
-                return prompt_format.format(edit.category, edit.to_attribute)
-        else:
-            raise NotImplementedError(edit.edit_type, "not implemented")
+        edit_type = edit.edit_type
+        if edit_type == "object_addition":
+            prompt = "Add a " + edit.to_attribute + " to the image"
+        elif edit_type == "positional_addition":
+            prompt = "Add " + edit.to_attribute + " the " + edit.category
+        elif edit_type == "size":
+            prompt = (
+                "Change the size of "
+                + edit.category
+                + " to "
+                + edit.to_attribute
+            )
+        elif edit_type == "shape":
+            prompt = (
+                "Change the shape of the "
+                + edit.category
+                + " to "
+                + edit.to_attribute
+            )
+        elif edit_type == "alter_parts":
+            prompt = edit.to_attribute + " to " + edit.category
+        elif edit_type == "color":
+            prompt = (
+                "Change the color of the "
+                + edit.category
+                + " to "
+                + edit.to_attribute
+            )
+        elif edit_type == "object_change":  # New
+            prompt = "Change the " + edit.category + " to " + edit.to_attribute
+        elif edit_type == "object_removal":  # New
+            prompt = "Remove the " + edit.category
+        elif edit_type == "object_replacement":
+            prompt = (
+                "Replace the "
+                + edit.from_attribute
+                + " with "
+                + edit.to_attribute
+            )
+        elif edit_type == "position_replacement":
+            prompt = (
+                "Move the "
+                + edit.from_attribute
+                + " to the "
+                + edit.to_attribute
+            )
+        elif edit_type == "object_duplication":  # New
+            prompt = "Duplicate the " + edit.category
+        elif edit_type == "texture":
+            prompt = (
+                "Change the texture of the "
+                + edit.category
+                + " to "
+                + edit.to_attribute
+            )
+        elif edit_type == "action":
+            prompt = edit.category + " doing " + edit.to_attribute
+        elif edit_type == "viewpoint":
+            prompt = "Change the viewpoint to " + edit.to_attribute
+        elif edit_type == "background":
+            prompt = "Change the background to " + edit.to_attribute
+        elif edit_type == "style":
+            prompt = (
+                "Change the style of the "
+                + edit.category
+                + " to "
+                + edit.to_attribute
+            )
+        return prompt
 
 
 pathto_attribute_json = "pixlens//editval//object.json"

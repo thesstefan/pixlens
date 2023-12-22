@@ -2,6 +2,7 @@ import dataclasses
 import logging
 from abc import abstractmethod
 from typing import Protocol
+from pathlib import Path
 
 from PIL import Image
 from PIL.Image import Image as PILImage
@@ -28,7 +29,7 @@ class PromptableImageEditingModel(Protocol):
         cache_dir = utils.get_cache_dir()
         model_dir = self.get_model_name().replace("/", "--")
         model_dir = "models--" + model_dir
-        full_path = cache_dir / model_dir / str(12) / prompt
+        full_path = cache_dir / model_dir / Path(image_path).stem / prompt
         full_path = full_path.with_suffix(".png")
         if full_path.is_file():
             logging.info("Using cached edited image")
