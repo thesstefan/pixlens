@@ -30,17 +30,6 @@ class EvaluationOutput:
     score: float
 
 
-@dataclasses.dataclass
-class Edit:
-    edit_id: int
-    image_path: str
-    image_id: int
-    category: str
-    edit_type: EditType
-    _from: str
-    _to: str
-
-
 class OperationEvaluation(Protocol):
     def evaluate_edit(
         self,
