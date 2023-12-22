@@ -2,9 +2,11 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import torch
 
 from pixlens.evaluation import interfaces
 from pixlens.editing.interfaces import PromptableImageEditingModel
+from pixlens.editing.pix2pix import Pix2pix
 
 
 # create a class that will parse a json object to get some edit instructions
@@ -64,7 +66,7 @@ class EvaluationPipeline:
                 Path(
                     self.dataset_path,
                     edit["class"],
-                    f"000000{str(edit['image_id'])}.png",
+                    f"000000{str(edit['image_id'])}.jpg",
                 )
             ),
             category=edit["class"],
@@ -80,9 +82,9 @@ class EvaluationPipeline:
         for model in models:
             for idx in self.edit_dataset.index:
                 edit = self.get_editfrom_attribute_edit_id(idx)
-                prompt = ""
+                prompt = self.generate_prompt(edit)
                 output = model.edit(prompt, edit.image_path)
-                raise NotImplementedError
+                score = 0
 
     def generate_prompt(self, edit: interfaces.Edit) -> str:
         edit_type = edit.edit_type
@@ -159,4 +161,5 @@ class EvaluationPipeline:
 pathto_attribute_json = "pixlens//editval//object.json"
 pathto_attribute_dataset = "editval_instances"
 eval = EvaluationPipeline(pathto_attribute_json, pathto_attribute_dataset)
-breakpoint()
+model = Pix2pix(device=torch.device("cuda"))
+eval.execute_pipeline([model])
