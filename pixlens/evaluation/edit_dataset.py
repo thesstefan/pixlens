@@ -87,29 +87,36 @@ class EvaluationPipeline:
                 score = 0
 
     def generate_prompt(self, edit: interfaces.Edit) -> str:
-        prompts = {
+        prompt_formats = {
             "object_addition": "Add a {} to the image",
             "positional_addition": "Add {} the {}",
             "size": "Change the size of {} to {}",
-            "shape": "Change the shape of the {} to {}",
+            "shape": "Change the shape of {} to {}",
             "alter_parts": "{} to {}",
-            "color": "Change the color of the {} to {}",
-            "object_change": "Change the {} to {}",
-            "object_removal": "Remove the {}",
-            "object_replacement": "Replace the {} with {}",
-            "position_replacement": "Move the {} to the {}",
-            "object_duplication": "Duplicate the {}",
-            "texture": "Change the texture of the {} to {}",
+            "color": "Change the color of {} to {}",
+            "object_change": "Change {} to {}",
+            "object_removal": "Remove {}",
+            "object_replacement": "Replace {} with {}",
+            "position_replacement": "Move {} to {}",
+            "object_duplication": "Duplicate {}",
+            "texture": "Change the texture of {} to {}",
             "action": "{} doing {}",
             "viewpoint": "Change the viewpoint to {}",
             "background": "Change the background to {}",
-            "style": "Change the style of the {} to {}",
+            "style": "Change the style of {} to {}",
         }
 
-        prompt_format = prompts.get(edit.edit_type)
+        prompt_format = prompt_formats.get(edit.edit_type)
         if prompt_format:
-            return prompt_format.format(edit.category, edit.to_attribute)
-        raise ValueError(f"Edit type {edit.edit_type} is not implemented")
+            # Handle special cases where from_attribute is needed
+            if edit.edit_type in ["object_replacement", "position_replacement"]:
+                return prompt_format.format(
+                    edit.from_attribute, edit.to_attribute
+                )
+            else:
+                return prompt_format.format(edit.category, edit.to_attribute)
+        else:
+            raise NotImplementedError(edit.edit_type, "not implemented")
 
 
 pathto_attribute_json = "pixlens//editval//object.json"
