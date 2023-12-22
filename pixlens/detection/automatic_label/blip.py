@@ -56,13 +56,21 @@ class Blip(ImageDescriptorModel):
     ) -> None:
         self.device = device
         self.model, self.processor = load_blip(blip_type, device)
+        self.blip_type = blip_type
 
     def __call__(self, image: Image) -> ImageCaption:
         inputs = self.processor(images=image, return_tensors="pt").to(
             self.device, torch.float16
         )
-        generated_ids = self.model.generate(**inputs)
-        generated_text = self.processor.batch_decode(
-            generated_ids, skip_special_tokens=True
-        )[0].strip()
-        return generated_text
+        if self.blip_type == BlipType.BLIP2:
+            generated_ids = self.model.generate(**inputs)
+            generated_text = self.processor.batch_decode(
+                generated_ids, skip_special_tokens=True
+            )[0].strip()
+        else:
+            text = "A picture of"
+            inputs = self.processor(
+                images=image, text=text, return_tensors="pt"
+            )
+            generated_text = self.model(**inputs)
+        return ImageCaption(caption=generated_text)

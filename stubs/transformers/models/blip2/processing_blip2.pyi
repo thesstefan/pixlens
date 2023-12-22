@@ -11,3 +11,8 @@ class Blip2Processor(ProcessorMixin):
         return_tensors: str = ...,
         **kwargs: Incomplete,
     ) -> Incomplete: ...
+    def batch_decode(
+        self,
+        *args: Incomplete,
+        **kwargs: Incomplete,
+    ) -> list[str]: ...
