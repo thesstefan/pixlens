@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-from pixlens import utils
+from pixlens.utils import utils
 
 
 def log_if_hugging_face_model_not_in_cache(

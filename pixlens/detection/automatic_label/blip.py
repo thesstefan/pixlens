@@ -74,3 +74,12 @@ class Blip(ImageDescriptorModel):
             )
             generated_text = self.model(**inputs)
         return ImageCaption(caption=generated_text)
+
+
+import requests
+
+url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+image = Image.open(requests.get(url, stream=True).raw)
+
+blip = Blip()
+print(blip(image))
