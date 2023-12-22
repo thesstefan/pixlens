@@ -80,16 +80,26 @@ class EvaluationPipeline:
         for model in models:
             for idx in self.edit_dataset.index:
                 edit = self.get_edit_from_edit_id(idx)
-                edit_type = edit.edit_type
                 prompt = ""
                 output = model.edit(prompt, edit.image_path)
                 raise NotImplementedError
 
-    def generate_prompt(self, edit_id: int) -> str:
-        raise NotImplementedError
+    def generate_prompt(self, edit: interfaces.Edit) -> str:
+        edit_type = edit.edit_type
+        if edit_type == "object_addition":
+            prompt = "Add a " + edit._to + " to the image"
+        elif edit_type == "positional_addition":
+            prompt = "Add " + edit._to + " the " + edit.category
+        elif edit_type == "size":
+            prompt = "Change the size of " + edit.category + " to " + edit._to
+        elif edit_type == "shape":
+            prompt = "Change the shape of the " + edit.category + " to " + edit
+        elif edit_type == "alter_parts":
+            prompt = edit._to + " to " + edit.category
+        return prompt
 
 
-path_to_json = "pixlens//editval//object.json"
-path_to_dataset = "editval_instances"
-eval = EvaluationPipeline(path_to_json, path_to_dataset)
-breakpoint()
+# path_to_json = "pixlens//editval//object.json"
+# path_to_dataset = "editval_instances"
+# eval = EvaluationPipeline(path_to_json, path_to_dataset)
+# breakpoint()
