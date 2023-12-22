@@ -6,12 +6,6 @@ import torch
 
 from pixlens.evaluation import interfaces
 from pixlens.editing.interfaces import PromptableImageEditingModel
-from pixlens.editing.pix2pix import Pix2pix
-from pixlens.detection.interfaces import (
-    PromptDetectAndBBoxSegmentModel,
-    DetectionSegmentationResult,
-)
-from pixlens.detection.grounded_sam import GroundedSAM
 
 
 # create a class that will parse a json object to get some edit instructions
@@ -22,7 +16,6 @@ class EvaluationPipeline:
         self.json_object_path = json_object_path
         self.edit_dataset: pd.DataFrame
         self.dataset_path = dataset_path
-        self.det_set_model: PromptDetectAndBBoxSegmentModel = GroundedSAM
         self._parse_json_object()
 
     def _parse_json_object(self) -> None:
