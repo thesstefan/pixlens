@@ -74,7 +74,8 @@ class EvaluationPipeline:
         )
 
     def execute_pipeline(
-        self, models: list[PromptableImageEditingModel]
+        self,
+        models: list[PromptableImageEditingModel],
     ) -> None:
         for model in models:
             for idx in self.edit_dataset.index:
@@ -83,6 +84,9 @@ class EvaluationPipeline:
                 prompt = ""
                 output = model.edit(prompt, edit.image_path)
                 raise NotImplementedError
+
+    def generate_prompt(self, edit_id: int) -> str:
+        raise NotImplementedError
 
 
 path_to_json = "pixlens//editval//object.json"
