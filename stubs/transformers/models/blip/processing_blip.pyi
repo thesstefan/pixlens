@@ -1,6 +1,4 @@
 from _typeshed import Incomplete
-import torch
-
 from transformers.processing_utils import ProcessorMixin
 
 class AutoProcessor(ProcessorMixin):

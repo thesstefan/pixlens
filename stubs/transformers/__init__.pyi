@@ -10,3 +10,15 @@ from .models.owlvit import (
 from .models.owlvit import (
     OwlViTProcessor as OwlViTProcessor,
 )
+from .models.blip2 import (
+    Blip2ForConditionalGeneration as Blip2ForConditionalGeneration,
+)
+from .models.blip2 import (
+    Blip2Processor as Blip2Processor,
+)
+from .models.blip import (
+    BlipForConditionalGeneration as BlipForConditionalGeneration,
+)
+from .models.blip import (
+    BlipProcessor as BlipProcessor,
+)
