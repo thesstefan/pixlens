@@ -126,12 +126,4 @@ class EvaluationPipeline:
                 if hasattr(edit, "from_attribute")
                 else "",
             )
-        else:
-            raise ValueError(f"Edit type {edit.edit_type} is not implemented")
-
-
-# pathto_attribute_json = "pixlens//editval//object.json"
-# pathto_attribute_dataset = "editval_instances"
-# eval = EvaluationPipeline(pathto_attribute_json, pathto_attribute_dataset)
-# model = Pix2pix(device=torch.device("cuda"))
-# eval.execute_pipeline([model])
+        raise ValueError(f"Edit type {edit.edit_type} is not implemented")
