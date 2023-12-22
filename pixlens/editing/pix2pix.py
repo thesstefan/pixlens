@@ -29,7 +29,9 @@ def load_pix2pix(
     )
 
     pipe.to(device)
-    pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+    pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(
+        pipe.scheduler.config
+    )
     return pipe
 
 
@@ -61,4 +63,6 @@ class Pix2pix(interfaces.PromptableImageEditingModel):
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
         ).images[0]
-        return interfaces.ImageEditingOutput(output_image, prompt)
+        return interfaces.ImageEditingOutput(
+            input_image=input_image, output_image=output_image, prompt=prompt
+        )

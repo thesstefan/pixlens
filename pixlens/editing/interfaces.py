@@ -1,11 +1,13 @@
 import dataclasses
 from typing import Protocol
-from PIL import Image
+
+from PIL.Image import Image as PILImage
 
 
 @dataclasses.dataclass
 class ImageEditingOutput:
-    image: Image.Image
+    input_image: PILImage
+    output_image: PILImage
     prompt: str
 
 
