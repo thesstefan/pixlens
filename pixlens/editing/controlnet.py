@@ -67,7 +67,10 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         image = np.concatenate([image, image, image], axis=2)
         return Image.fromarray(image)
 
-    def edit(
+    def get_model_name(self) -> str:
+        return "ControlNet"
+
+    def edit_image(
         self,
         prompt: str,
         image_path: str,
@@ -83,5 +86,5 @@ class ControlNet(interfaces.PromptableImageEditingModel):
             image_guidance_scale=image_guidance_scale,
         ).images[0]
         return interfaces.ImageEditingOutput(
-            input_image=input_image, output_image=output_image, prompt=prompt
+            output_image=output_image, prompt=prompt
         )

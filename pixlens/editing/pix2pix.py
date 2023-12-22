@@ -8,7 +8,7 @@ from diffusers import (
     EulerAncestralDiscreteScheduler,
 )
 from pixlens.utils import utils
-from pixlens.editing import interfaces
+from pixlens.editing import interfaces, utils as editing_utils
 from pixlens.editing.utils import log_model_if_not_in_cache
 
 
@@ -51,7 +51,10 @@ class Pix2pix(interfaces.PromptableImageEditingModel):
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
 
-    def edit(
+    def get_model_name(self) -> str:
+        return "Pix2pix"
+
+    def edit_image(
         self,
         prompt: str,
         image_path: str,
@@ -64,5 +67,5 @@ class Pix2pix(interfaces.PromptableImageEditingModel):
             image_guidance_scale=self.image_guidance_scale,
         ).images[0]
         return interfaces.ImageEditingOutput(
-            input_image=input_image, output_image=output_image, prompt=prompt
+            output_image=output_image, prompt=prompt
         )

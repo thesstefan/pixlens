@@ -55,7 +55,7 @@ def main() -> None:
     if args.input is None:
         Path(in_path).unlink()
 
-    output.image.save(args.output)
+    output.output_image.save(args.output)
 
 
 if __name__ == "__main__":
