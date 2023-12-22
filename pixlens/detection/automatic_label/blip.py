@@ -58,11 +58,11 @@ class Blip(ImageDescriptorModel):
         self.model, self.processor = load_blip(blip_type, device)
 
     def __call__(self, image: Image) -> ImageCaption:
-        inputs = processor(images=image, return_tensors="pt").to(
+        inputs = self.processor(images=image, return_tensors="pt").to(
             self.device, torch.float16
         )
         generated_ids = self.model.generate(**inputs)
-        generated_text = processor.batch_decode(
+        generated_text = self.processor.batch_decode(
             generated_ids, skip_special_tokens=True
         )[0].strip()
         return generated_text
