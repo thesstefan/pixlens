@@ -30,6 +30,7 @@ class EvaluationOutput:
     score: float
 
 
+@dataclasses.dataclass
 class Edit:
     edit_id: int
     # prompt: str

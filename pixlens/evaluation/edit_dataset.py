@@ -1,4 +1,5 @@
 import json
+import os
 
 import pandas as pd
 
@@ -58,6 +59,9 @@ class EvaluationPipeline:
         return interfaces.Edit(
             edit_id=edit["edit_id"],
             image_id=edit["image_id"],
+            image_path=os.path.join(
+                self.dataset_path, edit["class"], edit["image_id"]
+            ),
             category=edit["class"],
             edit_type=interfaces.EditType(edit["edit_type"]),
             _from=edit["from"],
@@ -65,4 +69,7 @@ class EvaluationPipeline:
         )
 
 
-breakpoint()
+# path_to_json = "pixlens\editval\object.json"
+# path_to_dataset = "editval_instances"
+# eval = EvaluationPipeline(path_to_json, path_to_dataset)
+# breakpoint()
