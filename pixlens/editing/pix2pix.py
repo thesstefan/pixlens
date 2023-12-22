@@ -40,7 +40,7 @@ class Pix2pix(interfaces.PromptableImageEditingModel):
 
     def __init__(
         self,
-        pix2pix_type: Pix2pixType,
+        pix2pix_type: Pix2pixType = Pix2pixType.BASE,
         device: torch.device | None = None,
         *,
         num_inference_steps: int = 100,

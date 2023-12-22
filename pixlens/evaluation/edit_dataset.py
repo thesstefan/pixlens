@@ -2,8 +2,11 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import torch
 
 from pixlens.evaluation import interfaces
+from pixlens.editing.interfaces import PromptableImageEditingModel
+from pixlens.editing.pix2pix import Pix2pix
 
 
 # create a class that will parse a json object to get some edit instructions
@@ -54,7 +57,7 @@ class EvaluationPipeline:
         print(self.edit_dataset.head())
 
     # getter edit from edit id
-    def get_edit_from_edit_id(self, edit_id: int) -> interfaces.Edit:
+    def get_editfrom_attribute_edit_id(self, edit_id: int) -> interfaces.Edit:
         edit = self.edit_dataset.loc[edit_id]
         return interfaces.Edit(
             edit_id=edit["edit_id"],
@@ -63,17 +66,54 @@ class EvaluationPipeline:
                 Path(
                     self.dataset_path,
                     edit["class"],
-                    f"000000{str(edit['image_id'])}.png",
+                    f"000000{str(edit['image_id'])}.jpg",
                 )
             ),
             category=edit["class"],
             edit_type=interfaces.EditType(edit["edit_type"]),
-            _from=edit["from"],
-            _to=edit["to"],
+            from_attribute=edit["from"],
+            to_attribute=edit["to"],
         )
 
+    def execute_pipeline(
+        self,
+        models: list[PromptableImageEditingModel],
+    ) -> None:
+        for model in models:
+            for idx in self.edit_dataset.index:
+                edit = self.get_editfrom_attribute_edit_id(idx)
+                prompt = self.generate_prompt(edit)
+                output = model.edit(prompt, edit.image_path)
+                score = 0
 
-path_to_json = "pixlens\editval\object.json"
-path_to_dataset = "editval_instances"
-eval = EvaluationPipeline(path_to_json, path_to_dataset)
-breakpoint()
+    def generate_prompt(self, edit: interfaces.Edit) -> str:
+        prompts = {
+            "object_addition": "Add a {} to the image",
+            "positional_addition": "Add {} the {}",
+            "size": "Change the size of {} to {}",
+            "shape": "Change the shape of the {} to {}",
+            "alter_parts": "{} to {}",
+            "color": "Change the color of the {} to {}",
+            "object_change": "Change the {} to {}",
+            "object_removal": "Remove the {}",
+            "object_replacement": "Replace the {} with {}",
+            "position_replacement": "Move the {} to the {}",
+            "object_duplication": "Duplicate the {}",
+            "texture": "Change the texture of the {} to {}",
+            "action": "{} doing {}",
+            "viewpoint": "Change the viewpoint to {}",
+            "background": "Change the background to {}",
+            "style": "Change the style of the {} to {}",
+        }
+
+        prompt_format = prompts.get(edit.edit_type)
+        if prompt_format:
+            return prompt_format.format(edit.category, edit.to_attribute)
+        raise ValueError(f"Edit type {edit.edit_type} is not implemented")
+
+
+pathto_attribute_json = "pixlens//editval//object.json"
+pathto_attribute_dataset = "editval_instances"
+eval = EvaluationPipeline(pathto_attribute_json, pathto_attribute_dataset)
+model = Pix2pix(device=torch.device("cuda"))
+eval.execute_pipeline([model])
