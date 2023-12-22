@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import pandas as pd
-
 from pixlens.evaluation import interfaces
 from pixlens.editing.interfaces import PromptableImageEditingModel
 
