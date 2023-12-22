@@ -38,8 +38,8 @@ class Edit:
     image_id: int
     category: str
     edit_type: EditType
-    _from: str
-    _to: str
+    from_attribute: str
+    to_attribute: str
 
 
 class OperationEvaluation(Protocol):
