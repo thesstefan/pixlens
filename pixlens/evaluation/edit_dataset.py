@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 from pixlens.evaluation import interfaces
+from pixlens.editing.interfaces import PromptableImageEditingModel
 
 
 # create a class that will parse a json object to get some edit instructions
@@ -72,11 +73,15 @@ class EvaluationPipeline:
             _to=edit["to"],
         )
 
-    def execute_pipeline(self, models: list[str]) -> None:
+    def execute_pipeline(
+        self, models: list[PromptableImageEditingModel]
+    ) -> None:
         for model in models:
             for idx in self.edit_dataset.index:
                 edit = self.get_edit_from_edit_id(idx)
                 edit_type = edit.edit_type
+                prompt = ""
+                output = model.edit(prompt, edit.image_path)
                 raise NotImplementedError
 
 
