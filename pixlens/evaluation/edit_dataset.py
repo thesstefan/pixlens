@@ -81,6 +81,18 @@ class EvaluationPipeline:
             to_attribute=edit["to"],
         )
 
+    def get_edit(self, edit_id: int) -> interfaces.Edit:
+        if edit_id in self.edit_dataset.index:
+            return self.get_editfrom_attribute_edit_id(edit_id)
+        else:
+            raise ValueError(f"No edit found with edit_id: {edit_id}")
+
+    def get_all_edits_image_id(self, image_id: str) -> pd.DataFrame:
+        return self.edit_dataset[self.edit_dataset["image_id"] == image_id]
+
+    def get_all_edits_ms_coco_class(self, ms_coco_class: str) -> pd.DataFrame:
+        return self.edit_dataset[self.edit_dataset["class"] == ms_coco_class]
+
     def execute_pipeline(
         self,
         models: list[PromptableImageEditingModel],
