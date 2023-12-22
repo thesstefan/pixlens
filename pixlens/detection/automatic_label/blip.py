@@ -1,5 +1,6 @@
 import enum
 
+from PIL import Image
 import torch
 from transformers import (
     AutoProcessor,
@@ -9,7 +10,7 @@ from transformers import (
 )
 
 from pixlens.detection.automatic_label.interfaces import (
-    ImageDescription,
+    ImageCaption,
     ImageDescriptorModel,
 )
 from pixlens.detection.utils import log_if_hugging_face_model_not_in_cache
@@ -55,3 +56,13 @@ class Blip(ImageDescriptorModel):
     ) -> None:
         self.device = device
         self.model, self.processor = load_blip(blip_type, device)
+
+    def __call__(self, image: Image) -> ImageCaption:
+        inputs = processor(images=image, return_tensors="pt").to(
+            self.device, torch.float16
+        )
+        generated_ids = self.model.generate(**inputs)
+        generated_text = processor.batch_decode(
+            generated_ids, skip_special_tokens=True
+        )[0].strip()
+        return generated_text
