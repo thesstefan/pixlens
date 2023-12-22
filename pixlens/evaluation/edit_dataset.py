@@ -72,8 +72,15 @@ class EvaluationPipeline:
             _to=edit["to"],
         )
 
+    def execute_pipeline(self, models: list[str]) -> None:
+        for model in models:
+            for idx in self.edit_dataset.index:
+                edit = self.get_edit_from_edit_id(idx)
+                edit_type = edit.edit_type
+                raise NotImplementedError
 
-path_to_json = "pixlens\editval\object.json"
+
+path_to_json = "pixlens//editval//object.json"
 path_to_dataset = "editval_instances"
 eval = EvaluationPipeline(path_to_json, path_to_dataset)
 breakpoint()
