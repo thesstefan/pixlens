@@ -13,6 +13,7 @@ from transformers import (
 
 from pixlens.detection import interfaces
 from pixlens.utils import utils
+from pixlens.detection.utils import log_if_hugging_face_model_not_in_cache
 
 
 class OwlViTType(enum.StrEnum):
@@ -23,14 +24,6 @@ class OwlViTType(enum.StrEnum):
     LARGE_V2 = "google/owlv2-large-patch14"
 
 
-def log_if_model_not_in_cache(owlvit_type: str, cache_dir: Path) -> None:
-    model_dir = owlvit_type.replace("/", "--")
-    model_dir = "models--" + model_dir
-
-    if not (cache_dir / model_dir).is_dir():
-        logging.info("Downloading OwlViT %s...", owlvit_type)
-
-
 def load_owlvit(
     owlvit_type: OwlViTType,
     device: torch.device | None = None,
@@ -39,7 +32,7 @@ def load_owlvit(
     Owlv2Processor | OwlViTProcessor,
 ]:
     path_to_cache = utils.get_cache_dir()
-    log_if_model_not_in_cache(owlvit_type, path_to_cache)
+    log_if_hugging_face_model_not_in_cache(owlvit_type, path_to_cache)
 
     model = (
         Owlv2ForObjectDetection
