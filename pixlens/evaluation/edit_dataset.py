@@ -1,5 +1,5 @@
 import json
-from typing import list
+
 import pandas as pd
 
 from pixlens.evaluation import interfaces
@@ -63,3 +63,6 @@ class EvaluationPipeline:
             _from=edit["from"],
             _to=edit["to"],
         )
+
+
+breakpoint()
