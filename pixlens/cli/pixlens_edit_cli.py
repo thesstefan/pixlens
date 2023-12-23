@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "--edit-model",
     type=str,
-    default="pix2pix",
+    default="InstructPix2Pix",
     help=("Image editing model: pix2pix, dreambooth, etc."),
 )
 parser.add_argument(
@@ -44,7 +44,7 @@ def main() -> None:
         prompt = args.prompt
 
     # code to instantiate and run pix2pix
-    if args.edit_model == "pix2pix":
+    if args.edit_model == "InstructPix2Pix":
         model = pix2pix.Pix2pix(pix2pix.Pix2pixType.BASE, device)
     elif args.edit_model == "controlnet":
         model = controlnet.ControlNet(controlnet.ControlNetType.BASE, device)
