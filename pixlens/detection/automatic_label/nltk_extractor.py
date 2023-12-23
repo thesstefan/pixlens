@@ -30,10 +30,3 @@ class NLTKObjectExtractor(CaptionIntoObjects):
         tokens = word_tokenize(caption)
         tagged = pos_tag(tokens)
         return [word for word, pos in tagged if pos.startswith("NN")]
-
-
-if __name__ == "__main__":
-    extractor = NLTKObjectExtractor()
-    caption = "A dog playing with a ball in the park."
-    objects = extractor.extract_objects(caption)
-    print("Objects:", objects)

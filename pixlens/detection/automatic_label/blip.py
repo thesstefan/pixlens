@@ -60,7 +60,7 @@ class Blip(ImageDescriptorModel):
         self.model, self.processor = load_blip(blip_type, device)
         self.blip_type = blip_type
 
-    def __call__(self, image: Image) -> ImageCaption:
+    def __call__(self, image: Image.Image) -> ImageCaption:
         inputs = self.processor(images=image, return_tensors="pt").to(
             self.device, torch.float16
         )
