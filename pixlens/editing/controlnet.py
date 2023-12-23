@@ -10,7 +10,6 @@ from diffusers import (
     UniPCMultistepScheduler,
 )
 from PIL import Image
-from PIL.Image import Image as PILImage
 
 from pixlens.editing import interfaces
 from pixlens.editing.utils import log_model_if_not_in_cache
@@ -59,7 +58,7 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         self.device = device
         self.model = load_controlnet(pix2pix_type, device)
 
-    def prepare_image(self, image_path: str) -> PILImage:
+    def prepare_image(self, image_path: str) -> Image.Image:
         image = PIL.Image.open(image_path)
         image = np.array(image)
         image = cv2.Canny(image, 100, 200)
