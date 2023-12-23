@@ -2,11 +2,18 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk import pos_tag
 
-from pixlens.detection.automatic_label.interfaces import CaptionIntoObjects
+from PIL import Image
+import torch
+
+from pixlens.detection.automatic_label.blip import Blip
+from pixlens.detection.automatic_label.interfaces import (
+    CaptionIntoObjectsModel,
+    ImageToObjects,
+)
 from pixlens.utils.utils import get_cache_dir
 
 
-class NLTKObjectExtractor(CaptionIntoObjects):
+class NLTKObjectExtractor(CaptionIntoObjectsModel):
     def __init__(self) -> None:
         cache_dir = get_cache_dir()
         str_cache_dir = str(cache_dir)
@@ -30,3 +37,12 @@ class NLTKObjectExtractor(CaptionIntoObjects):
         tokens = word_tokenize(caption)
         tagged = pos_tag(tokens)
         return [word for word, pos in tagged if pos.startswith("NN")]
+
+
+class ImageToObjectsNLTK(ImageToObjects):
+    def __init__(self, device: torch.device | None = None) -> None:
+        super().__init__(Blip(device=device), NLTKObjectExtractor())
+
+    def image_to_objects(self, image: Image.Image) -> list[str]:
+        caption = self.image_descriptor_model.image_caption(image)
+        return self.caption_into_objects_model.extract_objects(caption.caption)
