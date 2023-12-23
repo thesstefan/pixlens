@@ -1,6 +1,6 @@
 import logging
-from abc import abstractmethod
-from typing import Protocol, Tuple
+from abc import abstractmethod, ABC
+from typing import Protocol
 from pathlib import Path
 
 from PIL import Image
@@ -8,18 +8,26 @@ from PIL import Image
 from pixlens.utils import utils
 
 
-class PromptableImageEditingModel(Protocol):
+class Model(ABC):
     @abstractmethod
     def get_model_name(self) -> str:
-        ...
+        pass
 
+
+class ImageEditor(Protocol):
+    @abstractmethod
+    def edit_image(self, prompt: str, image_path: str) -> Image.Image:
+        pass
+
+
+class PromptableImageEditingModel(Model, ImageEditor):
     @abstractmethod
     def edit_image(self, prompt: str, image_path: str) -> Image.Image:
         ...
 
     def check_if_image_exists(
         self, prompt: str, image_path: str
-    ) -> Tuple[bool, Path]:
+    ) -> tuple[bool, Path]:
         """
         Check if the image exists and return a tuple of (bool, path).
 
