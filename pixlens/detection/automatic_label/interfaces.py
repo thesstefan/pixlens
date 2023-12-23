@@ -13,3 +13,8 @@ class ImageDescriptorModel(Protocol):
         image_path: str,
     ) -> ImageCaption:
         ...
+
+
+class CaptionIntoObjects(Protocol):
+    def extract_objects(self, caption: str) -> list:
+        ...

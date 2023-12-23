@@ -1,12 +1,14 @@
+"""Implements the Blip model for image captioning."""
+
 import enum
 
 from PIL import Image
 import torch
 from transformers import (
     AutoProcessor,
+    BlipForConditionalGeneration,
     Blip2ForConditionalGeneration,
     Blip2Processor,
-    BlipForConditionalGeneration,
 )
 
 from pixlens.detection.automatic_label.interfaces import (
@@ -33,11 +35,11 @@ def load_blip(
     path_to_cache = get_cache_dir()
     model = (
         Blip2ForConditionalGeneration
-        if blip_type in [BlipType.BLIP2]
+        if blip_type == BlipType.BLIP2
         else BlipForConditionalGeneration
     ).from_pretrained(blip_type, cache_dir=path_to_cache)
     processor = (
-        Blip2Processor if blip_type in [BlipType.BLIP2] else AutoProcessor
+        Blip2Processor if blip_type == BlipType.BLIP2 else AutoProcessor
     ).from_pretrained(blip_type, cache_dir=path_to_cache)
 
     model.to(device)
@@ -74,12 +76,3 @@ class Blip(ImageDescriptorModel):
             )
             generated_text = self.model(**inputs)
         return ImageCaption(caption=generated_text)
-
-
-import requests
-
-url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-image = Image.open(requests.get(url, stream=True).raw)
-
-blip = Blip()
-print(blip(image))
