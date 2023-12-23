@@ -28,10 +28,10 @@ class PromptableImageEditingModel(Model, ImageEditor):
     def check_if_image_exists(
         self, prompt: str, image_path: str
     ) -> tuple[bool, Path]:
-        """
-        Check if the image exists and return a tuple of (bool, path).
+        """Check if the image exists and return a tuple of (bool, path).
 
-        The bool value is True if the image exists, and the path is where the image is stored.
+        The bool value is True if the image exists,
+        and the path is where the image is stored.
         """
         cache_dir = utils.get_cache_dir()
         model_dir = self.get_model_name().replace("/", "--")
