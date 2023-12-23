@@ -70,6 +70,22 @@
                 "--output",
                 "${workspaceFolder}/results/edit_output_pix2pix.png",
             ]
+        },
+        {
+            "name": "Debug Pixlens Caption CLI",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_caption_cli.py",
+            "args": [
+                "--model",
+                "blip"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
         }
     ]
 }

@@ -5,7 +5,7 @@ from nltk import pos_tag
 from PIL import Image
 import torch
 
-from pixlens.detection.automatic_label.blip import Blip
+from pixlens.detection.automatic_label.blip import Blip, BlipType
 from pixlens.detection.automatic_label.interfaces import (
     CaptionIntoObjectsModel,
     ImageToObjects,
@@ -40,9 +40,16 @@ class NLTKObjectExtractor(CaptionIntoObjectsModel):
 
 
 class ImageToObjectsNLTK(ImageToObjects):
-    def __init__(self, device: torch.device | None = None) -> None:
-        super().__init__(Blip(device=device), NLTKObjectExtractor())
+    def __init__(
+        self,
+        device: torch.device | None = None,
+        blip_type: BlipType | None = None,
+    ) -> None:
+        blip_type = blip_type if blip_type is not None else BlipType.BLIP2
+        super().__init__(
+            Blip(device=device, blip_type=blip_type), NLTKObjectExtractor()
+        )
 
     def image_to_objects(self, image: Image.Image) -> list[str]:
         caption = self.image_descriptor_model.image_caption(image)
-        return self.caption_into_objects_model.extract_objects(caption.caption)
+        return self.caption_into_objects_model.extract_objects(caption)

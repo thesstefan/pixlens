@@ -12,7 +12,6 @@ from transformers import (
 )
 
 from pixlens.detection.automatic_label.interfaces import (
-    ImageCaption,
     ImageDescriptorModel,
 )
 from pixlens.detection.utils import log_if_hugging_face_model_not_in_cache
@@ -60,7 +59,7 @@ class Blip(ImageDescriptorModel):
         self.model, self.processor = load_blip(blip_type, device)
         self.blip_type = blip_type
 
-    def image_caption(self, image: Image.Image) -> ImageCaption:
+    def image_caption(self, image: Image.Image) -> str:
         inputs = self.processor(images=image, return_tensors="pt").to(
             self.device, torch.float16
         )
@@ -74,5 +73,9 @@ class Blip(ImageDescriptorModel):
             inputs = self.processor(
                 images=image, text=text, return_tensors="pt"
             )
-            generated_text = self.model(**inputs)
-        return ImageCaption(caption=generated_text)
+            generated_text = self.model.generate(**inputs)
+            generated_text = self.processor.decode(
+                generated_text[0], skip_special_tokens=True
+            )
+
+        return generated_text

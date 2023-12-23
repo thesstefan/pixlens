@@ -6,16 +6,11 @@ from PIL import Image
 import torch
 
 
-@dataclasses.dataclass
-class ImageCaption:
-    caption: str
-
-
 class ImageDescriptorModel(Protocol):
     def image_caption(
         self,
         image: Image.Image,
-    ) -> ImageCaption:
+    ) -> str:
         ...
 
 
@@ -37,4 +32,4 @@ class ImageToObjects(abc.ABC, CaptionIntoObjectsModel):
 
     def image_to_objects(self, image: Image.Image) -> list[str]:
         caption = self.image_descriptor_model.image_caption(image)
-        return self.caption_into_objects_model.extract_objects(caption.caption)
+        return self.caption_into_objects_model.extract_objects(caption)
