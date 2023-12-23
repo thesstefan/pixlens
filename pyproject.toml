@@ -18,6 +18,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
 optional-dependencies.dev = { file = ["requirements-dev.txt"] }
+optional-dependencies.server = { file = ["requirements-server.txt"] }
 
 [tool.setuptools.packages.find]
 where = ["."]
