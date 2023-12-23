@@ -2,8 +2,9 @@ import dataclasses
 import enum
 from typing import Protocol
 
+from PIL import Image
+
 from pixlens.detection.interfaces import DetectionSegmentationResult
-from pixlens.editing.interfaces import ImageEditingOutput
 
 
 class EditType(enum.StrEnum):
@@ -33,7 +34,6 @@ class EvaluationOutput:
 @dataclasses.dataclass
 class Edit:
     edit_id: int
-    # prompt: str
     image_path: str
     image_id: int
     category: str
@@ -47,6 +47,6 @@ class OperationEvaluation(Protocol):
         self,
         original_detection_segmentation_result: DetectionSegmentationResult,
         edited_detection_segmentation_result: DetectionSegmentationResult,
-        image_editing_output: ImageEditingOutput,
+        image_editing_output: Image.Image,
     ) -> EvaluationOutput:
         ...
