@@ -90,6 +90,7 @@ class EvaluationPipeline:
         models: list[PromptableImageEditingModel],
     ) -> None:
         for model in models:
+            logging.info("Running model: %s", model.get_model_name())
             for idx in self.edit_dataset.index:
                 edit = self.get_editfrom_attribute_edit_id(idx)
                 prompt = self.generate_prompt(edit)
