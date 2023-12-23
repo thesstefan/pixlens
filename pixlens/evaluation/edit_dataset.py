@@ -1,3 +1,4 @@
+import logging
 import json
 from pathlib import Path
 
@@ -92,8 +93,8 @@ class EvaluationPipeline:
             for idx in self.edit_dataset.index:
                 edit = self.get_editfrom_attribute_edit_id(idx)
                 prompt = self.generate_prompt(edit)
-                print("prompt: ", prompt)
-                print("image_path: ", edit.image_path)
+                logging.info("prompt: %s", prompt)
+                logging.info("image_path: %s", edit.image_path)
                 output = model.edit(prompt, edit.image_path)
 
     def generate_prompt(self, edit: interfaces.Edit) -> str:
