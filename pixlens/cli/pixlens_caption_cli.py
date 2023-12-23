@@ -28,7 +28,7 @@ def main() -> None:
         device=torch.device("cpu"), blip_type=bliptype
     )
     caption = image_to_objects.image_to_objects(image)
-    print("Objects: ", caption)
+    logging.info("Objects: %s", caption)
 
 
 if __name__ == "__main__":

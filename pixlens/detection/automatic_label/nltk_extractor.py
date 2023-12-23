@@ -1,7 +1,8 @@
+import logging
+
 import nltk
 from nltk.tokenize import word_tokenize
 from nltk import pos_tag
-
 from PIL import Image
 import torch
 
@@ -27,7 +28,7 @@ class NLTKObjectExtractor(CaptionIntoObjectsModel):
             nltk.data.find("tokenizers/punkt", str_cache_dir)
             nltk.data.find("taggers/averaged_perceptron_tagger", str_cache_dir)
         except LookupError:
-            print("Downloading NLTK resources...")
+            logging.info("Downloading NLTK resources...")
             nltk.download("punkt", download_dir=str_cache_dir)
             nltk.download(
                 "averaged_perceptron_tagger", download_dir=str_cache_dir
