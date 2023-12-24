@@ -2,6 +2,7 @@ import abc
 import dataclasses
 from typing import Protocol
 
+from PIL import Image
 import torch
 
 
@@ -22,7 +23,7 @@ class PromptableDetectionModel(Protocol):
     def detect(
         self,
         prompt: str,
-        image_path: str,
+        image: Image.Image,
     ) -> DetectionOutput:
         ...
 
@@ -37,17 +38,13 @@ class BBoxSegmentationModel(Protocol):
     def segment(
         self,
         bbox: torch.Tensor,
-        image_path: str,
+        image: Image.Image,
     ) -> SegmentationOutput:
         ...
 
 
 class PromptableSegmentationModel(Protocol):
-    def segment(
-        self,
-        prompt: str,
-        image_path: str,
-    ) -> SegmentationOutput:
+    def segment(self, prompt: str, image: Image.Image) -> SegmentationOutput:
         ...
 
 
@@ -86,17 +83,17 @@ class PromptDetectAndBBoxSegmentModel(abc.ABC, PromptableSegmentationModel):
     def detect_and_segment(
         self,
         prompt: str,
-        image_path: str,
+        image: Image.Image,
     ) -> tuple[SegmentationOutput, DetectionOutput]:
         detection_output = self.promptable_detection_model.detect(
             prompt,
-            image_path,
+            image,
         )
         detection_output = self.filter_detection_output(detection_output)
 
         segmentation_output = self.bbox_segmentation_model.segment(
             detection_output.bounding_boxes,
-            image_path,
+            image,
         )
 
         return segmentation_output, detection_output
@@ -104,6 +101,6 @@ class PromptDetectAndBBoxSegmentModel(abc.ABC, PromptableSegmentationModel):
     def segment(
         self,
         prompt: str,
-        image_path: str,
+        image: Image.Image,
     ) -> SegmentationOutput:
-        return self.detect_and_segment(prompt, image_path)[0]
+        return self.detect_and_segment(prompt, image)[0]

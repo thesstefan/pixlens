@@ -75,9 +75,9 @@ class BBoxSamPredictor(interfaces.BBoxSegmentationModel):
     def segment(
         self,
         bbox: torch.Tensor,
-        image_path: str,
+        image: Image.Image,
     ) -> interfaces.SegmentationOutput:
-        image = np.asarray(Image.open(image_path).convert("RGB"))
+        image = np.asarray(image).convert("RGB"))
 
         self.sam_predictor.set_image(image)
 

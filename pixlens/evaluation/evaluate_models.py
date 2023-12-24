@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 from PIL import Image
 
+from pixlens.detection import interfaces as detection_interfaces
 from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation import interfaces
 from pixlens.evaluation.edit_dataset import PreprocessingPipeline
@@ -43,3 +44,20 @@ class EvaluationPipeline:
         if extension:
             return Image.open(edit_path.with_suffix(extension))
         raise FileNotFoundError
+
+    def init_detection_model(
+        self, model: detection_interfaces.PromptDetectAndBBoxSegmentModel
+    ) -> None:
+        self.detection_model = model
+
+    def do_detection_and_segmentation(
+        self, image: Image.Image, prompt: str
+    ) -> detection_interfaces.DetectionSegmentationResult:
+        (
+            segmentation_output,
+            detection_output,
+        ) = self.detection_model.detect_and_segment(prompt, image)
+        return detection_interfaces.DetectionSegmentationResult(
+            detection_output=detection_output,
+            segmentation_output=segmentation_output,
+        )
