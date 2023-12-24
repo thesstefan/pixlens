@@ -1,7 +1,7 @@
 import pandas as pd
 from pixlens.evaluation import interfaces
 
-class EvaluationPipeline:
+class PreprocessingPipeline:
     json_object_path: str
     edit_dataset: pd.DataFrame
     dataset_path: str
