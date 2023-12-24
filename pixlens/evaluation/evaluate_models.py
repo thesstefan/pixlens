@@ -50,6 +50,9 @@ class EvaluationPipeline:
     ) -> None:
         self.detection_model = model
 
+    def init_editing_model(self, model: PromptableImageEditingModel) -> None:
+        self.editing_model = model
+
     def do_detection_and_segmentation(
         self, image: Image.Image, prompt: str
     ) -> detection_interfaces.DetectionSegmentationResult:
@@ -61,3 +64,46 @@ class EvaluationPipeline:
             detection_output=detection_output,
             segmentation_output=segmentation_output,
         )
+
+    def get_all_inputs_for_edit(
+        self, edit: interfaces.Edit
+    ) -> interfaces.EvaluationInput:
+        input_image = self.get_input_image_from_edit_id(edit.edit_id)
+        edited_image = self.get_edited_image_from_edit(edit, self.editing_model)
+        prompt = PreprocessingPipeline.generate_prompt(edit)
+        input_detection_segmentation_result = (
+            self.do_detection_and_segmentation(input_image, prompt)
+        )
+        edited_detection_segmentation_result = (
+            self.do_detection_and_segmentation(edited_image, prompt)
+        )
+        return interfaces.EvaluationInput(
+            input_image=input_image,
+            edited_image=edited_image,
+            prompt=prompt,
+            input_detection_segmentation_result=input_detection_segmentation_result,
+            edited_detection_segmentation_result=edited_detection_segmentation_result,
+            edit=edit,
+        )
+
+    def get_all_scores_for_edit(
+        self, edit: interfaces.Edit
+    ) -> dict[str, float]:
+        evaluation_input = self.get_all_inputs_for_edit(edit)
+        edit_type_dependent_scores = self.get_edit_dependent_scores_for_edit(
+            evaluation_input
+        )
+        edit_type_indpendent_scores = self.get_edit_independent_scores_for_edit(
+            evaluation_input
+        )
+        return {**edit_type_dependent_scores, **edit_type_indpendent_scores}
+
+    def get_edit_dependent_scores_for_edit(
+        self, evaluation_input: interfaces.EvaluationInput
+    ) -> dict[str, float]:
+        raise NotImplementedError
+
+    def get_edit_independent_scores_for_edit(
+        self, evaluation_input: interfaces.EvaluationInput
+    ) -> dict[str, float]:
+        raise NotImplementedError

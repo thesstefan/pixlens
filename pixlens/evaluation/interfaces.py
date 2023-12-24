@@ -41,6 +41,16 @@ class Edit:
     to_attribute: str
 
 
+@dataclasses.dataclass
+class EvaluationInput:
+    input_image: Image.Image
+    edited_image: Image.Image
+    prompt: str
+    input_detection_segmentation_result: DetectionSegmentationResult
+    edited_detection_segmentation_result: DetectionSegmentationResult
+    edit: Edit
+
+
 class OperationEvaluation(Protocol):
     def evaluate_edit(
         self,
