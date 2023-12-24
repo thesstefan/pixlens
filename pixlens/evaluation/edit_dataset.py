@@ -1,11 +1,11 @@
-import logging
 import json
+import logging
 from pathlib import Path
 
 import pandas as pd
 
-from pixlens.evaluation import interfaces
 from pixlens.editing.interfaces import PromptableImageEditingModel
+from pixlens.evaluation import interfaces
 from pixlens.utils.utils import get_cache_dir
 
 
@@ -24,7 +24,8 @@ class PreprocessingPipeline:
         if pandas_path.exists():
             self.edit_dataset = pd.read_csv(pandas_path)
             return
-        with open(self.json_object_path) as json_file:
+
+        with Path(self.json_object_path).open() as json_file:
             json_data = json.load(json_file)
 
         records: list[dict] = []
@@ -41,7 +42,11 @@ class PreprocessingPipeline:
                         from_values = [""] * len(to_values)
 
                     # Iterate through "to" values
-                    for from_val, to_val in zip(from_values, to_values):
+                    for from_val, to_val in zip(
+                        from_values,
+                        to_values,
+                        strict=False,
+                    ):
                         records.append(
                             {
                                 "edit_id": len(records),
@@ -53,40 +58,35 @@ class PreprocessingPipeline:
                                 "input_image_path": self.dataset_path
                                 + "/"
                                 + image_id,
-                            }
+                            },
                         )
 
         # Create a pandas DataFrame from the records
         self.edit_dataset = pd.DataFrame(records)
         self.edit_dataset.to_csv(pandas_path, index=False)
 
-    def __print__(self) -> None:
-        print(self.edit_dataset.head())
-
-    # getter edit from edit id
-    def get_editfrom_attribute_edit_id(self, edit_id: int) -> interfaces.Edit:
-        edit = self.edit_dataset.loc[edit_id]
-        return interfaces.Edit(
-            edit_id=edit["edit_id"],
-            image_id=edit["image_id"],
-            image_path=str(
-                Path(
-                    self.dataset_path,
-                    edit["class"],
-                    f"000000{str(edit['image_id'])}.jpg",
-                )
-            ),
-            category=edit["class"],
-            edit_type=interfaces.EditType(edit["edit_type"]),
-            from_attribute=edit["from"],
-            to_attribute=edit["to"],
-        )
-
     def get_edit(self, edit_id: int) -> interfaces.Edit:
         if edit_id in self.edit_dataset.index:
-            return self.get_editfrom_attribute_edit_id(edit_id)
-        else:
-            raise ValueError(f"No edit found with edit_id: {edit_id}")
+            edit = self.edit_dataset.loc[edit_id]
+            return interfaces.Edit(
+                edit_id=edit["edit_id"],
+                image_id=edit["image_id"],
+                image_path=str(
+                    Path(
+                        self.dataset_path,
+                        edit["class"],
+                        f"000000{str(edit['image_id'])}.jpg",  # FIXME: this is a hack
+                        # there is a proper way to get the image pathname from the id
+                    ),
+                ),
+                category=edit["class"],
+                edit_type=interfaces.EditType(edit["edit_type"]),
+                from_attribute=edit["from"],
+                to_attribute=edit["to"],
+            )
+
+        error_msg = f"No edit found with edit_id: {edit_id}"
+        raise ValueError(error_msg)
 
     def get_all_edits_image_id(self, image_id: str) -> pd.DataFrame:
         return self.edit_dataset[self.edit_dataset["image_id"] == image_id]
@@ -101,7 +101,7 @@ class PreprocessingPipeline:
         for model in models:
             logging.info("Running model: %s", model.get_model_name())
             for idx in self.edit_dataset.index:
-                edit = self.get_editfrom_attribute_edit_id(idx)
+                edit = self.get_edit(idx)
                 prompt = self.generate_prompt(edit)
                 logging.info("prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)
@@ -115,7 +115,6 @@ class PreprocessingPipeline:
             "shape": "Change the shape of {category} to {to}",
             "alter_parts": "{to} to {category}",
             "color": "Change the color of {category} to {to}",
-            "object_change": "Change {category} to {to}",
             "object_removal": "Remove {category}",
             "object_replacement": "Replace {from} with {to}",
             "position_replacement": "Move {from} to {to}",
@@ -136,4 +135,5 @@ class PreprocessingPipeline:
                 if hasattr(edit, "from_attribute")
                 else "",
             )
-        raise ValueError(f"Edit type {edit.edit_type} is not implemented")
+        error_msg = f"Edit type {edit.edit_type} is not implemented"
+        raise ValueError(error_msg)

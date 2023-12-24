@@ -40,6 +40,7 @@ class PromptableImageEditingModel(Model, ImageEditor):
         full_path = full_path.with_suffix(".png")
         return full_path.exists(), full_path
 
+    # TODO: fix this, check if image exists and saving should be done somewhere else
     def edit(self, prompt: str, image_path: str) -> Image.Image:
         image_exists_bool, path_of_image = self.check_if_image_exists(
             prompt, image_path
