@@ -10,7 +10,6 @@ from pixlens.detection.interfaces import DetectionSegmentationResult
 class EditType(enum.StrEnum):
     SIZE = "size"
     COLOR = "color"
-    OBJECT_CHANGE = "object_change"
     OBJECT_ADDITION = "object_addition"
     POSITIONAL_ADDITION = "positional_addition"
     OBJECT_REMOVAL = "object_removal"
