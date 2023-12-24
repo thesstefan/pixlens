@@ -78,14 +78,15 @@ def download_image(url) -> Image.Image:
     return image
 
 
-def get_image_extension(image_path):
-    path = Path(image_path)
+def get_image_extension(
+    image_path: pathlib.Path,
+) -> typing.Optional[str]:
     # If there is already an extension, return it
-    if path.suffix:
-        return path.suffix
+    if image_path.suffix:
+        return image_path.suffix
 
     # If not, try to infer the extension
-    for ext in ['.jpg', '.png', '.jpeg', '.bmp', '.gif', '.tiff']:
-        if Path(str(path) + ext).is_file():
+    for ext in [".jpg", ".png", ".jpeg", ".bmp", ".gif", ".tiff"]:
+        if image_path.with_suffix(ext).is_file():
             return ext
     return None

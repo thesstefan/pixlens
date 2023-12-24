@@ -68,20 +68,14 @@ class PreprocessingPipeline:
         self.edit_dataset = pd.DataFrame(records)
         self.edit_dataset.to_csv(pandas_path, index=False)
 
-    def get_edit(self, edit_id: int) -> interfaces.Edit:
-        if edit_id in self.edit_dataset.index:
-            edit = self.edit_dataset.loc[edit_id]
+    @staticmethod
+    def get_edit(edit_id: int, edit_dataset: pd.DataFrame) -> interfaces.Edit:
+        if edit_id in edit_dataset.index:
+            edit = edit_dataset.loc[edit_id]
             return interfaces.Edit(
                 edit_id=edit["edit_id"],
                 image_id=edit["image_id"],
-                image_path=str(
-                    Path(
-                        self.dataset_path,
-                        edit["class"],
-                        f"000000{str(edit['image_id'])}.jpg",  # FIXME: this is a hack
-                        # there is a proper way to get the image pathname from the id
-                    ),
-                ),
+                image_path=edit["input_image_path"],
                 category=edit["class"],
                 edit_type=interfaces.EditType(edit["edit_type"]),
                 from_attribute=edit["from"],
@@ -104,13 +98,14 @@ class PreprocessingPipeline:
         for model in models:
             logging.info("Running model: %s", model.get_model_name())
             for idx in self.edit_dataset.index:
-                edit = self.get_edit(idx)
+                edit = self.get_edit(idx, self.edit_dataset)
                 prompt = self.generate_prompt(edit)
                 logging.info("prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)
                 output = model.edit(prompt, edit.image_path)
 
-    def generate_prompt(self, edit: interfaces.Edit) -> str:
+    @staticmethod
+    def generate_prompt(edit: interfaces.Edit) -> str:
         prompt_formats = {
             "object_addition": "Add a {to} to the image",
             "positional_addition": "Add a {to} the {category}",
@@ -140,3 +135,9 @@ class PreprocessingPipeline:
             )
         error_msg = f"Edit type {edit.edit_type} is not implemented"
         raise ValueError(error_msg)
+
+
+PreprocessingPipeline(
+    dataset_path="/editval_instances",
+    json_object_path="./pixlens/editval/object.json",
+)
