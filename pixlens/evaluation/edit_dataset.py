@@ -50,7 +50,9 @@ class PreprocessingPipeline:
                                 "edit_type": edit_type,
                                 "from": from_val,
                                 "to": to_val,
-                                "edit_path": self.dataset_path + "/" + image_id,
+                                "input_image_path": self.dataset_path
+                                + "/"
+                                + image_id,
                             }
                         )
 
