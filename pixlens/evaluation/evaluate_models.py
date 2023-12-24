@@ -2,13 +2,14 @@ import logging
 import json
 from pathlib import Path
 
+
 from PIL import Image
 import pandas as pd
 
 from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation import interfaces
 from pixlens.evaluation.edit_dataset import PreprocessingPipeline
-from pixlens.utils.utils import get_cache_dir
+from pixlens.utils.utils import get_cache_dir, get_image_extension
 
 
 class EvaluationPipeline:
@@ -23,9 +24,14 @@ class EvaluationPipeline:
         else:
             raise FileNotFoundError
 
-    def get_input_image_from_edit_id(self, edit_id: interfaces.Edit) -> Image.Image:
-        return Image.open(edit_id.input_image_path)
-        
-    def get_edited_image_from_edit_id(self) -> Image.Image:
+    def get_input_image_from_edit_id(self, edit_id: int) -> Image.Image:
+        image_path = self.edit_dataset.iloc[edit_id]["input_image_path"]
+        image_extension = get_image_extension(image_path)
+        return Image.open(Path(image_path + image_extension))
 
-    
+    def get_edited_image_from_edit_id(self) -> Image.Image:
+        raise NotImplementedError
+
+
+pipeline = EvaluationPipeline()
+pipeline.get_input_image_from_edit_id(0)

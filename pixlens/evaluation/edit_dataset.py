@@ -50,9 +50,12 @@ class PreprocessingPipeline:
                                 "edit_type": edit_type,
                                 "from": from_val,
                                 "to": to_val,
-                                "input_image_path": self.dataset_path
+                                "input_image_path": "./"
+                                + self.dataset_path
                                 + "/"
-                                + image_id,
+                                + obj_class
+                                + "/000000"  # FIXME: this is a cheat
+                                + str(image_id),
                             }
                         )
 
@@ -137,3 +140,12 @@ class PreprocessingPipeline:
                 else "",
             )
         raise ValueError(f"Edit type {edit.edit_type} is not implemented")
+
+
+import os
+
+print(os.listdir())
+pipeline = PreprocessingPipeline(
+    dataset_path="/editval_instances",
+    json_object_path="pixlens/editval/object.json",
+)

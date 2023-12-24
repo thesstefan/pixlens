@@ -1,4 +1,5 @@
 import functools
+import os
 import pathlib
 import shutil
 import typing
@@ -75,3 +76,16 @@ def download_image(url) -> Image.Image:
     image = PIL.ImageOps.exif_transpose(image)
     image = image.convert("RGB")
     return image
+
+
+def get_image_extension(image_path):
+    path = Path(image_path)
+    # If there is already an extension, return it
+    if path.suffix:
+        return path.suffix
+
+    # If not, try to infer the extension
+    for ext in ['.jpg', '.png', '.jpeg', '.bmp', '.gif', '.tiff']:
+        if Path(str(path) + ext).is_file():
+            return ext
+    return None
