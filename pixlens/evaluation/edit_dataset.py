@@ -3,14 +3,16 @@ import json
 from pathlib import Path
 
 import pandas as pd
+
 from pixlens.evaluation import interfaces
 from pixlens.editing.interfaces import PromptableImageEditingModel
+from pixlens.utils.utils import get_cache_dir
 
 
 # create a class that will parse a json object to get some edit instructions
 # as a init function it receives the json object file path
 # in the init it calls a private function that parses the json object
-class EvaluationPipeline:
+class PreprocessingPipeline:
     def __init__(self, json_object_path: str, dataset_path: str) -> None:
         self.json_object_path = json_object_path
         self.edit_dataset: pd.DataFrame
@@ -18,6 +20,10 @@ class EvaluationPipeline:
         self._parse_json_object()
 
     def _parse_json_object(self) -> None:
+        pandas_path = Path(get_cache_dir(), "edit_dataset.csv")
+        if pandas_path.exists():
+            self.edit_dataset = pd.read_csv(pandas_path)
+            return
         with open(self.json_object_path) as json_file:
             json_data = json.load(json_file)
 
@@ -50,6 +56,7 @@ class EvaluationPipeline:
 
         # Create a pandas DataFrame from the records
         self.edit_dataset = pd.DataFrame(records)
+        self.edit_dataset.to_csv(pandas_path, index=False)
 
     def __print__(self) -> None:
         print(self.edit_dataset.head())
