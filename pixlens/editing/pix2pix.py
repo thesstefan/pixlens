@@ -1,15 +1,15 @@
-import PIL
-import logging
 import enum
-import torch
-from pathlib import Path
+
 from diffusers import (
     StableDiffusionInstructPix2PixPipeline,
     EulerAncestralDiscreteScheduler,
 )
-from pixlens.utils import utils
-from pixlens.editing import interfaces
+from PIL import Image
+import torch
+
+from pixlens.editing import interfaces, utils as editing_utils
 from pixlens.editing.utils import log_model_if_not_in_cache
+from pixlens.utils import utils
 
 
 class Pix2pixType(enum.StrEnum):
@@ -29,7 +29,9 @@ def load_pix2pix(
     )
 
     pipe.to(device)
-    pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+    pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(
+        pipe.scheduler.config
+    )
     return pipe
 
 
@@ -38,7 +40,7 @@ class Pix2pix(interfaces.PromptableImageEditingModel):
 
     def __init__(
         self,
-        pix2pix_type: Pix2pixType,
+        pix2pix_type: Pix2pixType = Pix2pixType.BASE,
         device: torch.device | None = None,
         *,
         num_inference_steps: int = 100,
@@ -49,16 +51,19 @@ class Pix2pix(interfaces.PromptableImageEditingModel):
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
 
-    def edit(
+    def get_model_name(self) -> str:
+        return "Pix2pix"
+
+    def edit_image(
         self,
         prompt: str,
         image_path: str,
-    ) -> interfaces.ImageEditingOutput:
-        input_image = PIL.Image.open(image_path)
+    ) -> Image.Image:
+        input_image = Image.open(image_path)
         output_image = self.model(
             prompt,
             input_image,
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
         ).images[0]
-        return interfaces.ImageEditingOutput(output_image, prompt)
+        return output_image

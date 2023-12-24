@@ -27,6 +27,12 @@ class PromptableDetectionModel(Protocol):
         ...
 
 
+@dataclasses.dataclass
+class DetectionSegmentationResult:
+    detection_output: DetectionOutput
+    segmentation_output: SegmentationOutput
+
+
 class BBoxSegmentationModel(Protocol):
     def segment(
         self,

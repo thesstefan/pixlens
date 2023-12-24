@@ -2,7 +2,6 @@ import enum
 
 import cv2
 import numpy as np
-import PIL
 import torch
 from diffusers import (
     ControlNetModel,
@@ -58,28 +57,29 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         self.device = device
         self.model = load_controlnet(pix2pix_type, device)
 
-    def prepare_image(self, image_path: str) -> PIL.Image.Image:
-        image = PIL.Image.open(image_path)
+    def prepare_image(self, image_path: str) -> Image.Image:
+        image = Image.open(image_path)
         image = np.array(image)
         image = cv2.Canny(image, 100, 200)
         image = image[:, :, None]
         image = np.concatenate([image, image, image], axis=2)
-        canny_image = Image.fromarray(image)
-        return canny_image
+        return Image.fromarray(image)
 
-    def edit(
+    def get_model_name(self) -> str:
+        return "ControlNet"
+
+    def edit_image(
         self,
         prompt: str,
         image_path: str,
         *,
         num_inference_steps: int = 100,
         image_guidance_scale: float = 1.0,
-    ) -> interfaces.ImageEditingOutput:
+    ) -> Image.Image:
         input_image = self.prepare_image(image_path)
-        output_image = self.model(
+        return self.model(
             prompt,
             input_image,
             num_inference_steps=num_inference_steps,
             image_guidance_scale=image_guidance_scale,
         ).images[0]
-        return interfaces.ImageEditingOutput(output_image, prompt)
