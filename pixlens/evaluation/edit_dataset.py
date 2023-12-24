@@ -3,6 +3,8 @@ import logging
 from pathlib import Path
 
 import pandas as pd
+import pandera as pa
+from pandera import Column
 
 from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation import interfaces
@@ -21,9 +23,36 @@ class PreprocessingPipeline:
 
     def _parse_json_object(self) -> None:
         pandas_path = Path(get_cache_dir(), "edit_dataset.csv")
+
         if pandas_path.exists():
             self.edit_dataset = pd.read_csv(pandas_path)
-            return
+
+            # TODO: add more complex schema validation
+            schema = pa.DataFrameSchema(
+                {
+                    "edit_id": Column(pa.Int),
+                    "image_id": Column(pa.Int),
+                    "edit_type": Column(pa.String),
+                    "class": Column(pa.String),
+                    "from_atttibute": Column(pa.String),
+                    "to_attribute": Column(pa.String),
+                    "input_image_path": Column(pa.String),
+                },
+            )
+
+            # validating the data frame with the expected schema
+            try:
+                schema.validate(self.edit_dataset, lazy=True)
+            except pa.errors.SchemaErrors as err:
+                logging.warning("Schema errors and failure cases:")
+                logging.warning(err)
+                logging.warning(
+                    "Deleting cached edit dataset, as it does not comply "
+                    "with the established schema",
+                )
+                pandas_path.unlink()
+            else:
+                return
 
         with Path(self.json_object_path).open() as json_file:
             json_data = json.load(json_file)
@@ -78,7 +107,7 @@ class PreprocessingPipeline:
                     Path(
                         self.dataset_path,
                         edit["class"],
-                        f"000000{str(edit['image_id'])}.jpg",  # FIXME: this is a hack
+                        f"000000{edit['image_id']!s}.jpg",  # FIXME: this is a hack
                         # there is a proper way to get the image pathname from the id
                     ),
                 ),
