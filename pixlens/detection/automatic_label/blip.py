@@ -59,17 +59,18 @@ class Blip(ImageDescriptorModel):
         self.model, self.processor = load_blip(blip_type, device)
         self.blip_type = blip_type
 
-    def image_caption(self, image: Image.Image) -> str:
-        inputs = self.processor(images=image, return_tensors="pt").to(
-            self.device, torch.float16
-        )
+    def image_caption(self, image: Image.Image, text: str = "") -> str:
         if self.blip_type == BlipType.BLIP2:
+            inputs = self.processor(
+                images=image, text=text, return_tensors="pt"
+            ).to(self.device, torch.float16)
             generated_ids = self.model.generate(**inputs)
             generated_text = self.processor.batch_decode(
                 generated_ids, skip_special_tokens=True
             )[0].strip()
         else:
-            text = "A picture of"
+            if text == "":
+                text = "A picture of"
             inputs = self.processor(
                 images=image, text=text, return_tensors="pt"
             )
@@ -79,3 +80,12 @@ class Blip(ImageDescriptorModel):
             )
 
         return generated_text
+
+    def is_object_in_image(
+        self, image: Image.Image, object_to_look_for: str
+    ) -> bool:
+        text = "Is there any " + object_to_look_for + " in this image? Answer:"
+        caption = self.image_caption(image, text=text)
+        if "yes" in caption.lower():
+            return True
+        return False

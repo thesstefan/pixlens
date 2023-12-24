@@ -10,6 +10,7 @@ class ImageDescriptorModel(Protocol):
     def image_caption(
         self,
         image: Image.Image,
+        text: str,
     ) -> str:
         ...
 

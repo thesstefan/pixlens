@@ -34,23 +34,23 @@ class NLTKObjectExtractor(CaptionIntoObjectsModel):
                 "averaged_perceptron_tagger", download_dir=str_cache_dir
             )
 
-    def extract_objects(self, caption: str) -> list[str]:
+    def extract_objects_from_caption(self, caption: str) -> list[str]:
         tokens = word_tokenize(caption)
         tagged = pos_tag(tokens)
         return [word for word, pos in tagged if pos.startswith("NN")]
 
 
-class ImageToObjectsNLTK(ImageToObjects):
+class ImageToObjectsNLTK(Blip, NLTKObjectExtractor):
     def __init__(
         self,
         device: torch.device | None = None,
         blip_type: BlipType | None = None,
     ) -> None:
         blip_type = blip_type if blip_type is not None else BlipType.BLIP2
-        super().__init__(
-            Blip(device=device, blip_type=blip_type), NLTKObjectExtractor()
-        )
+        Blip.__init__(self, device=device, blip_type=blip_type)
+        NLTKObjectExtractor.__init__(self)
 
     def image_to_objects(self, image: Image.Image) -> list[str]:
-        caption = self.image_descriptor_model.image_caption(image)
-        return self.caption_into_objects_model.extract_objects(caption)
+        # Using image_caption from Blip
+        caption = self.image_caption(image)
+        return self.extract_objects_from_caption(caption)
