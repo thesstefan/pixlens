@@ -28,7 +28,9 @@ class EvaluationPipeline:
         image_path = self.edit_dataset.iloc[edit_id]["input_image_path"]
         image_path = Path(image_path)
         image_extension = get_image_extension(image_path)
-        return Image.open(image_path.with_suffix(image_extension))
+        if image_extension:
+            return Image.open(image_path.with_suffix(image_extension))
+        raise FileNotFoundError
 
     def get_edited_image_from_edit(
         self, edit: interfaces.Edit, model: PromptableImageEditingModel
@@ -37,8 +39,10 @@ class EvaluationPipeline:
         edit_path = Path(
             get_cache_dir(),
             "models--" + model.get_model_name(),
-            f"000000{str(edit.image_id)}",
+            f"000000{edit.image_id!s:>06}",
             prompt,
         )
         extension = get_image_extension(edit_path)
-        return Image.open(edit_path.with_suffix(extension))
+        if extension:
+            return Image.open(edit_path.with_suffix(extension))
+        raise FileNotFoundError
