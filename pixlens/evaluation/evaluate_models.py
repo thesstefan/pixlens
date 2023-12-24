@@ -72,10 +72,10 @@ class EvaluationPipeline:
         edited_image = self.get_edited_image_from_edit(edit, self.editing_model)
         prompt = PreprocessingPipeline.generate_prompt(edit)
         input_detection_segmentation_result = (
-            self.do_detection_and_segmentation(input_image, prompt)
+            self.do_detection_and_segmentation(input_image, edit.category)
         )
         edited_detection_segmentation_result = (
-            self.do_detection_and_segmentation(edited_image, prompt)
+            self.do_detection_and_segmentation(edited_image, edit.to_attribute)
         )
         return interfaces.EvaluationInput(
             input_image=input_image,
@@ -99,11 +99,13 @@ class EvaluationPipeline:
         return {**edit_type_dependent_scores, **edit_type_indpendent_scores}
 
     def get_edit_dependent_scores_for_edit(
-        self, evaluation_input: interfaces.EvaluationInput
+        self,
+        evaluation_input: interfaces.EvaluationInput,
     ) -> dict[str, float]:
         raise NotImplementedError
 
     def get_edit_independent_scores_for_edit(
-        self, evaluation_input: interfaces.EvaluationInput
+        self,
+        evaluation_input: interfaces.EvaluationInput,
     ) -> dict[str, float]:
         raise NotImplementedError
