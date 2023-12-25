@@ -9,8 +9,8 @@ from pixlens.editing.pix2pix import Pix2pix
 from pixlens.evaluation.evaluation_pipeline import (
     EvaluationPipeline,
 )
-from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 from pixlens.evaluation.operations.size import SizeEdit
+from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
 parser.add_argument(
