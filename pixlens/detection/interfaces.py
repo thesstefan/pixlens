@@ -1,6 +1,7 @@
 import abc
 import dataclasses
 from typing import Protocol
+import logging
 
 import torch
 from PIL import Image
@@ -90,6 +91,14 @@ class PromptDetectAndBBoxSegmentModel(abc.ABC, PromptableSegmentationModel):
             image,
         )
         detection_output = self.filter_detection_output(detection_output)
+
+        if detection_output.bounding_boxes.shape[0] == 0:
+            logging.warning("No objects detected")
+            return SegmentationOutput(
+                # no objects detected so logits should be empty and same for masks
+                masks=torch.tensor([]),
+                logits=torch.tensor([]),
+            ), detection_output
 
         segmentation_output = self.bbox_segmentation_model.segment(
             detection_output.bounding_boxes,

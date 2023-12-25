@@ -27,7 +27,7 @@ class PreprocessingPipeline:
         if pandas_path.exists():
             self.edit_dataset = pd.read_csv(pandas_path)
 
-            # TODO: add more complex schema validation  # noqa: TD002
+            # TODO: add more complex schema validation  # noqa: TD002, FIX002, TD003, E501
             schema = pa.DataFrameSchema(
                 {
                     "edit_id": Column(pa.Int),
@@ -108,7 +108,7 @@ class PreprocessingPipeline:
                 image_id=edit["image_id"],
                 image_path=edit["input_image_path"],
                 category=edit["class"],
-                edit_type=EditType(edit["edit_type"]),
+                edit_type=EditType.from_type_name(edit["edit_type"]),
                 from_attribute=edit["from_attribute"],
                 to_attribute=edit["to_attribute"],
             )
@@ -135,34 +135,15 @@ class PreprocessingPipeline:
                 logging.info("image_path: %s", edit.image_path)
                 model.edit(prompt, edit.image_path)
 
+                if idx == 5:  # noqa: PLR2004 TODO: remove later...
+                    break
+
     @staticmethod
     def generate_prompt(edit: Edit) -> str:
-        prompt_formats = {
-            "object_addition": "Add a {to} to the image",
-            "positional_addition": "Add a {to} the {category}",
-            "size": "Change the size of {category} to {to}",
-            "shape": "Change the shape of {category} to {to}",
-            "alter_parts": "{to} to {category}",
-            "color": "Change the color of {category} to {to}",
-            "object_removal": "Remove {category}",
-            "object_replacement": "Replace {from_} with {to}",
-            "position_replacement": "Move {from_} to {to}",
-            "object_duplication": "Duplicate {category}",
-            "texture": "Change the texture of {category} to {to}",
-            "action": "{category} doing {to}",
-            "viewpoint": "Change the viewpoint to {to}",
-            "background": "Change the background to {to}",
-            "style": "Change the style of {category} to {to}",
-        }
-
-        prompt_format = prompt_formats.get(edit.edit_type)
-        if prompt_format:
-            return prompt_format.format(
-                category=edit.category,
-                to=edit.to_attribute,
-                from_=edit.from_attribute
-                if hasattr(edit, "from_attribute")
-                else "",
-            )
-        error_msg = f"Edit type {edit.edit_type} is not implemented"
-        raise ValueError(error_msg)
+        return edit.edit_type.prompt.format(
+            category=edit.category,
+            to=edit.to_attribute,
+            from_=edit.from_attribute
+            if hasattr(edit, "from_attribute")
+            else "",
+        )
