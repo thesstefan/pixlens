@@ -85,7 +85,7 @@ class EvaluationPipeline:
             self.do_detection_and_segmentation(input_image, edit.category)
         )
         edited_detection_segmentation_result = (
-            self.do_detection_and_segmentation(edited_image, edit.to_attribute)
+            self.do_detection_and_segmentation(edited_image, edit.to_attribute if edit.edit_type )
         )
         return interfaces.EvaluationInput(
             input_image=input_image,
@@ -119,4 +119,9 @@ class EvaluationPipeline:
         self,
         evaluation_input: interfaces.EvaluationInput,
     ) -> dict[str, float]:
+        raise NotImplementedError
+
+    def get_score_for_size_edit(
+        self, evaluation_input: interfaces.EvaluationInput
+    ) -> float:
         raise NotImplementedError
