@@ -11,7 +11,9 @@ same_object = [
     for edit in edits
     if edit not in new_object + new_object_with_indication
 ]
+tol = 1e-6
 SHAPE_DIFFERENCE_MSG = "Input and output shapes must be the same shape"
+DIVDING_BY_ZERO_MSG = "Cannot divide by zero"
 
 
 def remove_words_from_string(
@@ -52,6 +54,19 @@ def compute_area(tensor1: torch.Tensor) -> float:
     return area1.item()
 
 
+def compute_area_ratio(
+    numerator: torch.Tensor,
+    denominator: torch.Tensor,
+) -> float:
+    if numerator.shape != denominator.shape:
+        raise ValueError(SHAPE_DIFFERENCE_MSG)
+    area1 = compute_area(numerator)
+    area2 = compute_area(denominator)
+    if area2 < tol:
+        raise ValueError(DIVDING_BY_ZERO_MSG)
+    return area1 / area2
+
+
 def compute_iou(tensor1: torch.Tensor, tensor2: torch.Tensor) -> float:
     if tensor1.shape != tensor2.shape:
         raise ValueError(SHAPE_DIFFERENCE_MSG)
@@ -59,3 +74,14 @@ def compute_iou(tensor1: torch.Tensor, tensor2: torch.Tensor) -> float:
     union = torch.logical_or(tensor1, tensor2).sum()
     iou = intersection.float() / union.float()
     return iou.item()
+
+
+def is_small_area_within_big_area(
+    small_area: torch.Tensor,
+    big_area: torch.Tensor,
+    confidence_threshold: float = 0.9,
+) -> bool:
+    if small_area.shape != big_area.shape:
+        raise ValueError(SHAPE_DIFFERENCE_MSG)
+    intersection = torch.logical_and(small_area, big_area).sum()
+    return intersection.item() / compute_area(small_area) > confidence_threshold

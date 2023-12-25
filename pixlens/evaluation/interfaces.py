@@ -69,8 +69,6 @@ class EvaluationInput:
 class OperationEvaluation(Protocol):
     def evaluate_edit(
         self,
-        original_detection_segmentation_result: DetectionSegmentationResult,
-        edited_detection_segmentation_result: DetectionSegmentationResult,
-        image_editing_output: Image.Image,
+        evaluation_input: EvaluationInput,
     ) -> EvaluationOutput:
         ...

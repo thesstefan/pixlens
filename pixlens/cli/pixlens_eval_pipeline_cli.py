@@ -73,6 +73,8 @@ def main() -> None:
     # Do as you please with the evaluation_input
     # For example, you can do:
     print(evaluation_input.prompt)  # noqa: T201
+    score = evaluation_pipeline.get_score_for_size_edit(evaluation_input)
+    print(score)  # noqa: T201
 
 
 if __name__ == "__main__":
