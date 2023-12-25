@@ -2,8 +2,8 @@ import abc
 import dataclasses
 from typing import Protocol
 
-from PIL import Image
 import torch
+from PIL import Image
 
 
 @dataclasses.dataclass

@@ -88,8 +88,10 @@ class PreprocessingPipeline:
                                 + self.dataset_path
                                 + "/"
                                 + obj_class
-                                + "/000000"  # FIXME: this is a cheat
-                                + str(image_id),
+                                + "/"
+                                + "0" * (12 - len(str(image_id)))
+                                + str(image_id)
+                                + ".jpg",
                             }
                         )
 
@@ -143,8 +145,8 @@ class PreprocessingPipeline:
             "alter_parts": "{to} to {category}",
             "color": "Change the color of {category} to {to}",
             "object_removal": "Remove {category}",
-            "object_replacement": "Replace {from} with {to}",
-            "position_replacement": "Move {from} to {to}",
+            "object_replacement": "Replace {from_} with {to}",
+            "position_replacement": "Move {from_} to {to}",
             "object_duplication": "Duplicate {category}",
             "texture": "Change the texture of {category} to {to}",
             "action": "{category} doing {to}",
@@ -164,9 +166,3 @@ class PreprocessingPipeline:
             )
         error_msg = f"Edit type {edit.edit_type} is not implemented"
         raise ValueError(error_msg)
-
-
-PreprocessingPipeline(
-    dataset_path="/editval_instances",
-    json_object_path="./pixlens/editval/object.json",
-)

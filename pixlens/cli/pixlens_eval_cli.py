@@ -1,5 +1,6 @@
 import argparse
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
@@ -8,8 +9,10 @@ from PIL import Image
 from pixlens.detection import grounded_sam, owl_vit_sam
 from pixlens.visualization import annotation
 
+if TYPE_CHECKING:
+    from pixlens.detection.interfaces import PromptDetectAndBBoxSegmentModel
 parser = argparse.ArgumentParser(
-    description="PixLens - Evaluate & understand image editing models"
+    description="PixLens - Evaluate & understand image editing models",
 )
 parser.add_argument(
     "--object-detection",
@@ -30,9 +33,9 @@ parser.add_argument(
 
 def main() -> None:
     args = parser.parse_args()
-
+    model: PromptDetectAndBBoxSegmentModel
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logging.info(f"Using device: {device}")
+    logging.info("Using device: %s", device)
     image = Image.open(args.image).convert("RGB")
     if args.object_detection == "GroundedSAM":
         model = grounded_sam.GroundedSAM(
@@ -47,17 +50,20 @@ def main() -> None:
     else:
         raise NotImplementedError
     segmentation_output, detection_output = model.detect_and_segment(
-        args.prompt, image
+        args.prompt,
+        image,
     )
 
     image_source = np.asarray(image)
 
     annotated_image = annotation.annotate_detection_output(
-        image_source, detection_output
+        image_source,
+        detection_output,
     )
 
     masked_annotated_image = annotation.annotate_mask(
-        segmentation_output.masks, annotated_image
+        segmentation_output.masks,
+        annotated_image,
     )
     masked_annotated_image.save(args.out)
 

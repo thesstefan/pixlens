@@ -6,9 +6,13 @@ import torch
 
 from pixlens.editing import controlnet, pix2pix
 from pixlens.utils import utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pixlens.editing.interfaces import PromptableImageEditingModel
 
 parser = argparse.ArgumentParser(
-    description="PixLens - Evaluate & understand image editing models"
+    description="PixLens - Evaluate & understand image editing models",
 )
 parser.add_argument(
     "--edit-model",
@@ -17,10 +21,17 @@ parser.add_argument(
     help=("Image editing model: pix2pix, dreambooth, etc."),
 )
 parser.add_argument(
-    "--output", required=True, type=str, help=("Path of output image")
+    "--output",
+    required=True,
+    type=str,
+    help=("Path of output image"),
 )
 parser.add_argument(
-    "--input", type=str, help="Path of input image", nargs="?", default=None
+    "--input",
+    type=str,
+    help="Path of input image",
+    nargs="?",
+    default=None,
 )
 
 parser.add_argument("--prompt", type=str, help=("Prompt with edit instruction"))
@@ -28,9 +39,9 @@ parser.add_argument("--prompt", type=str, help=("Prompt with edit instruction"))
 
 def main() -> None:
     args = parser.parse_args()
-
+    model: PromptableImageEditingModel
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logging.info(f"Using device: {device}")
+    logging.info("Using device: %s", device)
 
     # check if args.in defined
     in_path = "example_input.jpg"

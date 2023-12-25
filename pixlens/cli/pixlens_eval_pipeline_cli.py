@@ -61,7 +61,9 @@ def main() -> None:
     # Get all inputs for the edit
     evaluation_input = evaluation_pipeline.get_all_inputs_for_edit(edit)
 
-    breakpoint()
+    # Do as you please with the evaluation_input
+    # For example, you can do:
+    print(evaluation_input.prompt)  # noqa: T201
 
 
 if __name__ == "__main__":
