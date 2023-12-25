@@ -1,8 +1,35 @@
+import torch
+
 from pixlens.evaluation import interfaces as evaluation_interfaces
 from pixlens.evaluation.utils import (
     compute_area_ratio,
     is_small_area_within_big_area,
 )
+
+
+def size_change_applied_correctly(
+    direction: str,
+    input_mask: torch.Tensor,
+    output_mask: torch.Tensor,
+) -> bool:
+    if direction == "small":
+        return (
+            compute_area_ratio(
+                numerator=output_mask,
+                denominator=input_mask,
+            )
+            < 1
+        )
+    if direction == "big":
+        return (
+            compute_area_ratio(
+                numerator=output_mask,
+                denominator=input_mask,
+            )
+            > 1
+        )
+    error_msg = f"Invalid direction: {direction}"
+    raise ValueError(error_msg)
 
 
 class SizeEdit(evaluation_interfaces.OperationEvaluation):
@@ -20,27 +47,16 @@ class SizeEdit(evaluation_interfaces.OperationEvaluation):
             idmax = edit_segmentation.logits.argmax()
             mask_edited = edit_segmentation.masks[idmax]
 
-            if (transformation == "small") and compute_area_ratio(
-                numerator=mask_input,
-                denominator=mask_edited,
-            ) > 1:
+            if size_change_applied_correctly(
+                transformation,
+                mask_input,
+                mask_edited,
+            ):
                 return evaluation_interfaces.EvaluationOutput(
                     score=float(
                         is_small_area_within_big_area(
-                            small_area=mask_edited,
-                            big_area=mask_input,
-                        ),
-                    ),
-                )
-            if (transformation == "big") and compute_area_ratio(
-                numerator=mask_input,
-                denominator=mask_edited,
-            ) < 1:
-                return evaluation_interfaces.EvaluationOutput(
-                    score=float(
-                        is_small_area_within_big_area(
-                            small_area=mask_input,
-                            big_area=mask_edited,
+                            input_mask=mask_input,
+                            edited_mask=mask_edited,
                         ),
                     ),
                 )
