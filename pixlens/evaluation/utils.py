@@ -11,6 +11,7 @@ same_object = [
     for edit in edits
     if edit not in new_object + new_object_with_indication
 ]
+SHAPE_DIFFERENCE_MSG = "Input and output shapes must be the same shape"
 
 
 def remove_words_from_string(
@@ -34,7 +35,8 @@ def get_prompt_for_output_detection(edit: Edit) -> str:
         return edit.to_attribute
     if edit.edit_id in new_object_with_indication:
         return remove_words_from_string(
-            edit.to_attribute, directions_and_instructions
+            edit.to_attribute,
+            directions_and_instructions,
         )
     return edit.category
 
@@ -50,17 +52,9 @@ def compute_area(tensor1: torch.Tensor) -> float:
     return area1.item()
 
 
-def compute_area_ratio(tensor1: torch.Tensor, tensor2: torch.Tensor) -> float:
-    area1 = compute_area(tensor1)
-    area2 = compute_area(tensor2)
-    if area2:
-        return area1 / area2
-    msg = "Area of tensor2 is 0"
-    raise ValueError(msg)
-
-
 def compute_iou(tensor1: torch.Tensor, tensor2: torch.Tensor) -> float:
-    assert tensor1.shape == tensor2.shape, "Tensors must have the same shape"
+    if tensor1.shape != tensor2.shape:
+        raise ValueError(SHAPE_DIFFERENCE_MSG)
     intersection = torch.logical_and(tensor1, tensor2).sum()
     union = torch.logical_or(tensor1, tensor2).sum()
     iou = intersection.float() / union.float()
