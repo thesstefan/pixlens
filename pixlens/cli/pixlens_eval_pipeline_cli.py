@@ -55,7 +55,7 @@ def main() -> None:
 
     # Get the edit object from the dataset using the provided edit ID
     edit = PreprocessingPipeline.get_edit(
-        args.edit_id, evaluation_pipeline.edit_dataset
+        args.edit_id, evaluation_pipeline.edit_dataset,
     )
 
     # Get all inputs for the edit
