@@ -43,6 +43,7 @@ class EditType(Enum):
 @dataclasses.dataclass
 class EvaluationOutput:
     score: float
+    success: bool
 
 
 @dataclasses.dataclass

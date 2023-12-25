@@ -40,7 +40,13 @@ class SizeEdit(evaluation_interfaces.OperationEvaluation):
         # 1 - Check if object is present in both input and output:
         input_segmentation = evaluation_input.input_detection_segmentation_result.segmentation_output
         edit_segmentation = evaluation_input.edited_detection_segmentation_result.segmentation_output
-        if evaluation_input.edited_detection_segmentation_result.detection_output.phrases:
+        if not input_segmentation.masks.any():
+            return evaluation_interfaces.EvaluationOutput(
+                score=-1.0,
+                success=False,
+            )  # Object wasn't even present at input
+        if edit_segmentation.masks:
+            # Code continues here...
             # 2 - Check if resize is small or big and compute area difference
             transformation = evaluation_input.edit.to_attribute
             mask_input = input_segmentation.masks[0]
@@ -61,7 +67,9 @@ class SizeEdit(evaluation_interfaces.OperationEvaluation):
                             edited_mask=mask_edited,
                         ),
                     ),
+                    success=True,
                 )
         return evaluation_interfaces.EvaluationOutput(
             score=0.0,
+            success=True,
         )  # Object wasn't present at output or area was indeed bigger / smaller
