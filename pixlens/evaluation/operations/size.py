@@ -63,4 +63,4 @@ class SizeEdit(evaluation_interfaces.OperationEvaluation):
                 )
         return evaluation_interfaces.EvaluationOutput(
             score=0.0,
-        )  # Object wasn't present at output
+        )  # Object wasn't present at output or area was indeed bigger / smaller
