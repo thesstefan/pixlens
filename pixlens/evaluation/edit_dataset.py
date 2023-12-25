@@ -54,7 +54,7 @@ class PreprocessingPipeline:
             else:
                 return
 
-        with Path(self.json_object_path).open() as json_file:
+        with Path(self.json_object_path).open(encoding="utf-8") as json_file:
             json_data = json.load(json_file)
 
         records: list[dict] = []
@@ -92,7 +92,7 @@ class PreprocessingPipeline:
                                 + "0" * (12 - len(str(image_id)))
                                 + str(image_id)
                                 + ".jpg",
-                            }
+                            },
                         )
 
         # Create a pandas DataFrame from the records
@@ -133,7 +133,7 @@ class PreprocessingPipeline:
                 prompt = self.generate_prompt(edit)
                 logging.info("prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)
-                output = model.edit(prompt, edit.image_path)
+                model.edit(prompt, edit.image_path)
 
     @staticmethod
     def generate_prompt(edit: interfaces.Edit) -> str:

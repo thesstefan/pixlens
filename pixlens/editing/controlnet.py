@@ -72,7 +72,7 @@ class ControlNet(interfaces.PromptableImageEditingModel):
             axis=2,
         )
         return Image.fromarray(
-            image_array.astype(np.uint8)
+            image_array.astype(np.uint8),
         )  # Convert ndarray back to Image
 
     def get_model_name(self) -> str:
