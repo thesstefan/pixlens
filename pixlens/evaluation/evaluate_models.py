@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import torch
 from PIL import Image
 
 from pixlens.detection import interfaces as detection_interfaces
@@ -11,7 +12,8 @@ from pixlens.utils.utils import get_cache_dir, get_image_extension
 
 
 class EvaluationPipeline:
-    def __init__(self) -> None:
+    def __init__(self, device: torch.device) -> None:
+        self.device = device
         self.edit_dataset: pd.DataFrame
         self.get_edit_dataset()
 
@@ -59,7 +61,7 @@ class EvaluationPipeline:
         (
             segmentation_output,
             detection_output,
-        ) = self.detection_model.detect_and_segment(prompt, image)
+        ) = self.detection_model.detect_and_segment(prompt=prompt, image=image)
         return detection_interfaces.DetectionSegmentationResult(
             detection_output=detection_output,
             segmentation_output=segmentation_output,

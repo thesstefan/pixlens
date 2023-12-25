@@ -80,7 +80,7 @@
                 "--edit-id",
                 "0", // Replace with the desired edit ID
                 "--editing-model",
-                "controlnet", // Replace with the desired editing model name
+                "pix2pix", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam" // Replace with the desired detection model name
             ],

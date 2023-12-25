@@ -1,13 +1,15 @@
 import argparse
 
+import torch
+
 from pixlens.detection.grounded_sam import GroundedSAM
 from pixlens.detection.owl_vit_sam import OwlViTSAM
 from pixlens.editing.controlnet import ControlNet
 from pixlens.editing.pix2pix import Pix2pix
+from pixlens.evaluation.edit_dataset import PreprocessingPipeline
 from pixlens.evaluation.evaluate_models import (
     EvaluationPipeline,
 )
-from pixlens.evaluation.edit_dataset import PreprocessingPipeline
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
 parser.add_argument(
@@ -34,18 +36,18 @@ parser.add_argument(
 
 def main() -> None:
     args = parser.parse_args()
-
+    device = torch.device("cpu")
     # Initialize the EvaluationPipeline
-    evaluation_pipeline = EvaluationPipeline()
+    evaluation_pipeline = EvaluationPipeline(device=device)
     editing_model = (
-        ControlNet()
+        ControlNet(device=device)
         if args.editing_model.lower() == "controlnet"
-        else Pix2pix()
+        else Pix2pix(device=device)
     )
     detection_model = (
-        GroundedSAM
+        GroundedSAM(device=device)
         if args.detection_model.lower() == "groundedsam"
-        else OwlViTSAM
+        else OwlViTSAM(device=device)
     )  # Replace with actual model initialization
 
     evaluation_pipeline.init_editing_model(editing_model)
@@ -60,3 +62,7 @@ def main() -> None:
     evaluation_input = evaluation_pipeline.get_all_inputs_for_edit(edit)
 
     breakpoint()
+
+
+if __name__ == "__main__":
+    main()

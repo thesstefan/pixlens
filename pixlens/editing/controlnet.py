@@ -51,7 +51,7 @@ class ControlNet(interfaces.PromptableImageEditingModel):
 
     def __init__(
         self,
-        pix2pix_type: ControlNetType,
+        pix2pix_type: ControlNetType = ControlNetType.BASE,
         device: torch.device | None = None,
     ) -> None:
         self.device = device
