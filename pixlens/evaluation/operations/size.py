@@ -45,7 +45,9 @@ class SizeEdit(evaluation_interfaces.OperationEvaluation):
             transformation = evaluation_input.edit.to_attribute
             mask_input = input_segmentation.masks[0]
             idmax = edit_segmentation.logits.argmax()
-            mask_edited = edit_segmentation.masks[idmax]
+            mask_edited = edit_segmentation.masks[
+                idmax
+            ]  # TODO: IMPLEMENT NON MAX SUPRESSION TO GET ONLY ONE OBJECT!
 
             if size_change_applied_correctly(
                 transformation,

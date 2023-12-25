@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import torch
 from PIL import Image
@@ -8,10 +9,8 @@ from pixlens.detection import interfaces as detection_interfaces
 from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation import interfaces
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
-from pixlens.evaluation.utils import (
-    get_prompt_for_input_detection,
-    get_prompt_for_output_detection,
-)
+from pixlens.evaluation.utils import get_updated_to
+
 from pixlens.utils.utils import get_cache_dir, get_image_extension
 
 
@@ -85,16 +84,27 @@ class EvaluationPipeline:
         input_image = self.get_input_image_from_edit_id(edit.edit_id)
         edited_image = self.get_edited_image_from_edit(edit, self.editing_model)
         prompt = PreprocessingPipeline.generate_prompt(edit)
+        from_attribute = (
+            None if np.isnan(edit.from_attribute) else edit.from_attribute
+        )
+        to_attribute = get_updated_to(edit)
+        list_for_det_seg = [
+            item
+            for item in [edit.category, from_attribute, to_attribute]
+            if item is not None
+        ]
+        prompt_for_det_seg = ",".join(list_for_det_seg)
+
         input_detection_segmentation_result = (
             self.do_detection_and_segmentation(
                 input_image,
-                get_prompt_for_input_detection(edit),
+                prompt_for_det_seg,
             )
         )
         edited_detection_segmentation_result = (
             self.do_detection_and_segmentation(
                 edited_image,
-                get_prompt_for_output_detection(edit),
+                prompt_for_det_seg,
             )
         )
         return interfaces.EvaluationInput(
@@ -104,6 +114,11 @@ class EvaluationPipeline:
             input_detection_segmentation_result=input_detection_segmentation_result,
             edited_detection_segmentation_result=edited_detection_segmentation_result,
             edit=edit,
+            updated_strings=interfaces.UpdatedStrings(
+                category=edit.category,
+                from_attribute=from_attribute,
+                to_attribute=to_attribute,
+            ),
         )
 
     def get_all_scores_for_edit(
