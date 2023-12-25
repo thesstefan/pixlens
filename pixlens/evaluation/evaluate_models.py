@@ -91,10 +91,10 @@ class EvaluationPipeline:
     ) -> dict[str, float]:
         evaluation_input = self.get_all_inputs_for_edit(edit)
         edit_type_dependent_scores = self.get_edit_dependent_scores_for_edit(
-            evaluation_input
+            evaluation_input,
         )
         edit_type_indpendent_scores = self.get_edit_independent_scores_for_edit(
-            evaluation_input
+            evaluation_input,
         )
         return {**edit_type_dependent_scores, **edit_type_indpendent_scores}
 

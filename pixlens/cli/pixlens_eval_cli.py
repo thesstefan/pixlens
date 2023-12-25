@@ -33,6 +33,7 @@ def main() -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logging.info(f"Using device: {device}")
+    image = Image.open(args.image).convert("RGB")
     if args.object_detection == "GroundedSAM":
         model = grounded_sam.GroundedSAM(
             device=device,
@@ -46,10 +47,10 @@ def main() -> None:
     else:
         raise NotImplementedError
     segmentation_output, detection_output = model.detect_and_segment(
-        args.prompt, args.image
+        args.prompt, image
     )
 
-    image_source = np.asarray(Image.open(args.image).convert("RGB"))
+    image_source = np.asarray(Image.open(image).convert("RGB"))
 
     annotated_image = annotation.annotate_detection_output(
         image_source, detection_output
