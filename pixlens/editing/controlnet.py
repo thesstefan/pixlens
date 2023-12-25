@@ -5,8 +5,10 @@ import numpy as np
 import torch
 from diffusers import (
     ControlNetModel,
-    StableDiffusionControlNetPipeline,
     UniPCMultistepScheduler,
+)
+from diffusers.pipelines.controlnet.pipeline_controlnet import (
+    StableDiffusionControlNetPipeline,
 )
 from PIL import Image
 
@@ -27,7 +29,6 @@ def load_controlnet(
     model_type: ControlNetType,
     device: torch.device | None = None,
 ) -> StableDiffusionControlNetPipeline:
-    pipe: StableDiffusionControlNetPipeline
     path_to_cache = utils.get_cache_dir()
     log_model_if_not_in_cache(model_type, path_to_cache)
     controlnet = ControlNetModel.from_pretrained(
@@ -85,9 +86,11 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         image_guidance_scale: float = 1.0,
     ) -> Image.Image:
         input_image = self.prepare_image(image_path)
-        return self.model(
+        output = self.model(
             prompt,
             input_image,
             num_inference_steps=num_inference_steps,
             image_guidance_scale=image_guidance_scale,
-        ).images[0]
+        )
+        output_images: list[Image.Image] = output.images
+        return output_images[0]
