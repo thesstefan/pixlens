@@ -123,11 +123,7 @@ class EvaluationPipeline:
         self,
         evaluation_input: interfaces.EvaluationInput,
     ) -> dict[str, float]:
-        if evaluation_input.edit.edit_type == "size":
-            return {
-                "size": self.get_score_for_size_edit(evaluation_input),
-            }
-        return {}
+        raise NotImplementedError
 
     def get_edit_independent_scores_for_edit(
         self,
