@@ -41,6 +41,7 @@ class SizeEdit(evaluation_interfaces.OperationEvaluation):
         input_segmentation = evaluation_input.input_detection_segmentation_result.segmentation_output
         edit_segmentation = evaluation_input.edited_detection_segmentation_result.segmentation_output
         if evaluation_input.edited_detection_segmentation_result.detection_output.phrases:
+            # Code continues here...
             # 2 - Check if resize is small or big and compute area difference
             transformation = evaluation_input.edit.to_attribute
             mask_input = input_segmentation.masks[0]
