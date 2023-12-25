@@ -125,7 +125,11 @@ class EvaluationPipeline:
         self,
         evaluation_input: interfaces.EvaluationInput,
     ) -> dict[str, float]:
-        raise NotImplementedError
+        if evaluation_input.edit.edit_type == "size":
+            return {
+                "size": self.get_score_for_size_edit(evaluation_input),
+            }
+        return {}
 
     def get_edit_independent_scores_for_edit(
         self,
@@ -140,18 +144,16 @@ class EvaluationPipeline:
         # 1 - Check if object is present in both input and output:
         score_area_ratio = 0.0
         score_iou = 0.0
+        input_segmentation = evaluation_input.input_detection_segmentation_result.segmentation_output
+        edit_segmentation = evaluation_input.edited_detection_segmentation_result.segmentation_output
         if len(
             evaluation_input.edited_detection_segmentation_result.detection_output.phrases,
         ):
             # 2 - Check if resize is small or big and compute area difference
             transformation = evaluation_input.edit.to_attribute
-            mask_input = evaluation_input.input_detection_segmentation_result.segmentation_output.masks[
-                0
-            ]
-            idmax = evaluation_input.edited_detection_segmentation_result.segmentation_output.logits.argmax()
-            mask_edited = evaluation_input.edited_detection_segmentation_result.segmentation_output.masks[
-                idmax
-            ]
+            mask_input = input_segmentation.masks[0]
+            idmax = edit_segmentation.logits.argmax()
+            mask_edited = edit_segmentation.masks[idmax]
 
             area_ratio = compute_area_ratio(mask_input, mask_edited)
             if (transformation == "small" and area_ratio > 1) or (
