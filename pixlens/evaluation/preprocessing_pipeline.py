@@ -27,7 +27,7 @@ class PreprocessingPipeline:
         if pandas_path.exists():
             self.edit_dataset = pd.read_csv(pandas_path)
 
-            # TODO: add more complex schema validation
+            # TODO: add more complex schema validation  # noqa: TD002
             schema = pa.DataFrameSchema(
                 {
                     "edit_id": Column(pa.Int),

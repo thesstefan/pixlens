@@ -6,10 +6,10 @@ from pixlens.detection.grounded_sam import GroundedSAM
 from pixlens.detection.owl_vit_sam import OwlViTSAM
 from pixlens.editing.controlnet import ControlNet
 from pixlens.editing.pix2pix import Pix2pix
-from pixlens.evaluation.edit_dataset import PreprocessingPipeline
-from pixlens.evaluation.evaluate_models import (
+from pixlens.evaluation.evaluation_pipeline import (
     EvaluationPipeline,
 )
+from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
 parser.add_argument(
