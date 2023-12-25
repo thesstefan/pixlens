@@ -1,10 +1,11 @@
 import abc
 import dataclasses
-from typing import Protocol
 import logging
+from typing import Protocol
 
 import torch
 from PIL import Image
+from torchvision.ops import nms
 
 
 @dataclasses.dataclass
@@ -67,16 +68,18 @@ class PromptDetectAndBBoxSegmentModel(abc.ABC, PromptableSegmentationModel):
         confident_predictions = torch.where(
             detection_output.logits > self.detection_confidence_threshold,
         )[0]
+        filtered_boxes = detection_output.bounding_boxes[confident_predictions]
+        filtered_logits = detection_output.logits[confident_predictions]
 
-        detection_output.logits = detection_output.logits[confident_predictions]
-        detection_output.bounding_boxes = detection_output.bounding_boxes[
-            confident_predictions
-        ]
+        # Apply Non-Maximum Suppression
+        iou_threshold = 0.5  # You can adjust this threshold
+        keep = nms(filtered_boxes, filtered_logits, iou_threshold)
 
+        # Update detection_output with NMS results
+        detection_output.bounding_boxes = filtered_boxes[keep]
+        detection_output.logits = filtered_logits[keep]
         detection_output.phrases = [
-            phrase
-            for index, phrase in enumerate(detection_output.phrases)
-            if index in confident_predictions
+            detection_output.phrases[i] for i in confident_predictions[keep]
         ]
 
         return detection_output
