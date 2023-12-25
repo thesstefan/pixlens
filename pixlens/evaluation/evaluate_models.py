@@ -8,6 +8,10 @@ from pixlens.detection import interfaces as detection_interfaces
 from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation import interfaces
 from pixlens.evaluation.edit_dataset import PreprocessingPipeline
+from pixlens.evaluation.utils import (
+    get_prompt_for_input_detection,
+    get_prompt_for_output_detection,
+)
 from pixlens.utils.utils import get_cache_dir, get_image_extension
 
 
@@ -82,10 +86,16 @@ class EvaluationPipeline:
         edited_image = self.get_edited_image_from_edit(edit, self.editing_model)
         prompt = PreprocessingPipeline.generate_prompt(edit)
         input_detection_segmentation_result = (
-            self.do_detection_and_segmentation(input_image, edit.category)
+            self.do_detection_and_segmentation(
+                input_image,
+                get_prompt_for_input_detection(edit),
+            )
         )
         edited_detection_segmentation_result = (
-            self.do_detection_and_segmentation(edited_image, edit.to_attribute if edit.edit_type )
+            self.do_detection_and_segmentation(
+                edited_image,
+                get_prompt_for_output_detection(edit),
+            )
         )
         return interfaces.EvaluationInput(
             input_image=input_image,
