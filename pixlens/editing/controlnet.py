@@ -47,7 +47,8 @@ def load_controlnet(
     pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
     pipe.enable_xformers_memory_efficient_attention()
     pipe.enable_model_cpu_offload()
-    return pipe
+    pipeline: StableDiffusionControlNetPipeline = pipe
+    return pipeline
 
 
 class ControlNet(interfaces.PromptableImageEditingModel):
