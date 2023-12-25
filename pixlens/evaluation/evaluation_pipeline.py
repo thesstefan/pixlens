@@ -9,6 +9,8 @@ from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation import interfaces
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 from pixlens.evaluation.utils import (
+    compute_area_ratio,
+    compute_iou,
     get_prompt_for_input_detection,
     get_prompt_for_output_detection,
 )
@@ -135,4 +137,30 @@ class EvaluationPipeline:
         self,
         evaluation_input: interfaces.EvaluationInput,
     ) -> float:
-        raise NotImplementedError
+        # 1 - Check if object is present in both input and output:
+        score_area_ratio = 0.0
+        score_iou = 0.0
+        if len(
+            evaluation_input.edited_detection_segmentation_result.detection_output.phrases,
+        ):
+            # 2 - Check if resize is small or big and compute area difference
+            transformation = evaluation_input.edit.to_attribute
+            mask_input = evaluation_input.input_detection_segmentation_result.segmentation_output.masks[
+                0
+            ]
+            idmax = evaluation_input.edited_detection_segmentation_result.segmentation_output.logits.argmax()
+            mask_edited = evaluation_input.edited_detection_segmentation_result.segmentation_output.masks[
+                idmax
+            ]
+
+            area_ratio = compute_area_ratio(mask_input, mask_edited)
+            if (transformation == "small" and area_ratio > 1) or (
+                transformation == "big" and area_ratio < 1
+            ):
+                score_area_ratio = 1
+
+            score_iou = compute_iou(mask_input, mask_edited)
+
+            return (score_area_ratio + score_iou) / 2
+
+        return 0  # Object wasn't present at output

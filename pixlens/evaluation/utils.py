@@ -1,3 +1,5 @@
+import torch
+
 from pixlens.evaluation.interfaces import Edit, EditType
 
 directions_and_instructions = ["add", "to", "right", "left", "below"]
@@ -41,3 +43,25 @@ def get_prompt_for_input_detection(edit: Edit) -> str:
     if edit.edit_type == "background":
         return edit.from_attribute
     return edit.category
+
+
+def compute_area(tensor1: torch.Tensor) -> float:
+    area1 = torch.sum(tensor1)
+    return area1.item()
+
+
+def compute_area_ratio(tensor1: torch.Tensor, tensor2: torch.Tensor) -> float:
+    area1 = compute_area(tensor1)
+    area2 = compute_area(tensor2)
+    if area2:
+        return area1 / area2
+    msg = "Area of tensor2 is 0"
+    raise ValueError(msg)
+
+
+def compute_iou(tensor1: torch.Tensor, tensor2: torch.Tensor) -> float:
+    assert tensor1.shape == tensor2.shape, "Tensors must have the same shape"
+    intersection = torch.logical_and(tensor1, tensor2).sum()
+    union = torch.logical_or(tensor1, tensor2).sum()
+    iou = intersection.float() / union.float()
+    return iou.item()
