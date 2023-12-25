@@ -16,6 +16,8 @@ class EvaluationPipeline:
         self.device = device
         self.edit_dataset: pd.DataFrame
         self.get_edit_dataset()
+        self.detection_model: detection_interfaces.PromptDetectAndBBoxSegmentModel  # noqa: E501
+        self.editing_model: PromptableImageEditingModel
 
     def get_edit_dataset(self) -> None:
         pandas_path = Path(get_cache_dir(), "edit_dataset.csv")
@@ -33,7 +35,9 @@ class EvaluationPipeline:
         raise FileNotFoundError
 
     def get_edited_image_from_edit(
-        self, edit: interfaces.Edit, model: PromptableImageEditingModel
+        self,
+        edit: interfaces.Edit,
+        model: PromptableImageEditingModel,
     ) -> Image.Image:
         prompt = PreprocessingPipeline.generate_prompt(edit)
         edit_path = Path(
@@ -48,7 +52,8 @@ class EvaluationPipeline:
         raise FileNotFoundError
 
     def init_detection_model(
-        self, model: detection_interfaces.PromptDetectAndBBoxSegmentModel
+        self,
+        model: detection_interfaces.PromptDetectAndBBoxSegmentModel,
     ) -> None:
         self.detection_model = model
 
@@ -56,7 +61,9 @@ class EvaluationPipeline:
         self.editing_model = model
 
     def do_detection_and_segmentation(
-        self, image: Image.Image, prompt: str
+        self,
+        image: Image.Image,
+        prompt: str,
     ) -> detection_interfaces.DetectionSegmentationResult:
         (
             segmentation_output,
@@ -68,7 +75,8 @@ class EvaluationPipeline:
         )
 
     def get_all_inputs_for_edit(
-        self, edit: interfaces.Edit
+        self,
+        edit: interfaces.Edit,
     ) -> interfaces.EvaluationInput:
         input_image = self.get_input_image_from_edit_id(edit.edit_id)
         edited_image = self.get_edited_image_from_edit(edit, self.editing_model)
@@ -89,7 +97,8 @@ class EvaluationPipeline:
         )
 
     def get_all_scores_for_edit(
-        self, edit: interfaces.Edit
+        self,
+        edit: interfaces.Edit,
     ) -> dict[str, float]:
         evaluation_input = self.get_all_inputs_for_edit(edit)
         edit_type_dependent_scores = self.get_edit_dependent_scores_for_edit(
