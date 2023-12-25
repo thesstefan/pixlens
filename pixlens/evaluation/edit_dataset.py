@@ -34,7 +34,7 @@ class PreprocessingPipeline:
                     "image_id": Column(pa.Int),
                     "edit_type": Column(pa.String),
                     "class": Column(pa.String),
-                    "from_atttibute": Column(pa.String),
+                    "from_atttibute": Column(pa.String, nullable=True),
                     "to_attribute": Column(pa.String),
                     "input_image_path": Column(pa.String),
                 },
@@ -82,8 +82,8 @@ class PreprocessingPipeline:
                                 "image_id": image_id,
                                 "class": obj_class,
                                 "edit_type": edit_type,
-                                "from": from_val,
-                                "to": to_val,
+                                "from_atttibute": from_val,
+                                "to_attribute": to_val,
                                 "input_image_path": "./"
                                 + self.dataset_path
                                 + "/"
@@ -107,8 +107,8 @@ class PreprocessingPipeline:
                 image_path=edit["input_image_path"],
                 category=edit["class"],
                 edit_type=interfaces.EditType(edit["edit_type"]),
-                from_attribute=edit["from"],
-                to_attribute=edit["to"],
+                from_attribute=edit["from_atttibute"],
+                to_attribute=edit["to_attribute"],
             )
 
         error_msg = f"No edit found with edit_id: {edit_id}"

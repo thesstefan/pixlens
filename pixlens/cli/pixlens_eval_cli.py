@@ -50,7 +50,7 @@ def main() -> None:
         args.prompt, image
     )
 
-    image_source = np.asarray(Image.open(image).convert("RGB"))
+    image_source = np.asarray(image)
 
     annotated_image = annotation.annotate_detection_output(
         image_source, detection_output

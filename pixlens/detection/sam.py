@@ -77,13 +77,13 @@ class BBoxSamPredictor(interfaces.BBoxSegmentationModel):
         bbox: torch.Tensor,
         image: Image.Image,
     ) -> interfaces.SegmentationOutput:
-        image = np.asarray(image).convert("RGB"))
+        image_array = np.asarray(image)
 
-        self.sam_predictor.set_image(image)
+        self.sam_predictor.set_image(image_array)
 
         transformed_boxes = self.sam_predictor.transform.apply_boxes_torch(
             bbox,
-            image.shape[:2],
+            image_array.shape[:2],
         ).to(self.sam_predictor.device)
 
         masks, logits, _ = self.sam_predictor.predict_torch(
