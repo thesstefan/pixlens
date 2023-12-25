@@ -1,7 +1,7 @@
-from pixlens.evaluation.interfaces import EditType, Edit
+from pixlens.evaluation.interfaces import Edit, EditType
 
 directions_and_instructions = ["add", "to", "right", "left", "below"]
-edits = [edit for edit in EditType]
+edits = list(EditType)
 new_object = ["object_addition", "object_replacement", "background"]
 new_object_with_indication = ["alter_parts", "positional_addition"]
 same_object = [

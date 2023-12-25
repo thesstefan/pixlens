@@ -7,7 +7,7 @@ import pandera as pa
 from pandera import Column
 
 from pixlens.editing.interfaces import PromptableImageEditingModel
-from pixlens.evaluation import interfaces
+from pixlens.evaluation.interfaces import Edit, EditType
 from pixlens.utils.utils import get_cache_dir
 
 
@@ -100,15 +100,15 @@ class PreprocessingPipeline:
         self.edit_dataset.to_csv(pandas_path, index=False)
 
     @staticmethod
-    def get_edit(edit_id: int, edit_dataset: pd.DataFrame) -> interfaces.Edit:
+    def get_edit(edit_id: int, edit_dataset: pd.DataFrame) -> Edit:
         if edit_id in edit_dataset.index:
             edit = edit_dataset.loc[edit_id]
-            return interfaces.Edit(
+            return Edit(
                 edit_id=edit["edit_id"],
                 image_id=edit["image_id"],
                 image_path=edit["input_image_path"],
                 category=edit["class"],
-                edit_type=interfaces.EditType(edit["edit_type"]),
+                edit_type=EditType(edit["edit_type"]),
                 from_attribute=edit["from_attribute"],
                 to_attribute=edit["to_attribute"],
             )
@@ -136,7 +136,7 @@ class PreprocessingPipeline:
                 model.edit(prompt, edit.image_path)
 
     @staticmethod
-    def generate_prompt(edit: interfaces.Edit) -> str:
+    def generate_prompt(edit: Edit) -> str:
         prompt_formats = {
             "object_addition": "Add a {to} to the image",
             "positional_addition": "Add a {to} the {category}",
