@@ -1,12 +1,12 @@
 import functools
-import os
 import pathlib
 import shutil
 import typing
+
+import PIL
 import platformdirs
 import requests
 import tqdm
-import PIL
 from PIL import Image
 
 CACHE_DIR_NAME = "pixlens"
@@ -71,8 +71,10 @@ def get_basename_dict(path_dict: dict[T, str]) -> dict[T, str]:
     return {key: pathlib.Path(path).name for key, path in path_dict.items()}
 
 
-def download_image(url) -> Image.Image:
-    image = PIL.Image.open(requests.get(url, stream=True).raw)
+def download_image(url: str) -> Image.Image:
+    image = PIL.Image.open(
+        requests.get(url, stream=True, timeout=REQUEST_TIMEOUT).raw,
+    )
     image = PIL.ImageOps.exif_transpose(image)
     image = image.convert("RGB")
     return image
@@ -80,7 +82,7 @@ def download_image(url) -> Image.Image:
 
 def get_image_extension(
     image_path: pathlib.Path,
-) -> typing.Optional[str]:
+) -> str | None:
     # If there is already an extension, return it
     if image_path.suffix:
         return image_path.suffix
