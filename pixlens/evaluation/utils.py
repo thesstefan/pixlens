@@ -77,10 +77,18 @@ def compute_iou(tensor1: torch.Tensor, tensor2: torch.Tensor) -> float:
 
 
 def is_small_area_within_big_area(
-    small_area: torch.Tensor,
-    big_area: torch.Tensor,
+    input_mask: torch.Tensor,
+    edited_mask: torch.Tensor,
     confidence_threshold: float = 0.9,
 ) -> bool:
+    # infer small and big area from input and edited masks
+    if compute_area(input_mask) > compute_area(edited_mask):
+        small_area = edited_mask
+        big_area = input_mask
+    else:
+        small_area = input_mask
+        big_area = edited_mask
+
     if small_area.shape != big_area.shape:
         raise ValueError(SHAPE_DIFFERENCE_MSG)
     intersection = torch.logical_and(small_area, big_area).sum()
