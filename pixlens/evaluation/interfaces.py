@@ -58,6 +58,13 @@ class Edit:
 
 
 @dataclasses.dataclass
+class UpdatedStrings:
+    category: str
+    from_attribute: str | None
+    to_attribute: str | None
+
+
+@dataclasses.dataclass
 class EvaluationInput:
     input_image: Image.Image
     edited_image: Image.Image
@@ -65,6 +72,7 @@ class EvaluationInput:
     input_detection_segmentation_result: DetectionSegmentationResult
     edited_detection_segmentation_result: DetectionSegmentationResult
     edit: Edit
+    updated_strings: UpdatedStrings
 
 
 class OperationEvaluation(Protocol):
