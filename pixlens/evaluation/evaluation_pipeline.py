@@ -7,7 +7,7 @@ from PIL import Image
 from pixlens.detection import interfaces as detection_interfaces
 from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation import interfaces
-from pixlens.evaluation.edit_dataset import PreprocessingPipeline
+from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 from pixlens.evaluation.utils import (
     get_prompt_for_input_detection,
     get_prompt_for_output_detection,
@@ -132,6 +132,7 @@ class EvaluationPipeline:
         raise NotImplementedError
 
     def get_score_for_size_edit(
-        self, evaluation_input: interfaces.EvaluationInput
+        self,
+        evaluation_input: interfaces.EvaluationInput,
     ) -> float:
         raise NotImplementedError
