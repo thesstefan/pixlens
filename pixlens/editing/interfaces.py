@@ -1,7 +1,7 @@
 import logging
-from abc import abstractmethod, ABC
-from typing import Protocol
+from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Protocol
 
 from PIL import Image
 
@@ -26,7 +26,9 @@ class PromptableImageEditingModel(Model, ImageEditor):
         ...
 
     def check_if_image_exists(
-        self, prompt: str, image_path: str
+        self,
+        prompt: str,
+        image_path: str,
     ) -> tuple[bool, Path]:
         """Check if the image exists and return a tuple of (bool, path).
 
@@ -43,7 +45,8 @@ class PromptableImageEditingModel(Model, ImageEditor):
     # TODO: fix this, check if image exists and saving should be done somewhere else
     def edit(self, prompt: str, image_path: str) -> Image.Image:
         image_exists_bool, path_of_image = self.check_if_image_exists(
-            prompt, image_path
+            prompt,
+            image_path,
         )
         if image_exists_bool:
             logging.info("Image already exists, loading...")
