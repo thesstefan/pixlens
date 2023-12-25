@@ -10,6 +10,7 @@ from pixlens.evaluation.evaluation_pipeline import (
     EvaluationPipeline,
 )
 from pixlens.evaluation.operations.size import SizeEdit
+from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
@@ -74,7 +75,7 @@ def main() -> None:
     # Do as you please with the evaluation_input
     # For example, you can do:
     print(evaluation_input.prompt)  # noqa: T201
-    score = SizeEdit().evaluate_edit(evaluation_input)
+    score = ObjectAddition().evaluate_edit(evaluation_input)
     print(score)  # noqa: T201
 
 

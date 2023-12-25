@@ -12,5 +12,9 @@ class ObjectAddition(evaluation_interfaces.OperationEvaluation):
         edit_segmentation = evaluation_input.edited_detection_segmentation_result.segmentation_output
         input_detection = evaluation_input.input_detection_segmentation_result.detection_output
         edit_detection = evaluation_input.edited_detection_segmentation_result.detection_output
+        from_attribute, to_attribute = (
+            evaluation_input.updated_strings.from_attribute,
+            evaluation_input.updated_strings.to_attribute,
+        )
 
         return evaluation_interfaces.EvaluationOutput(score=0.0)
