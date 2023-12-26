@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Protocol
 
+import torch
 from PIL import Image
 
 from pixlens.utils import utils
@@ -57,3 +58,7 @@ class PromptableImageEditingModel(Model, ImageEditor):
             path_of_image.parent.mkdir(parents=True, exist_ok=True)
             edited_image.save(path_of_image)
         return edited_image
+
+    @abstractmethod
+    def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
+        ...

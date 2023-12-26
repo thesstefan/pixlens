@@ -95,3 +95,15 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         )
         output_images: list[Image.Image] = output.images
         return output_images[0]
+
+    def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
+        input_image = self.prepare_image(image_path)
+        output = self.model(
+            prompt,
+            input_image,
+            num_inference_steps=100,
+            image_guidance_scale=1.0,
+            output_type="latent",
+        )
+        output_images: list[torch.Tensor] = output.images
+        return output_images[0]

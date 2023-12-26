@@ -70,3 +70,15 @@ class Pix2pix(interfaces.PromptableImageEditingModel):
         )  # TODO: controlnet this is not detected as a mistake.
         output_images: list[Image.Image] = output.images
         return output_images[0]
+
+    def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
+        input_image = Image.open(image_path)
+        output = self.model(
+            prompt,
+            input_image,
+            num_inference_steps=self.num_inference_steps,
+            image_guidance_scale=self.image_guidance_scale,
+            output_type="latent",
+        )
+        output_images: list[torch.Tensor] = output.images
+        return output_images[0]
