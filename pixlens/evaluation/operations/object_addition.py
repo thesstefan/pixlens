@@ -1,7 +1,5 @@
-import torch
-
-from pixlens.evaluation import interfaces as evaluation_interfaces
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
+from pixlens.evaluation import interfaces as evaluation_interfaces
 
 
 class ObjectAddition(evaluation_interfaces.OperationEvaluation):
