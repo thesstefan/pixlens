@@ -1,6 +1,7 @@
 import torch
 
 from pixlens.evaluation import interfaces as evaluation_interfaces
+from pixlens.detection.utils import get_detection_segmentation_result_of_target
 
 
 class ObjectAddition(evaluation_interfaces.OperationEvaluation):
@@ -8,13 +9,31 @@ class ObjectAddition(evaluation_interfaces.OperationEvaluation):
         self,
         evaluation_input: evaluation_interfaces.EvaluationInput,
     ) -> evaluation_interfaces.EvaluationOutput:
-        input_segmentation = evaluation_input.input_detection_segmentation_result.segmentation_output
-        edit_segmentation = evaluation_input.edited_detection_segmentation_result.segmentation_output
-        input_detection = evaluation_input.input_detection_segmentation_result.detection_output
-        edit_detection = evaluation_input.edited_detection_segmentation_result.detection_output
-        from_attribute, to_attribute = (
-            evaluation_input.updated_strings.from_attribute,
-            evaluation_input.updated_strings.to_attribute,
+        to_attribute = evaluation_input.updated_strings.to_attribute
+        is_to_in_edited = (
+            1
+            if get_detection_segmentation_result_of_target(
+                evaluation_input.edited_detection_segmentation_result,
+                to_attribute,
+            ).detection_output.logits
+            else 0
+        )
+        is_category_in_edited = (
+            1
+            if get_detection_segmentation_result_of_target(
+                evaluation_input.edited_detection_segmentation_result,
+                evaluation_input.updated_strings.category,
+            ).detection_output.logits
+            else 0
+        )
+        is_category_in_input = bool(
+            get_detection_segmentation_result_of_target(
+                evaluation_input.input_detection_segmentation_result,
+                evaluation_input.updated_strings.category,
+            ).detection_output.logits,
         )
 
-        return evaluation_interfaces.EvaluationOutput(score=0.0)
+        return evaluation_interfaces.EvaluationOutput(
+            score=is_category_in_edited * is_to_in_edited,
+            success=is_category_in_input,
+        )
