@@ -13,6 +13,7 @@ from PIL import Image
 from pixlens.editing import interfaces
 from pixlens.editing.utils import log_model_if_not_in_cache
 from pixlens.utils import utils
+from pixlens.utils.yaml_constructible import YamlConstructible
 
 
 class ControlNetType(enum.StrEnum):
@@ -46,16 +47,18 @@ def load_controlnet(
     return pipe
 
 
-class ControlNet(interfaces.PromptableImageEditingModel):
-    device: torch.device | None
-
+class ControlNet(interfaces.PromptableImageEditingModel, YamlConstructible):
     def __init__(
         self,
         pix2pix_type: ControlNetType,
         device: torch.device | None = None,
+        num_inference_steps: int = 100,
+        image_guidance_scale: float = 1.0,
     ) -> None:
         self.device = device
         self.model = load_controlnet(pix2pix_type, device)
+        self.num_inference_steps = num_inference_steps
+        self.image_guidance_scale = image_guidance_scale
 
     def prepare_image(self, image_path: str) -> Image.Image:
         image = Image.open(image_path)
@@ -72,14 +75,11 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         self,
         prompt: str,
         image_path: str,
-        *,
-        num_inference_steps: int = 100,
-        image_guidance_scale: float = 1.0,
     ) -> Image.Image:
         input_image = self.prepare_image(image_path)
         return self.model(
             prompt,
             input_image,
-            num_inference_steps=num_inference_steps,
-            image_guidance_scale=image_guidance_scale,
+            num_inference_steps=self.num_inference_steps,
+            image_guidance_scale=self.image_guidance_scale,
         ).images[0]
