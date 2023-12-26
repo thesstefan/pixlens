@@ -35,8 +35,8 @@ class ObjectAddition(evaluation_interfaces.OperationEvaluation):
                 evaluation_input.updated_strings.category,
             ).detection_output.logits,
         )
-
+        score = is_to_in_edited * (is_to_in_edited + is_category_in_edited) / 2
         return evaluation_interfaces.EvaluationOutput(
-            score=is_category_in_edited * is_to_in_edited,
+            score=score,
             success=is_category_in_input,
         )
