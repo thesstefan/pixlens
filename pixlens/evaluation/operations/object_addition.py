@@ -8,6 +8,11 @@ class ObjectAddition(evaluation_interfaces.OperationEvaluation):
         evaluation_input: evaluation_interfaces.EvaluationInput,
     ) -> evaluation_interfaces.EvaluationOutput:
         to_attribute = evaluation_input.updated_strings.to_attribute
+        if to_attribute is None:
+            return evaluation_interfaces.EvaluationOutput(
+                score=0,
+                success=False,
+            )
         is_to_in_edited = (
             1
             if get_detection_segmentation_result_of_target(
