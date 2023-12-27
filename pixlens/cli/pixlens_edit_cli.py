@@ -1,12 +1,12 @@
 import argparse
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import torch
 
 from pixlens.editing import controlnet, pix2pix
 from pixlens.utils import utils
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pixlens.editing.interfaces import PromptableImageEditingModel

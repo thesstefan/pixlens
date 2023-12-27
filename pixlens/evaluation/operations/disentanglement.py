@@ -11,7 +11,7 @@ from pixlens.utils.utils import get_cache_dir
 class Disentanglement:
     def __init__(self, json_file_path: str, image_data_path: str) -> None:
         self.dataset: pd.DataFrame = pd.DataFrame(
-            columns=["z_0", "z_1", "z_2", "z_neg", "z_y"],
+            columns=["attribute", "z_0", "z_1", "z_2", "z_neg", "z_y"],
         )
         self.model: editing_interfaces.PromptableImageEditingModel
         self.json_file_path: Path = Path(json_file_path)
@@ -24,11 +24,14 @@ class Disentanglement:
     ) -> None:
         self.init_model(model)
 
+        ç
+        self.generate_dataset()
+
     def check_if_pd_dataset_existent(self) -> tuple[str, bool]:
         cache_dir = get_cache_dir()
         pandas_path = (
             cache_dir
-            / Path(self.model.get_model_name())
+            / Path("models--" + self.model.get_model_name())
             / "disentanglement.csv"
         )
         return str(pandas_path), pandas_path.exists()
@@ -39,9 +42,11 @@ class Disentanglement:
             self.dataset = pd.read_csv(pandas_path)
         for image_class_dir in self.image_data_path.iterdir():
             if image_class_dir.is_dir():
-                for image_file in image_class_dir.iterdir():
-                    if image_file.is_file():
-                        self.generate_all_latents_for_image(image_file)
+                image_file = next(
+                    image_class_dir.iterdir()
+                )  # Let's do only one image for now per class
+                if image_file.is_file():
+                    self.generate_all_latents_for_image(image_file)
         self.dataset.to_csv(pandas_path)
 
     def generate_all_latents_for_image(self, image_path: Path) -> None:
@@ -88,6 +93,7 @@ class Disentanglement:
 
                 data_to_append.append(
                     {
+                        "attribute": attribute,
                         "z_0": z_0.flatten(),
                         "z_1": z_1.flatten(),
                         "z_2": z_2.flatten(),

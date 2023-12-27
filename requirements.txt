@@ -1,5 +1,5 @@
 pytorch==2.1.2 #2.1.2 Needed for xformers
-pytorch-cuda==12.3
+pytorch-cuda==12.1
 #torchvision==0.16.0
 groundingdino-py==0.4.0
 segment-anything==1.0

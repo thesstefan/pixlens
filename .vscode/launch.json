@@ -90,6 +90,22 @@
             "stopOnEntry": false,
             "jinja": false,
             "justMyCode": true
+        },
+        {
+            "name": "Disentanglement Evaluation",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_disentanglement_cli.py",
+            "args": [
+                "--editing-model",
+                "InstructPix2Pix" // Replace with the desired editing model name
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
         }
     ]
 }

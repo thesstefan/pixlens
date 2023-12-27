@@ -1,0 +1,22 @@
+{
+    "objects": [
+        "chair",
+        "table"
+    ],
+    "textures": [
+        "steel",
+        "wood"
+    ],
+    "sizes": [
+        "big",
+        "small"
+    ],
+    "colors": [
+        "red",
+        "blue"
+    ],
+    "styles": [
+        "vintage",
+        "modern"
+    ]
+}
