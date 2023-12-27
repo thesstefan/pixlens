@@ -59,13 +59,15 @@ class Disentanglement:
                 prompty = self.get_prompt(o1, a1, attribute)
                 z_1 = (
                     self.model.get_latent(
-                        prompt=prompt1, image_path=str_img_path
+                        prompt=prompt1,
+                        image_path=str_img_path,
                     )
                     - z_0
                 )
                 z_2 = (
                     self.model.get_latent(
-                        prompt=prompt2, image_path=str_img_path
+                        prompt=prompt2,
+                        image_path=str_img_path,
                     )
                     - z_0
                 )
@@ -78,7 +80,8 @@ class Disentanglement:
                 )
                 z_y = (
                     self.model.get_latent(
-                        prompt=prompty, image_path=str_img_path
+                        prompt=prompty,
+                        image_path=str_img_path,
                     )
                     - z_0
                 )
