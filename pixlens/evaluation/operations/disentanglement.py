@@ -46,7 +46,8 @@ class Disentanglement:
 
     def generate_all_latents_for_image(self, image_path: Path) -> None:
         data_to_append = []
-        z_0 = self.model.get_latent(prompt="", image_path=str(image_path))
+        str_img_path = str(image_path)
+        z_0 = self.model.get_latent(prompt="", image_path=str_img_path)
         for attribute in list(self.data_attributes.keys()):
             for o0, a0, o1, a1 in self.generate_ordered_unique_combinations(
                 self.obejcts,
@@ -57,22 +58,28 @@ class Disentanglement:
                 promptneg = self.get_prompt(o0, a0, attribute)
                 prompty = self.get_prompt(o1, a1, attribute)
                 z_1 = (
-                    self.model.get_latent(prompt=prompt1, image_path=image_path)
+                    self.model.get_latent(
+                        prompt=prompt1, image_path=str_img_path
+                    )
                     - z_0
                 )
                 z_2 = (
-                    self.model.get_latent(prompt=prompt2, image_path=image_path)
+                    self.model.get_latent(
+                        prompt=prompt2, image_path=str_img_path
+                    )
                     - z_0
                 )
                 z_neg = (
                     self.model.get_latent(
                         prompt=promptneg,
-                        image_path=image_path,
+                        image_path=str_img_path,
                     )
                     - z_0
                 )
                 z_y = (
-                    self.model.get_latent(prompt=prompty, image_path=image_path)
+                    self.model.get_latent(
+                        prompt=prompty, image_path=str_img_path
+                    )
                     - z_0
                 )
 
