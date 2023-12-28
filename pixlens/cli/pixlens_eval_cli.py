@@ -1,6 +1,5 @@
 import argparse
 import logging
-from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
@@ -9,8 +8,6 @@ from PIL import Image
 from pixlens.detection import grounded_sam, owl_vit_sam
 from pixlens.visualization import annotation
 
-if TYPE_CHECKING:
-    from pixlens.detection.interfaces import PromptDetectAndBBoxSegmentModel
 parser = argparse.ArgumentParser(
     description="PixLens - Evaluate & understand image editing models",
 )
@@ -53,7 +50,7 @@ def main() -> None:
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logging.info(f"Using device: {device}")
+    logging.info(f"Using device: {device}")  # noqa: G004
     image = Image.open(args.image).convert("RGB")
     model = NAME_TO_MODEL[args.model].from_yaml(args.model_params_yaml)
     segmentation_output, detection_output = model.detect_and_segment(
