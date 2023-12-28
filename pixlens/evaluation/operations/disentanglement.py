@@ -3,6 +3,7 @@ from itertools import permutations
 from pathlib import Path
 
 import pandas as pd
+from PIL import Image
 
 from pixlens.editing import interfaces as editing_interfaces
 from pixlens.utils.utils import get_cache_dir
@@ -23,8 +24,6 @@ class Disentanglement:
         model: editing_interfaces.PromptableImageEditingModel,
     ) -> None:
         self.init_model(model)
-
-        ç
         self.generate_dataset()
 
     def check_if_pd_dataset_existent(self) -> tuple[str, bool]:
@@ -51,7 +50,12 @@ class Disentanglement:
 
     def generate_all_latents_for_image(self, image_path: Path) -> None:
         data_to_append = []
-        str_img_path = str(image_path)
+        cropped_image = self.crop_image_to_min_dimensions(
+            image_path,
+        )  # TODO: this should be done somewhere else, the load image -> crop -> save -> delete. It would be more efficient to crop the image inside the model.edit() maybe?
+        cropped_path = image_path.parent / "cropped.png"
+        cropped_image.save(cropped_path)
+        str_img_path = str(cropped_path)
         z_0 = self.model.get_latent(prompt="", image_path=str_img_path)
         for attribute in list(self.data_attributes.keys()):
             for o0, a0, o1, a1 in self.generate_ordered_unique_combinations(
@@ -67,30 +71,33 @@ class Disentanglement:
                         prompt=prompt1,
                         image_path=str_img_path,
                     )
-                    - z_0
+                    # - z_0
                 )
                 z_2 = (
                     self.model.get_latent(
                         prompt=prompt2,
                         image_path=str_img_path,
                     )
-                    - z_0
+                    # - z_0
                 )
                 z_neg = (
                     self.model.get_latent(
                         prompt=promptneg,
                         image_path=str_img_path,
                     )
-                    - z_0
+                    # - z_0
                 )
                 z_y = (
                     self.model.get_latent(
                         prompt=prompty,
                         image_path=str_img_path,
                     )
-                    - z_0
+                    # - z_0
                 )
-
+                self.model.edit(prompt=prompt1, image_path=str_img_path)
+                self.model.edit(prompt=prompt2, image_path=str_img_path)
+                self.model.edit(prompt=promptneg, image_path=str_img_path)
+                self.model.edit(prompt=prompty, image_path=str_img_path)
                 data_to_append.append(
                     {
                         "attribute": attribute,
@@ -101,6 +108,7 @@ class Disentanglement:
                         "z_y": z_y.flatten(),
                     },
                 )
+        cropped_path.unlink()
         self.dataset = pd.concat(
             [self.dataset, pd.DataFrame(data_to_append)],
             ignore_index=True,
@@ -135,4 +143,31 @@ class Disentanglement:
 
     @staticmethod
     def get_prompt(object_: str, attribute: str, attribute_type: str) -> str:
-        return f"Add object {object_} with {attribute} {attribute_type}"
+        return f"Add {object_} with {attribute_type} {attribute}"
+
+    def crop_image_to_min_dimensions(
+        self,
+        image_path: Path,
+        min_width: int = 320,  # min of widths from editval
+        min_height: int = 186,  # min of heights from editval
+    ) -> Image.Image:
+        with Image.open(image_path) as img:
+            width, height = img.size
+            left = int((width - min_width) / 2)
+            top = int((height - min_height) / 2)
+            right = int((width + min_width) / 2)
+            bottom = int((height + min_height) / 2)
+
+            # Crop the center of the image
+            return img.crop((left, top, right, bottom))
+
+
+import torch
+from pixlens.editing.pix2pix import Pix2pix
+from pixlens.editing.controlnet import ControlNet
+
+disentangle = Disentanglement(
+    json_file_path="objects_textures_sizes_colors_styles_test.json",
+    image_data_path="editval_instances",
+)
+disentangle.evaluate_model(Pix2pix(device=torch.device("cuda")))
