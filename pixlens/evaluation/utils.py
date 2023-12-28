@@ -4,7 +4,7 @@ import torch
 from PIL import Image, ImageColor
 
 # import delta e color similarity function
-from skimage.color import delta_e_cie2000
+from skimage.color import deltaE_ciede2000
 
 from pixlens.evaluation.interfaces import Edit, EditType
 
@@ -144,7 +144,7 @@ def color_change_applied_correctly(
     # required by the delta_e_cie2000 function
     closest_colors = sorted(
         ImageColor.colormap.items(),
-        key=lambda color: delta_e_cie2000(
+        key=lambda color: deltaE_ciede2000(
             rgb_to_lab(ImageColor.getrgb(color[1])),
             dominant_color,
         ),
