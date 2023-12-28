@@ -3,6 +3,7 @@ from collections import Counter
 import colorspacious as cs
 import numpy as np
 import torch
+import torch.nn.functional as F
 from PIL import Image, ImageColor
 
 # import delta e color similarity function
@@ -20,7 +21,6 @@ same_object = [
     if edit.type_name not in new_object + new_object_with_indication
 ]
 tol = 1e-6
-SHAPE_DIFFERENCE_MSG = "Input and output shapes must be the same shape"
 DIVDING_BY_ZERO_MSG = "Cannot divide by zero"
 
 
@@ -77,8 +77,6 @@ def compute_area_ratio(
     numerator: torch.Tensor,
     denominator: torch.Tensor,
 ) -> float:
-    if numerator.shape != denominator.shape:
-        raise ValueError(SHAPE_DIFFERENCE_MSG)
     area1 = compute_area(numerator)
     area2 = compute_area(denominator)
     if area2 < tol:
@@ -87,8 +85,6 @@ def compute_area_ratio(
 
 
 def compute_iou(tensor1: torch.Tensor, tensor2: torch.Tensor) -> float:
-    if tensor1.shape != tensor2.shape:
-        raise ValueError(SHAPE_DIFFERENCE_MSG)
     intersection = torch.logical_and(tensor1, tensor2).sum()
     union = torch.logical_or(tensor1, tensor2).sum()
     iou = intersection.float() / union.float()
@@ -101,15 +97,22 @@ def is_small_area_within_big_area(
     confidence_threshold: float = 0.9,
 ) -> bool:
     # infer small and big area from input and edited masks
+    # SD doesn't preserve sizes, rounds up to multiples of 2^n for a given n.
+    if input_mask.size(1) > edited_mask.size(1):
+        height_pad = input_mask.size(1) - edited_mask.size(1)
+        # Pad the bottom of the mask
+        edited_mask = F.pad(edited_mask, (0, 0, 0, height_pad), value=False)
+
+    if input_mask.size(2) > edited_mask.size(2):
+        width_pad = input_mask.size(2) - edited_mask.size(2)
+        # Pad the right side of the mask
+        edited_mask = F.pad(edited_mask, (0, width_pad, 0, 0), value=False)
     if compute_area(input_mask) > compute_area(edited_mask):
         small_area = edited_mask
         big_area = input_mask
     else:
         small_area = input_mask
         big_area = edited_mask
-
-    if small_area.shape != big_area.shape:
-        raise ValueError(SHAPE_DIFFERENCE_MSG)
     intersection = torch.logical_and(small_area, big_area).sum()
     return intersection.item() / compute_area(small_area) > confidence_threshold
 

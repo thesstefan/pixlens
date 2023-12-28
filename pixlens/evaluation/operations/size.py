@@ -45,7 +45,7 @@ class SizeEdit(evaluation_interfaces.OperationEvaluation):
                 score=-1.0,
                 success=False,
             )  # Object wasn't even present at input
-        if edit_segmentation.masks:
+        if edit_segmentation.masks.any():
             # Code continues here...
             # 2 - Check if resize is small or big and compute area difference
             transformation = evaluation_input.edit.to_attribute

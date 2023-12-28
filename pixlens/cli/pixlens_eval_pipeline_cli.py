@@ -13,6 +13,7 @@ from pixlens.evaluation.evaluation_pipeline import (
 from pixlens.evaluation.interfaces import EditType
 from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
+from pixlens.evaluation.operations.size import SizeEdit
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
@@ -97,18 +98,18 @@ def main() -> None:
             args.edit_type,
         )
         # get first edit from the all_edits_by_type dataframe
-        random_edit_record = all_edits_by_type.iloc[[1]]
-        # random_edit_record = all_edits_by_type.sample(n=1)  # noqa: ERA001
+        random_edit_record = all_edits_by_type.iloc[[4]]
+        #     # random_edit_record = all_edits_by_type.sample(n=1)  # noqa: ERA001
         edit = preprocessing_pipe.get_edit(
-            random_edit_record["edit_id"].astype(int).to_numpy()[0],
+            (random_edit_record["edit_id"].astype(int).to_numpy()[0]),
             evaluation_pipeline.edit_dataset,
         )
+        #
     else:
         edit = preprocessing_pipe.get_edit(
             args.edit_id,
             evaluation_pipeline.edit_dataset,
         )
-
     logging.info("Running edit: %s", edit.edit_id)
     logging.info("Edit type: %s", edit.edit_type)
     logging.info("Image path: %s", edit.image_path)
@@ -132,9 +133,15 @@ def main() -> None:
         )
     elif edit.edit_type.type_name == "color":
         evaluation_output = ColorEdit().evaluate_edit(evaluation_input)
+    elif edit.edit_type.type_name == "size":
+        evaluation_output = SizeEdit().evaluate_edit(evaluation_input)
 
     # print the evaluation score if successful otherwise print evaluation failed
     if evaluation_output.success:
+        if evaluation_output.score > 0:
+            logging.info("Good sample!")
+            logging.info(evaluation_output.score)
+            logging.info(edit.image_path)
         logging.info(evaluation_output.score)
     else:
         logging.info("Evaluation failed")

@@ -119,5 +119,25 @@
             "jinja": false,
             "justMyCode": true
         },
+        {
+            "name": "Debug PixLens Evaluation Pipeline - Size",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_pipeline_cli.py",
+            "args": [
+                "--editing-model",
+                "pix2pix", // Replace with the desired editing model name
+                "--detection-model",
+                "groundedsam", // Replace with the desired detection model name
+                "--edit-type",
+                "size"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        },
     ]
 }
