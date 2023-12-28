@@ -1,15 +1,8 @@
 import argparse
-import logging
 from pathlib import Path
-
-import torch
 
 from pixlens.editing import controlnet, pix2pix
 from pixlens.utils import utils
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from pixlens.editing.interfaces import PromptableImageEditingModel
 
 parser = argparse.ArgumentParser(
     description="PixLens - Evaluate & understand image editing models",
@@ -43,7 +36,8 @@ parser.add_argument(
 )
 
 NAME_TO_MODEL: dict[
-    str, type[controlnet.ControlNet] | type[pix2pix.Pix2pix]
+    str,
+    type[controlnet.ControlNet] | type[pix2pix.Pix2pix],
 ] = {
     "ControlNet": controlnet.ControlNet,
     "InstructPix2Pix": pix2pix.Pix2pix,
