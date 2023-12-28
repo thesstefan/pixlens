@@ -12,39 +12,44 @@ parser = argparse.ArgumentParser(
     description="PixLens - Evaluate & understand image editing models"
 )
 parser.add_argument(
-    "--object-detection",
+    "--model",
     type=str,
     default="GroundedSAM",
-    help=("Detector, either GroundedSAM or Owl-ViT+SAM"),
+    help=("Detect+Segment model, GroundedSAM or OwlViTSAM"),
 )
-parser.add_argument("--out", type=str, help=("Path of output annotated image"))
-parser.add_argument("--image", type=str, help=("Image to detect objects in"))
+parser.add_argument(
+    "--out_image",
+    type=str,
+    help=("Path of output annotated image"),
+    required=True,
+)
+parser.add_argument(
+    "--image",
+    type=str,
+    help=("Path of image to detect objects in"),
+    required=True,
+)
 parser.add_argument("--prompt", type=str, help=("Prompt to guide detection"))
 parser.add_argument(
-    "--detection-threshold",
-    type=float,
-    default=0.3,
-    help=("Detection threshold for object detection"),
+    "--model_params_yaml",
+    type=str,
+    help=("Path to YAML containing model params"),
+    required=True,
 )
+
+NAME_TO_MODEL: dict[
+    str,
+    type[grounded_sam.GroundedSAM] | type[owl_vit_sam.OwlViTSAM],
+] = {
+    "GroundedSAM": grounded_sam.GroundedSAM,
+    "OwlViTSAM": owl_vit_sam.OwlViTSAM,
+}
 
 
 def main() -> None:
     args = parser.parse_args()
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logging.info(f"Using device: {device}")
-    if args.object_detection == "GroundedSAM":
-        model = grounded_sam.GroundedSAM(
-            device=device,
-            detection_confidence_threshold=args.detection_threshold,
-        )
-    elif args.object_detection == "Owl-Vit+SAM":
-        model = owl_vit_sam.OwlViTSAM(
-            device=device,
-            detection_confidence_threshold=args.detection_threshold,
-        )
-    else:
-        raise NotImplementedError
+    model = NAME_TO_MODEL[args.model].from_yaml(args.model_params_yaml)
     segmentation_output, detection_output = model.detect_and_segment(
         args.prompt, args.image
     )

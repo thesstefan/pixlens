@@ -7,4 +7,5 @@ transformers==4.36.0
 scipy==1.11.4
 diffusers==0.24.0
 accelerate==0.25.0
-xformers==0.0.23
+#xformers==0.0.23
+pyyaml==6.0.1

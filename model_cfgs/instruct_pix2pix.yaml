@@ -1,0 +1,5 @@
+class: Pix2pix 
+params:
+    pix2pix_type: timbrooks/instruct-pix2pix
+    num_inference_steps: 100
+    image_guidance_scale: 1.0
