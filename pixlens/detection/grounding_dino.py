@@ -3,9 +3,12 @@ import logging
 import pathlib
 from typing import Any
 
+import groundingdino.datasets.transforms as T  # noqa: N812
+import numpy as np
 import numpy.typing as npt
 import torch
 from groundingdino.util import box_ops, inference
+from PIL import Image
 
 from pixlens.detection import interfaces
 from pixlens.utils import utils
@@ -98,6 +101,21 @@ def load_grounding_dino(
     )
 
 
+def load_image_from_pil(
+    image_source: Image.Image,
+) -> tuple[np.array, torch.Tensor]:
+    transform = T.Compose(
+        [
+            T.RandomResize([800], max_size=1333),
+            T.ToTensor(),
+            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ],
+    )
+    image = np.asarray(image_source)
+    image_transformed, _ = transform(image_source, None)
+    return image, image_transformed
+
+
 class GroundingDINO(interfaces.PromptableDetectionModel):
     grounding_dino_model: torch.nn.Module
 
@@ -135,13 +153,15 @@ class GroundingDINO(interfaces.PromptableDetectionModel):
     def detect(
         self,
         prompt: str,
-        image_path: str,
+        image: Image.Image,
     ) -> interfaces.DetectionOutput:
-        image_source, image = inference.load_image(image_path)
+        image_source, image_transformed = load_image_from_pil(
+            image,
+        )  # inference.load_image(image)
 
         boxes, logits, phrases = inference.predict(
             model=self.grounding_dino_model,
-            image=image,
+            image=image_transformed,
             caption=prompt,
             box_threshold=self.box_threshold,
             text_threshold=self.text_threshold,

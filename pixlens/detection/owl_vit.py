@@ -80,9 +80,8 @@ class OwlViT(interfaces.PromptableDetectionModel):
     def detect(
         self,
         prompt: str,
-        image_path: str,
+        image: Image.Image,
     ) -> interfaces.DetectionOutput:
-        image = Image.open(image_path)
         prompts = prompt.split(",")
         inputs = self.processor(
             text=prompts,
