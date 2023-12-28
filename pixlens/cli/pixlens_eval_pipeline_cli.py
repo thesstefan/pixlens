@@ -100,7 +100,7 @@ def main() -> None:
         random_edit_record = all_edits_by_type.iloc[[1]]
         # random_edit_record = all_edits_by_type.sample(n=1)  # noqa: ERA001
         edit = preprocessing_pipe.get_edit(
-            random_edit_record["edit_id"].astype(int).values[0],
+            random_edit_record["edit_id"].astype(int).to_numpy()[0],
             evaluation_pipeline.edit_dataset,
         )
     else:
