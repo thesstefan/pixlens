@@ -72,7 +72,7 @@
             ]
         },
         {
-            "name": "Debug PixLens Evaluation Pipeline",
+            "name": "Debug PixLens Evaluation Pipeline - Default",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_pipeline_cli.py",
@@ -90,6 +90,26 @@
             "stopOnEntry": false,
             "jinja": false,
             "justMyCode": true
-        }
+        },
+        {
+            "name": "Debug PixLens Evaluation Pipeline - Color",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_pipeline_cli.py",
+            "args": [
+                "--editing-model",
+                "pix2pix", // Replace with the desired editing model name
+                "--detection-model",
+                "groundedsam", // Replace with the desired detection model name
+                "--edit-type",
+                "color"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        },
     ]
 }

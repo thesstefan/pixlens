@@ -1,4 +1,5 @@
 import argparse
+import logging
 
 import torch
 
@@ -9,16 +10,16 @@ from pixlens.editing.pix2pix import Pix2pix
 from pixlens.evaluation.evaluation_pipeline import (
     EvaluationPipeline,
 )
-
+from pixlens.evaluation.interfaces import EditType
+from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
 parser.add_argument(
     "--edit-id",
-    default=0,
     type=int,
-    required=True,
+    required=False,
     help="ID of the edit to be evaluated",
 )
 parser.add_argument(
@@ -33,12 +34,37 @@ parser.add_argument(
     required=True,
     help="Name of the detection model to use",
 )
-# Add other necessary arguments if needed
+# add edit type argument as a string
+parser.add_argument(
+    "--edit-type",
+    type=str,
+    required=False,
+    help="Name of the edit type to evaluate",
+)
+
+
+# check arguments function. Check that either edit type or edit id is provided
+# and that the edit type is valid by importing the edit type class from
+# pixlens/evaluation/interfaces.py and checking that the edit type is in the
+# class
+#
+def check_args(args: argparse.Namespace) -> None:
+    if args.edit_id is None and args.edit_type is None:
+        error_msg = "Either edit id or edit type must be provided"
+        raise ValueError(error_msg) from None
+    if args.edit_type is not None:
+        try:
+            EditType.from_type_name(args.edit_type)
+        except ValueError as err:
+            error_msg = "Invalid edit type provided"
+            raise ValueError(error_msg) from err
 
 
 def main() -> None:
     args = parser.parse_args()
-    device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    check_args(args)
 
     # Run the Preprocessing Pipeline (if needed)
     preprocessing_pipe = PreprocessingPipeline(
@@ -64,19 +90,54 @@ def main() -> None:
     evaluation_pipeline.init_detection_model(detection_model)
 
     # Get the edit object from the dataset using the provided edit ID
-    edit = preprocessing_pipe.get_edit(
-        args.edit_id,
-        evaluation_pipeline.edit_dataset,
-    )
+    # otherwise use the edit type to get a random edit object from the dataset
+    # using the edit type
+    if args.edit_id is None:
+        all_edits_by_type = preprocessing_pipe.get_all_edits_edit_type(
+            args.edit_type,
+        )
+        # get first edit from the all_edits_by_type dataframe
+        random_edit_record = all_edits_by_type.iloc[[1]]
+        # random_edit_record = all_edits_by_type.sample(n=1)
+        edit = preprocessing_pipe.get_edit(
+            random_edit_record["edit_id"].astype(int).values[0],
+            evaluation_pipeline.edit_dataset,
+        )
+    else:
+        edit = preprocessing_pipe.get_edit(
+            args.edit_id,
+            evaluation_pipeline.edit_dataset,
+        )
+
+    logging.info("Running edit: %s", edit.edit_id)
+    logging.info("Edit type: %s", edit.edit_type)
+    logging.info("Image path: %s", edit.image_path)
+    logging.info("Category: %s", edit.category)
+    logging.info("From attribute: %s", edit.from_attribute)
+    logging.info("To attribute: %s", edit.to_attribute)
+    logging.info("Prompt: %s", PreprocessingPipeline.generate_prompt(edit))
 
     # Get all inputs for the edit
     evaluation_input = evaluation_pipeline.get_all_inputs_for_edit(edit)
 
-    # Do as you please with the evaluation_input
-    # For example, you can do:
-    print(evaluation_input.prompt)  # noqa: T201
-    score = ObjectAddition().evaluate_edit(evaluation_input)
-    print(score)  # noqa: T201
+    # evaluate the edit using the corresponding operation
+    # infer it from the edit type, so if edit type is "background" then use
+    # Background() class from pixlens/evaluation/operations/background.py and so on
+    # then call the evaluate_edit method of the class with the evaluation_input
+    # as the argument
+    # for example:
+    if edit.edit_type.type_name == "object_addition":
+        evaluation_output = ObjectAddition().evaluate_edit(
+            evaluation_input,
+        )
+    elif edit.edit_type.type_name == "color":
+        evaluation_output = ColorEdit().evaluate_edit(evaluation_input)
+
+    # print the evaluation score if successful, otherwise print evaluation failed
+    if evaluation_output.success:
+        logging.info(evaluation_output.score)
+    else:
+        logging.info("Evaluation failed")
 
 
 if __name__ == "__main__":

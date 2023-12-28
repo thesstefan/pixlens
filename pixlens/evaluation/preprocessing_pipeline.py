@@ -122,6 +122,9 @@ class PreprocessingPipeline:
     def get_all_edits_ms_coco_class(self, ms_coco_class: str) -> pd.DataFrame:
         return self.edit_dataset[self.edit_dataset["class"] == ms_coco_class]
 
+    def get_all_edits_edit_type(self, edit_type: str) -> pd.DataFrame:
+        return self.edit_dataset[self.edit_dataset["edit_type"] == edit_type]
+
     def execute_pipeline(
         self,
         models: list[PromptableImageEditingModel],
@@ -130,13 +133,14 @@ class PreprocessingPipeline:
             logging.info("Running model: %s", model.get_model_name())
             for idx in self.edit_dataset.index:
                 edit = self.get_edit(idx, self.edit_dataset)
+                # if (
+                #     edit.edit_type.type_name != "color"
+                # ):  # TODO: remove this line  # noqa: FIX002, TD003, TD002
+                #     continue
                 prompt = self.generate_prompt(edit)
                 logging.info("prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)
                 model.edit(prompt, edit.image_path)
-
-                if idx == 5:  # noqa: PLR2004 TODO: remove later...
-                    break
 
     @staticmethod
     def generate_prompt(edit: Edit) -> str:

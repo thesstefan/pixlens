@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -10,7 +11,6 @@ from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation import interfaces
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 from pixlens.evaluation.utils import get_updated_to
-
 from pixlens.utils.utils import get_cache_dir, get_image_extension
 
 
@@ -27,6 +27,7 @@ class EvaluationPipeline:
         if pandas_path.exists():
             self.edit_dataset = pd.read_csv(pandas_path)
         else:
+            logging.error(f"Edit dataset ({pandas_path}) not cached")  # noqa: G004
             raise FileNotFoundError
 
     def get_input_image_from_edit_id(self, edit_id: int) -> Image.Image:
