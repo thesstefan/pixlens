@@ -98,7 +98,7 @@ def main() -> None:
         )
         # get first edit from the all_edits_by_type dataframe
         random_edit_record = all_edits_by_type.iloc[[1]]
-        # random_edit_record = all_edits_by_type.sample(n=1)
+        # random_edit_record = all_edits_by_type.sample(n=1)  # noqa: ERA001
         edit = preprocessing_pipe.get_edit(
             random_edit_record["edit_id"].astype(int).values[0],
             evaluation_pipeline.edit_dataset,
@@ -122,7 +122,7 @@ def main() -> None:
 
     # evaluate the edit using the corresponding operation
     # infer it from the edit type, so if edit type is "background" then use
-    # Background() class from pixlens/evaluation/operations/background.py and so on
+    # Background() class from valuation/operations/background.py and so on
     # then call the evaluate_edit method of the class with the evaluation_input
     # as the argument
     # for example:
@@ -133,7 +133,7 @@ def main() -> None:
     elif edit.edit_type.type_name == "color":
         evaluation_output = ColorEdit().evaluate_edit(evaluation_input)
 
-    # print the evaluation score if successful, otherwise print evaluation failed
+    # print the evaluation score if successful otherwise print evaluation failed
     if evaluation_output.success:
         logging.info(evaluation_output.score)
     else:
