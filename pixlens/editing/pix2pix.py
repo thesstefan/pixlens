@@ -10,6 +10,7 @@ from PIL import Image
 from pixlens.editing import interfaces
 from pixlens.editing.utils import log_model_if_not_in_cache
 from pixlens.utils import utils
+from pixlens.utils.yaml_constructible import YamlConstructible
 
 
 class Pix2pixType(enum.StrEnum):
@@ -37,14 +38,16 @@ def load_pix2pix(
     return pipeline
 
 
-class Pix2pix(interfaces.PromptableImageEditingModel):
+class Pix2pix(
+    interfaces.PromptableImageEditingModel,
+    YamlConstructible,
+):
     device: torch.device | None
 
     def __init__(
         self,
         pix2pix_type: Pix2pixType = Pix2pixType.BASE,
         device: torch.device | None = None,
-        *,
         num_inference_steps: int = 100,
         image_guidance_scale: float = 1.0,
     ) -> None:

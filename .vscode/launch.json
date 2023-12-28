@@ -7,14 +7,16 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_cli.py",
             "args": [
-                "--object-detection",
+                "--model",
                 "GroundedSAM",
                 "--image",
                 "editval_instances/backpack/000000163866.jpg",
                 "--prompt",
                 "suitcase . backpack",
                 "--out",
-                "${workspaceFolder}/results/result_suitcase_backpack_grounded_sam.png"
+                "${workspaceFolder}/results/result_suitcase_backpack_grounded_sam.png",
+                "--model_params_yaml",
+                "model_cfgs/grounded_sam.yaml",
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
@@ -29,14 +31,16 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_cli.py",
             "args": [
-                "--object-detection",
+                "--model",
                 "Owl-Vit+SAM",
                 "--image",
                 "editval_instances/backpack/000000163866.jpg",
                 "--prompt",
                 "suitcase,backpack",
                 "--out",
-                "${workspaceFolder}/results/result_suitcase_backpack_owlvit_sam.png"
+                "${workspaceFolder}/results/result_suitcase_backpack_owlvit_sam.png",
+                "--model_params_yaml",
+                "model_cfgs/owlvit_sam.yaml",
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
@@ -52,10 +56,12 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_edit_cli.py",
             "console": "integratedTerminal",
             "args": [
-                "--edit-model",
+                "--model",
                 "controlnet",
                 "--output",
                 "${workspaceFolder}/results/edit_output_controlnet.png",
+                "--model_params_yaml",
+                "model_cfgs/controlnet.yaml",
             ]
         },
         {
@@ -65,10 +71,12 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_edit_cli.py",
             "console": "integratedTerminal",
             "args": [
-                "--edit-model",
+                "--model",
                 "InstructPix2Pix",
                 "--output",
                 "${workspaceFolder}/results/edit_output_pix2pix.png",
+                "--model_params_yaml",
+                "model_cfgs/instruct_pix2pix.yaml",
             ]
         },
         {
