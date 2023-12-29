@@ -41,31 +41,20 @@ def remove_words_from_string(
 
 
 def get_updated_to(edit: Edit) -> str | None:
+    if edit.to_attribute is np.nan:
+        return None
+    to_attribute = "".join(
+        char if char.isalpha() or char.isspace() else " "
+        for char in edit.to_attribute
+    )
     if edit.edit_type.type_name in new_object:
-        return edit.to_attribute
+        return to_attribute
     if edit.edit_id in new_object_with_indication:
         return remove_words_from_string(
-            edit.to_attribute,
+            to_attribute,
             directions_and_instructions,
         )
     return None
-
-
-def get_prompt_for_output_detection(edit: Edit) -> str:
-    if edit.edit_type.type_name in new_object:
-        return edit.to_attribute
-    if edit.edit_id in new_object_with_indication:
-        return remove_words_from_string(
-            edit.to_attribute,
-            directions_and_instructions,
-        )
-    return edit.category
-
-
-def get_prompt_for_input_detection(edit: Edit) -> str:
-    if edit.edit_type.type_name in ("background", "object_replacement"):
-        return edit.from_attribute
-    return edit.category
 
 
 def compute_area(tensor1: torch.Tensor) -> float:

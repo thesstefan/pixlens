@@ -7,6 +7,7 @@ import torch
 from PIL import Image
 
 from pixlens.detection import interfaces as detection_interfaces
+from pixlens.detection.utils import get_separator
 from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation import interfaces
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
@@ -89,12 +90,17 @@ class EvaluationPipeline:
             None if np.isnan(edit.from_attribute) else edit.from_attribute
         )
         to_attribute = get_updated_to(edit)
+        category = "".join(
+            char if char.isalpha() or char.isspace() else " "
+            for char in edit.category
+        )
         list_for_det_seg = [
             item
-            for item in [edit.category, from_attribute, to_attribute]
+            for item in [category, from_attribute, to_attribute]
             if item is not None
         ]
-        prompt_for_det_seg = ",".join(list_for_det_seg)
+        separator = get_separator(self.detection_model)
+        prompt_for_det_seg = separator.join(list_for_det_seg)
 
         input_detection_segmentation_result = (
             self.do_detection_and_segmentation(
@@ -116,7 +122,7 @@ class EvaluationPipeline:
             edited_detection_segmentation_result=edited_detection_segmentation_result,
             edit=edit,
             updated_strings=interfaces.UpdatedStrings(
-                category=edit.category,
+                category=category,
                 from_attribute=from_attribute,
                 to_attribute=to_attribute,
             ),

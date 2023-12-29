@@ -2,6 +2,7 @@ import json
 import logging
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pandera as pa
 from pandera import Column
@@ -145,12 +146,29 @@ class PreprocessingPipeline:
 
     @staticmethod
     def generate_prompt(edit: Edit) -> str:
+        category = "".join(
+            char if char.isalpha() or char.isspace() else " "
+            for char in edit.category
+        )
+        if edit.to_attribute is not np.nan:
+            to_attribute = "".join(
+                char if char.isalpha() or char.isspace() else " "
+                for char in edit.to_attribute
+            )
+        else:
+            to_attribute = ""
+
+        if edit.from_attribute is not np.nan:
+            from_attribute = "".join(
+                char if char.isalpha() or char.isspace() else " "
+                for char in edit.from_attribute
+            )
+        else:
+            from_attribute = ""
         return edit.edit_type.prompt.format(
-            category=edit.category,
-            to=edit.to_attribute,
-            from_=edit.from_attribute
-            if hasattr(edit, "from_attribute")
-            else "",
+            category=category,
+            to=to_attribute if hasattr(edit, "to_attribute") else "",
+            from_=from_attribute if hasattr(edit, "from_attribute") else "",
         )
 
     def add_object_removal(self, records: list[dict]) -> list[dict]:
@@ -193,9 +211,3 @@ class PreprocessingPipeline:
                             },
                         )
         return records
-
-
-preprocessing = PreprocessingPipeline(
-    json_object_path="pixlens/editval/object.json",
-    dataset_path="editval_instances/",
-)
