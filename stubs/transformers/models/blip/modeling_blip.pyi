@@ -1,8 +1,7 @@
-from typing import Optional, TypeVar
+from typing import Self
+
 from _typeshed import Incomplete
 from transformers.modeling_utils import PreTrainedModel
-
-_Self = TypeVar("_Self", bound="BlipPreTrainedModel")
 
 class BlipPreTrainedModel(PreTrainedModel):
     config_class = Incomplete
@@ -18,9 +17,9 @@ class BlipPreTrainedModel(PreTrainedModel):
         self, *args: Incomplete, **kwargs: Incomplete
     ) -> Incomplete: ...
     def prepare_inputs_for_generation(
-        self: _Self,
+        self: Self,
         input_ids: Incomplete,
-        past: Optional[Incomplete] = None,
+        past: Incomplete | None = None,
         **kwargs: Incomplete,
     ) -> Incomplete: ...
     def resize_position_embeddings(
