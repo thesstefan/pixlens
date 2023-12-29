@@ -1,7 +1,7 @@
 # ruff: noqa: FBT001, PLR0913
 
-from _typeshed import Incomplete
 import torch
+from _typeshed import Incomplete
 from transformers.processing_utils import ProcessorMixin
 
 class Owlv2Processor(ProcessorMixin):
