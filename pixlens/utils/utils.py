@@ -1,11 +1,13 @@
 import functools
+import logging
 import pathlib
 import shutil
 import typing
+
+import PIL
 import platformdirs
 import requests
 import tqdm
-import PIL
 from PIL import Image
 
 CACHE_DIR_NAME = "pixlens"
@@ -70,8 +72,20 @@ def get_basename_dict(path_dict: dict[T, str]) -> dict[T, str]:
     return {key: pathlib.Path(path).name for key, path in path_dict.items()}
 
 
-def download_image(url) -> Image.Image:
+def download_image(url: str) -> Image.Image:
     image = PIL.Image.open(requests.get(url, stream=True).raw)
     image = PIL.ImageOps.exif_transpose(image)
     image = image.convert("RGB")
     return image
+
+
+def log_if_hugging_face_model_not_in_cache(
+    model_type: str, cache_dir: pathlib.Path | None = None
+) -> None:
+    if cache_dir is None:
+        cache_dir = get_cache_dir()
+    model_dir = model_type.replace("/", "--")
+    model_dir = "models--" + model_dir
+
+    if not (cache_dir / model_dir).is_dir():
+        logging.info("Downloading model %s...", model_type)

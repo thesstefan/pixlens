@@ -2,20 +2,22 @@
 
 import enum
 
-from PIL import Image
 import torch
+from PIL import Image
 from transformers import (
     AutoProcessor,
-    BlipForConditionalGeneration,
     Blip2ForConditionalGeneration,
     Blip2Processor,
+    BlipForConditionalGeneration,
 )
 
 from pixlens.detection.automatic_label.interfaces import (
     ImageDescriptorModel,
 )
-from pixlens.detection.utils import log_if_hugging_face_model_not_in_cache
-from pixlens.utils.utils import get_cache_dir
+from pixlens.utils.utils import (
+    get_cache_dir,
+    log_if_hugging_face_model_not_in_cache,
+)
 
 
 class BlipType(enum.StrEnum):
