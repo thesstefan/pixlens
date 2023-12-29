@@ -13,16 +13,18 @@ class ObjectAddition(evaluation_interfaces.OperationEvaluation):
             object_in_input,
             object_not_in_output,
         ) = self.is_object_in_input_and_not_in_output(evaluation_input)
-        score_error = evaluation_interfaces.Score(score=0, success=False)
+        score_error = evaluation_interfaces.EvaluationOutput(
+            score=0, success=False
+        )
         if object_in_input and object_not_in_output:
-            score = evaluation_interfaces.Score(
+            score = evaluation_interfaces.EvaluationOutput(
                 success=True,
                 score=1,
             )
         elif not object_in_input:
             score = score_error
         else:
-            score = evaluation_interfaces.Score(
+            score = evaluation_interfaces.EvaluationOutput(
                 success=True,
                 score=0,
             )
