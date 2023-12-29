@@ -43,7 +43,7 @@ class EvaluationPipeline:
         edit: interfaces.Edit,
         model: PromptableImageEditingModel,
     ) -> Image.Image:
-        prompt = PreprocessingPipeline.generate_prompt(edit)
+        prompt = model.generate_prompt(edit)
         edit_path = Path(
             get_cache_dir(),
             "models--" + model.get_model_name(),
@@ -84,7 +84,7 @@ class EvaluationPipeline:
     ) -> interfaces.EvaluationInput:
         input_image = self.get_input_image_from_edit_id(edit.edit_id)
         edited_image = self.get_edited_image_from_edit(edit, self.editing_model)
-        prompt = PreprocessingPipeline.generate_prompt(edit)
+        prompt = self.editing_model.generate_prompt(edit)
         from_attribute = (
             None if np.isnan(edit.from_attribute) else edit.from_attribute
         )

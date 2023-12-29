@@ -5,6 +5,7 @@ from typing import Protocol
 
 from PIL import Image
 
+from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
 
 
@@ -23,6 +24,10 @@ class ImageEditor(Protocol):
 class PromptableImageEditingModel(Model, ImageEditor):
     @abstractmethod
     def edit_image(self, prompt: str, image_path: str) -> Image.Image:
+        ...
+
+    @abstractmethod
+    def generate_prompt(self, edit: Edit) -> str:
         ...
 
     def check_if_image_exists(
