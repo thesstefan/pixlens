@@ -25,6 +25,12 @@ class ColorEdit(evaluation_interfaces.OperationEvaluation):
             idmax = edit_segmentation.logits.argmax()
             mask_edited = edit_segmentation.masks[idmax]
 
+            logging.info("Target color: %s", target_color)
+            logging.info("Input image looks like the following:")
+            evaluation_input.input_image.show()
+            logging.info("Edited image looks like the following:")
+            evaluation_input.edited_image.show()
+
             if color_change_applied_correctly(
                 image=evaluation_input.edited_image,
                 mask=mask_edited,

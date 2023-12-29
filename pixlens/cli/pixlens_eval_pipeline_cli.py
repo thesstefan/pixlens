@@ -98,8 +98,8 @@ def main() -> None:
             args.edit_type,
         )
         # get first edit from the all_edits_by_type dataframe
-        random_edit_record = all_edits_by_type.iloc[[4]]
-        #     # random_edit_record = all_edits_by_type.sample(n=1)  # noqa: ERA001
+        random_edit_record = all_edits_by_type.iloc[[2]]
+        # random_edit_record = all_edits_by_type.sample(n=1)  # noqa: ERA001
         edit = preprocessing_pipe.get_edit(
             (random_edit_record["edit_id"].astype(int).to_numpy()[0]),
             evaluation_pipeline.edit_dataset,

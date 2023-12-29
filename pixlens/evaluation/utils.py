@@ -1,5 +1,5 @@
 from collections import Counter
-
+import logging
 import colorspacious as cs
 import numpy as np
 import torch
@@ -127,6 +127,10 @@ def get_colors_in_masked_area(
     # cropped_array = image_array * boolean_mask[:, :, np.newaxis]
     cropped_array = image_array[boolean_mask]
 
+    # show image from cropped array
+    logging.debug("Masked part in edited image:")
+    Image.fromarray(image_array * boolean_mask[:, :, np.newaxis]).show()
+
     pixels = cropped_array.reshape(-1, cropped_array.shape[-1])
 
     # Convert the 2D array to a list of tuples
@@ -171,6 +175,9 @@ def color_change_applied_correctly(
             dominant_color,
         ),
     )[:10]
+
+    logging.debug("Dominant color: %s", dominant_color)
+    logging.debug("Closest colors: %s", closest_colors)
 
     # Check if the target color is in the 5 closest colors
     return target_color in [color[0] for color in closest_colors]
