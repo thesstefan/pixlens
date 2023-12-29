@@ -35,7 +35,7 @@ class PreprocessingPipeline:
                     "edit_type": Column(pa.String),
                     "class": Column(pa.String),
                     "from_attribute": Column(pa.String, nullable=True),
-                    "to_attribute": Column(pa.String),
+                    "to_attribute": Column(pa.String, nullable=True),
                     "input_image_path": Column(pa.String),
                 },
             )
@@ -96,6 +96,7 @@ class PreprocessingPipeline:
                         )
 
         # Create a pandas DataFrame from the records
+        records = self.add_object_removal(records)
         self.edit_dataset = pd.DataFrame(records)
         self.edit_dataset.to_csv(pandas_path, index=False)
 
@@ -151,3 +152,50 @@ class PreprocessingPipeline:
             if hasattr(edit, "from_attribute")
             else "",
         )
+
+    def add_object_removal(self, records: list[dict]) -> list[dict]:
+        for category_path in Path(self.dataset_path).iterdir():
+            if category_path.is_dir():
+                for image_path in category_path.iterdir():
+                    if image_path.is_file() and image_path.suffix in [
+                        ".png",
+                        ".jpg",
+                        ".jpeg",
+                    ]:
+                        image_id = (
+                            image_path.stem.lstrip("0") or "0"
+                        )  # Remove leading zeros
+                        obj_class = category_path.name
+                        edit_type = (
+                            "object_removal"  # Assuming edit_type is constant
+                        )
+                        from_val = (
+                            None  # Set appropriate value for from_attribute
+                        )
+                        to_val = None  # Set appropriate value for to_attribute
+
+                        records.append(
+                            {
+                                "edit_id": len(records),
+                                "image_id": image_id,
+                                "class": obj_class,
+                                "edit_type": edit_type,
+                                "from_attribute": from_val,
+                                "to_attribute": to_val,
+                                "input_image_path": "./"
+                                + self.dataset_path
+                                + "/"
+                                + obj_class
+                                + "/"
+                                + "0" * (12 - len(str(image_id)))
+                                + image_id
+                                + ".jpg",
+                            },
+                        )
+        return records
+
+
+preprocessing = PreprocessingPipeline(
+    json_object_path="pixlens/editval/object.json",
+    dataset_path="editval_instances/",
+)
