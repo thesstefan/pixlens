@@ -1,15 +1,14 @@
 import logging
 
 import nltk
-from nltk.tokenize import word_tokenize
-from nltk import pos_tag
-from PIL import Image
 import torch
+from nltk import pos_tag
+from nltk.tokenize import word_tokenize
+from PIL import Image
 
 from pixlens.detection.automatic_label.blip import Blip, BlipType
 from pixlens.detection.automatic_label.interfaces import (
     CaptionIntoObjectsModel,
-    ImageToObjects,
 )
 from pixlens.utils.utils import get_cache_dir
 
@@ -31,7 +30,8 @@ class NLTKObjectExtractor(CaptionIntoObjectsModel):
             logging.info("Downloading NLTK resources...")
             nltk.download("punkt", download_dir=str_cache_dir)
             nltk.download(
-                "averaged_perceptron_tagger", download_dir=str_cache_dir
+                "averaged_perceptron_tagger",
+                download_dir=str_cache_dir,
             )
 
     def extract_objects_from_caption(self, caption: str) -> list[str]:

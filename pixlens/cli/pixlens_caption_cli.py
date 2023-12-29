@@ -8,7 +8,7 @@ from PIL import Image
 from pixlens.detection.automatic_label import blip, nltk_extractor
 
 parser = argparse.ArgumentParser(
-    description="BLIP Image Captioning - Generate captions for images"
+    description="BLIP Image Captioning - Generate captions for images",
 )
 parser.add_argument("--model", type=str, default="blip", help="Model to use")
 
@@ -23,7 +23,8 @@ def main() -> None:
     image = Image.open(requests.get(url, stream=True).raw)  # noqa: S113
     bliptype = blip.BlipType.BLIP2 if "2" in args.model else blip.BlipType.BLIP1
     image_to_objects = nltk_extractor.ImageToObjectsNLTK(
-        device=torch.device("cpu"), blip_type=bliptype
+        device=torch.device("cpu"),
+        blip_type=bliptype,
     )
     caption = image_to_objects.image_to_objects(image)
     logging.info("Objects: %s", caption)
