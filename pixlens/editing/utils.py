@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-import numpy as np
+import pandas as pd
 
 from pixlens.evaluation.interfaces import Edit, EditType
 
@@ -23,7 +23,7 @@ def generate_description_based_prompt(edit: Edit) -> str:
     to_attribute = edit.to_attribute
     category = edit.category
 
-    prompt_templates = {
+    prompt_templates: dict[EditType, str] = {
         # TODO: add prompts in a description based way
         # e.g. instead of "Add a red apple to the image", "A red apple".
     }
@@ -41,7 +41,9 @@ def generate_instruction_based_prompt(edit: Edit) -> str:
     category = edit.category
 
     prompt_templates = {
-        EditType.OBJECT_ADDITION: f"Add a {to_attribute} to the {category}",
+        EditType.COLOR: f"Change the color of the {category} to {to_attribute}",
+        EditType.SIZE: f"Change the size of the {category} to {to_attribute}",
+        EditType.OBJECT_ADDITION: f"Add a {to_attribute} to the image",
         EditType.POSITIONAL_ADDITION: f"Add a {to_attribute} the {category}",
         EditType.OBJECT_REMOVAL: f"Remove the {category}",
         EditType.OBJECT_REPLACEMENT: f"Replace the {from_attribute} with a {to_attribute}",  # noqa: E501
@@ -49,13 +51,13 @@ def generate_instruction_based_prompt(edit: Edit) -> str:
         EditType.OBJECT_DUPLICATION: f"Duplicate the {category}",
         EditType.TEXTURE: f"Change the texture of the {category} to {to_attribute}",  # noqa: E501
         EditType.ACTION: f"Transform the {category}'s pose from {from_attribute} to {to_attribute}"  # noqa: E501
-        if from_attribute is not None and not np.isnan(from_attribute)
+        if from_attribute is not None and not pd.isna(from_attribute)
         else f"Transform the {category}'s pose to {to_attribute}",
         EditType.VIEWPOINT: f"Change the viewpoint of the {category} from {from_attribute} to {to_attribute}"  # noqa: E501
-        if from_attribute is not None and not np.isnan(from_attribute)
+        if from_attribute is not None and not pd.isna(from_attribute)
         else f"Change the viewpoint of the {category} to {to_attribute}",
         EditType.BACKGROUND: f"Change the background from {from_attribute} to {to_attribute}"  # noqa: E501
-        if from_attribute is not None and not np.isnan(from_attribute)
+        if from_attribute is not None and not pd.isna(from_attribute)
         else f"Change the background to {to_attribute}",
         EditType.STYLE: f"Change the style of the {category} to {to_attribute}",
         EditType.SHAPE: f"Change the shape of the {category} to {to_attribute}",

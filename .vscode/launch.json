@@ -94,7 +94,7 @@
             "stopOnEntry": false,
             "jinja": false,
             "justMyCode": true
-        }
+        },
         {
             "name": "Debug BLIP2 Caption CLI",
             "type": "python",
