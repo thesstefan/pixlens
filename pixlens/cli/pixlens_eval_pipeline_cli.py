@@ -13,6 +13,7 @@ from pixlens.evaluation.evaluation_pipeline import (
 from pixlens.evaluation.interfaces import EditType
 from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
+from pixlens.evaluation.operations.object_replacement import ObjectReplacement
 from pixlens.evaluation.operations.size import SizeEdit
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 
@@ -135,6 +136,8 @@ def main() -> None:
         evaluation_output = ColorEdit().evaluate_edit(evaluation_input)
     elif edit.edit_type.type_name == "size":
         evaluation_output = SizeEdit().evaluate_edit(evaluation_input)
+    elif edit.edit_type.type_name == "object_replacement":
+        evaluation_output = ObjectReplacement().evaluate_edit(evaluation_input)
 
     # print the evaluation score if successful otherwise print evaluation failed
     if evaluation_output.success:
