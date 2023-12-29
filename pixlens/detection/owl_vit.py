@@ -13,7 +13,7 @@ from transformers import (
 
 from pixlens.detection import interfaces
 from pixlens.utils import utils
-from pixlens.detection.utils import log_if_hugging_face_model_not_in_cache
+from pixlens.utils.utils import log_if_hugging_face_model_not_in_cache
 
 
 class OwlViTType(enum.StrEnum):
