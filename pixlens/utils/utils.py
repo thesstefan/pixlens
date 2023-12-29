@@ -82,7 +82,8 @@ def download_image(url: str) -> Image.Image:
 
 
 def log_if_hugging_face_model_not_in_cache(
-    model_type: str, cache_dir: pathlib.Path | None = None
+    model_type: str,
+    cache_dir: pathlib.Path | None = None,
 ) -> None:
     if cache_dir is None:
         cache_dir = get_cache_dir()
