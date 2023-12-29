@@ -1,0 +1,6 @@
+class: ControlNet 
+params:
+    pix2pix_type: lllyasviel/sd-controlnet-canny
+    num_inference_steps: 100
+    image_guidance_scale: 1.0
+    text_guidance_scale: 7.5

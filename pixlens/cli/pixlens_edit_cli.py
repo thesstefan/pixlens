@@ -1,36 +1,51 @@
 import argparse
-import logging
 from pathlib import Path
-
-import torch
 
 from pixlens.editing import controlnet, pix2pix
 from pixlens.utils import utils
 
 parser = argparse.ArgumentParser(
-    description="PixLens - Evaluate & understand image editing models"
+    description="PixLens - Evaluate & understand image editing models",
 )
 parser.add_argument(
-    "--edit-model",
+    "--model",
     type=str,
-    default="pix2pix",
+    default="InstructPix2Pix",
     help=("Image editing model: pix2pix, dreambooth, etc."),
 )
 parser.add_argument(
-    "--output", required=True, type=str, help=("Path of output image")
+    "--output",
+    required=True,
+    type=str,
+    help=("Path of output image"),
 )
 parser.add_argument(
-    "--input", type=str, help="Path of input image", nargs="?", default=None
+    "--input",
+    type=str,
+    help="Path of input image",
+    nargs="?",
+    default=None,
 )
 
 parser.add_argument("--prompt", type=str, help=("Prompt with edit instruction"))
+parser.add_argument(
+    "--model_params_yaml",
+    type=str,
+    help=("Path to YAML containing model params"),
+    required=True,
+)
+
+NAME_TO_MODEL: dict[
+    str,
+    type[controlnet.ControlNet] | type[pix2pix.Pix2pix],
+] = {
+    "ControlNet": controlnet.ControlNet,
+    "InstructPix2Pix": pix2pix.Pix2pix,
+}
 
 
 def main() -> None:
     args = parser.parse_args()
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logging.info(f"Using device: {device}")
 
     # check if args.in defined
     in_path = "example_input.jpg"
@@ -43,19 +58,13 @@ def main() -> None:
         in_path = args.input
         prompt = args.prompt
 
-    # code to instantiate and run pix2pix
-    if args.edit_model == "pix2pix":
-        model = pix2pix.Pix2pix(pix2pix.Pix2pixType.BASE, device)
-    elif args.edit_model == "controlnet":
-        model = controlnet.ControlNet(controlnet.ControlNetType.BASE, device)
-    else:
-        raise NotImplementedError
+    model = NAME_TO_MODEL[args.model].from_yaml(args.params_yaml)
 
     output = model.edit(prompt, in_path)
     if args.input is None:
         Path(in_path).unlink()
 
-    output.image.save(args.output)
+    output.save(args.output)
 
 
 if __name__ == "__main__":
