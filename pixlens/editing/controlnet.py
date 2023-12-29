@@ -59,11 +59,13 @@ class ControlNet(interfaces.PromptableImageEditingModel, YamlConstructible):
         device: torch.device | None = None,
         num_inference_steps: int = 100,
         image_guidance_scale: float = 1.0,
+        text_guidance_scale: float = 7.0,
     ) -> None:
         self.device = device
         self.model = load_controlnet(pix2pix_type, device)
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
+        self.text_guidance_scale = text_guidance_scale
 
     def prepare_image(self, image_path: str) -> Image.Image:
         image = Image.open(image_path)
@@ -92,6 +94,8 @@ class ControlNet(interfaces.PromptableImageEditingModel, YamlConstructible):
             input_image,
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
+            guidance_scale=self.text_guidance_scale,
+            generator=torch.manual_seed(0),
         )
         output_images: list[Image.Image] = output.images
         return output_images[0]

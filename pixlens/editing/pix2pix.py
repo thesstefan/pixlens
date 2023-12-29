@@ -50,11 +50,13 @@ class Pix2pix(
         device: torch.device | None = None,
         num_inference_steps: int = 100,
         image_guidance_scale: float = 1.0,
+        text_guidance_scale: float = 7.5,
     ) -> None:
         self.device = device
         self.model = load_pix2pix(pix2pix_type, device)
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
+        self.text_guidance_scale = text_guidance_scale
 
     def get_model_name(self) -> str:
         return "Pix2pix"
@@ -70,6 +72,7 @@ class Pix2pix(
             input_image,
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
+            guidance_scale=self.text_guidance_scale,
         )  # TODO: controlnet this is not detected as a mistake.
         output_images: list[Image.Image] = output.images
         return output_images[0]
