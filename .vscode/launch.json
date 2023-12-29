@@ -80,6 +80,38 @@
             ]
         },
         {
+            "name": "Debug BLIP Caption CLI",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_caption_cli.py",
+            "args": [
+                "--model",
+                "blip"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        }
+        {
+            "name": "Debug BLIP2 Caption CLI",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_caption_cli.py",
+            "args": [
+                "--model",
+                "blip2"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        },
+        {
             "name": "Debug PixLens Evaluation Pipeline - Default",
             "type": "python",
             "request": "launch",
