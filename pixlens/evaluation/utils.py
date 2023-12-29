@@ -1,12 +1,12 @@
-from collections import Counter
 import logging
-import colorspacious as cs
+from collections import Counter
+
 import numpy as np
 import torch
 from PIL import Image, ImageColor
 
 # import delta e color similarity function
-from skimage.color import deltaE_ciede2000, rgb2lab
+from skimage.color import deltaE_cie76, rgb2lab
 
 from pixlens.evaluation.interfaces import Edit, EditType
 
@@ -121,7 +121,6 @@ def get_colors_in_masked_area(
     image_array = np.array(image)
 
     boolean_mask = mask[0].cpu().numpy()
-    # cropped_array = image_array * boolean_mask[:, :, np.newaxis]
     cropped_array = image_array[boolean_mask]
 
     # show image from cropped array
@@ -137,7 +136,20 @@ def get_colors_in_masked_area(
     color_counts = Counter(pixel_tuples)
 
     # Convert the Counter items to an array of tuples (count, color)
-    return [(count, color) for color, count in color_counts.items()]
+    # and then sort in descending order by count
+    color_counts = sorted(
+        color_counts.items(),
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    return [(count, color) for color, count in color_counts]
+
+
+def calculate_h_index(sorted_counts: list[int]) -> int:
+    return next(
+        (i for i, count in enumerate(sorted_counts, start=1) if count < i),
+        len(sorted_counts),
+    )
 
 
 # TODO: this function is clearly limited and should not be used in the final
@@ -150,31 +162,55 @@ def color_change_applied_correctly(
     mask: torch.Tensor,
     target_color: str,
 ) -> bool:
+    # ensure that the image is in rgb format
+    image = image.convert("RGB")
+
     # Get the colors in the masked area
     colors = get_colors_in_masked_area(image, mask)
+
+    # get h.index of colors in masked area
+    h_index = calculate_h_index([count for count, _ in colors])
+
+    # Get the most dominant colors based on the H-index
+    dominant_colors = [(count, rgb2lab(color)) for count, color in colors[:100]]
 
     # colors_pil_method = image.getcolors(image.size[0] * image.size[1])
     # assert that colors and colors_pil_method contain the same keys and values (order doesn't matter)
     # assert Counter(colors) == Counter(colorsn _pil_method)
 
     # Get the most common color
-    dominant_color = rgb2lab(max(colors, key=lambda x: x[0])[1])
+    # dominant_color = rgb2lab(max(colors, key=lambda x: x[0])[1])
 
-    # Find the 5 colors in PIL.ImageColor.colormap that are most similar
-    # to the retrieved color based on Delta-E distance
-    # however the colors in the colormap are in hexadecimal and the dominant
-    # color is in RGB, so we need to convert all colors to Lab space as it is
-    # required by the delta_e_cie2000 function
-    closest_colors = sorted(
-        ImageColor.colormap.items(),
-        key=lambda color: deltaE_ciede2000(
-            rgb2lab(ImageColor.getrgb(color[1])),
-            dominant_color,
-        ),
-    )[:10]
+    # compute pairwise distance between colors in PIL.ImageColor.colormap and
+    # colors detected in the masked area. The distance should be weighted by
+    # the number of pixels that have that color in the masked area, then
+    # take the 5 colors in PIL.ImageColor.colormap that have the smallest
+    # average distance to the colors in the masked area
 
-    logging.debug("Dominant color: %s", dominant_color)
-    logging.debug("Closest colors: %s", closest_colors)
+    # sum all counts in colors
+    total_count = sum([count for count, _ in dominant_colors])
+
+    # compute the average distance between each color in PIL.ImageColor.colormap
+    # and the colors in the masked area
+    average_distances = []
+    for pil_color in ImageColor.colormap.items():
+        color_lab = rgb2lab(
+            ImageColor.getrgb(pil_color[1])
+            if not isinstance(pil_color[1], tuple)
+            else pil_color[1]
+        )
+        average_distance = 0.0
+        for count, color in dominant_colors:
+            average_distance += count * deltaE_cie76(color_lab, color)
+        average_distances.append((average_distance / total_count, pil_color))
+
+    average_distances.sort(key=lambda x: x[0])
+
+    # get the 5 colors in PIL.ImageColor.colormap that have the smallest
+    # average distance to the colors in the masked area
+    closest_colors = average_distances[:10]
+
+    logging.info("Closest colors: %s", closest_colors)
 
     # Check if the target color is in the 5 closest colors
     return target_color in [color[0] for color in closest_colors]

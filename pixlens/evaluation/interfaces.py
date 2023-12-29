@@ -20,7 +20,10 @@ class EditType(Enum):
     POSITION_REPLACEMENT = ("position_replacement", "Move {from_} to {to}")
     OBJECT_DUPLICATION = ("object_duplication", "Duplicate {category}")
     TEXTURE = ("texture", "Change the texture of {category} to {to}")
-    ACTION = ("action", "{category} doing {to}")
+    ACTION = (
+        "action",
+        "Transform the image of a {category} {from_} into one where the {category} is {to}.",
+    )
     VIEWPOINT = ("viewpoint", "Change the viewpoint to {to}")
     BACKGROUND = ("background", "Change the background to {to}")
     STYLE = ("style", "Change the style of {category} to {to}")

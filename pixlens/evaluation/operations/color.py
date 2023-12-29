@@ -1,5 +1,5 @@
 import logging
-
+from PIL import Image
 from pixlens.evaluation import interfaces as evaluation_interfaces
 from pixlens.evaluation.utils import color_change_applied_correctly
 
@@ -25,11 +25,19 @@ class ColorEdit(evaluation_interfaces.OperationEvaluation):
             idmax = edit_segmentation.logits.argmax()
             mask_edited = edit_segmentation.masks[idmax]
 
-            logging.info("Target color: %s", target_color)
-            logging.info("Input image looks like the following:")
-            evaluation_input.input_image.show()
-            logging.info("Edited image looks like the following:")
-            evaluation_input.edited_image.show()
+            # logging.info("Target color: %s", target_color)
+            # # code to show a big box filled with the target color
+            # target_color_image = Image.new(
+            #     "RGB",
+            #     (100, 100),
+            #     color=target_color,
+            # )
+            # target_color_image.show()
+
+            # logging.info("Input image looks like the following:")
+            # evaluation_input.input_image.show()
+            # logging.info("Edited image looks like the following:")
+            # evaluation_input.edited_image.show()
 
             if color_change_applied_correctly(
                 image=evaluation_input.edited_image,
