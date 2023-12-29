@@ -51,23 +51,6 @@ def get_updated_to(edit: Edit) -> str | None:
     return None
 
 
-def get_prompt_for_output_detection(edit: Edit) -> str:
-    if edit.edit_type in new_object:
-        return edit.to_attribute
-    if edit.edit_id in new_object_with_indication:
-        return remove_words_from_string(
-            edit.to_attribute,
-            directions_and_instructions,
-        )
-    return edit.category
-
-
-def get_prompt_for_input_detection(edit: Edit) -> str:
-    if edit.edit_type in ("background", "object_replacement"):
-        return edit.from_attribute
-    return edit.category
-
-
 def compute_area(tensor1: torch.Tensor) -> float:
     area1 = torch.sum(tensor1)
     return area1.item()
