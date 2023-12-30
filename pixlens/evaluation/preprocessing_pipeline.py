@@ -108,7 +108,7 @@ class PreprocessingPipeline:
                 image_id=edit["image_id"],
                 image_path=edit["input_image_path"],
                 category=edit["class"],
-                edit_type=EditType.from_type_name(edit["edit_type"]),
+                edit_type=EditType(edit["edit_type"]),
                 from_attribute=edit["from_attribute"],
                 to_attribute=edit["to_attribute"],
             )
@@ -134,20 +134,14 @@ class PreprocessingPipeline:
             for idx in self.edit_dataset.index:
                 edit = self.get_edit(idx, self.edit_dataset)
                 # if (
-                #     edit.edit_type.type_name != "color"
+                #     edit.edit_type != EditType.ACTION
+                #     or edit.edit_type != EditType.VIEWPOINT
+                #     or edit.edit_type != EditType.BACKGROUND
                 # ):  # TODO: remove this line  # noqa: FIX002, TD003, TD002
                 #     continue
-                prompt = self.generate_prompt(edit)
+                if edit.edit_type != EditType.POSITION_REPLACEMENT:
+                    continue
+                prompt = model.generate_prompt(edit)
                 logging.info("prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)
-                model.edit(prompt, edit.image_path)
-
-    @staticmethod
-    def generate_prompt(edit: Edit) -> str:
-        return edit.edit_type.prompt.format(
-            category=edit.category,
-            to=edit.to_attribute,
-            from_=edit.from_attribute
-            if hasattr(edit, "from_attribute")
-            else "",
-        )
+                model.edit(prompt, edit.image_path, edit)

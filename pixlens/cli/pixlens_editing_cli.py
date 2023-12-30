@@ -3,6 +3,7 @@ from pathlib import Path
 
 from pixlens.editing import controlnet, pix2pix
 from pixlens.utils import utils
+from pixlens.evaluation import Edit, EditType
 
 parser = argparse.ArgumentParser(
     description="PixLens - Evaluate & understand image editing models",

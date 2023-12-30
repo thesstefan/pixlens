@@ -16,9 +16,9 @@ edits = list(EditType)
 new_object = ["object_addition", "object_replacement", "background", "texture"]
 new_object_with_indication = ["alter_parts", "positional_addition"]
 same_object = [
-    edit.type_name
+    edit
     for edit in edits
-    if edit.type_name not in new_object + new_object_with_indication
+    if edit not in new_object + new_object_with_indication
 ]
 tol = 1e-6
 DIVDING_BY_ZERO_MSG = "Cannot divide by zero"
@@ -41,7 +41,7 @@ def remove_words_from_string(
 
 
 def get_updated_to(edit: Edit) -> str | None:
-    if edit.edit_type.type_name in new_object:
+    if edit.edit_type in new_object:
         return edit.to_attribute
     if edit.edit_id in new_object_with_indication:
         return remove_words_from_string(
@@ -49,23 +49,6 @@ def get_updated_to(edit: Edit) -> str | None:
             directions_and_instructions,
         )
     return None
-
-
-def get_prompt_for_output_detection(edit: Edit) -> str:
-    if edit.edit_type.type_name in new_object:
-        return edit.to_attribute
-    if edit.edit_id in new_object_with_indication:
-        return remove_words_from_string(
-            edit.to_attribute,
-            directions_and_instructions,
-        )
-    return edit.category
-
-
-def get_prompt_for_input_detection(edit: Edit) -> str:
-    if edit.edit_type.type_name in ("background", "object_replacement"):
-        return edit.from_attribute
-    return edit.category
 
 
 def compute_area(tensor1: torch.Tensor) -> float:
