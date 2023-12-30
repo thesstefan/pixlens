@@ -42,7 +42,8 @@ class EditType(Enum):
 
 @dataclasses.dataclass
 class EvaluationOutput:
-    score: float
+    edit_specific_score: float
+    ssim_score: float | None
     success: bool
 
 
