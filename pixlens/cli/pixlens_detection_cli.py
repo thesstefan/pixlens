@@ -69,7 +69,7 @@ def main() -> None:
         segmentation_output.masks,
         annotated_image,
     )
-    masked_annotated_image.save(args.out)
+    masked_annotated_image.save(args.out_image)
 
 
 if __name__ == "__main__":
