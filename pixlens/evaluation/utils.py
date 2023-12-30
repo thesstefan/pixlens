@@ -180,25 +180,31 @@ def apply_mask(np_image: NDArray, mask: NDArray) -> NDArray:
     return masked_image
 
 
-def compute_masked_ssim(evaluation_input: EvaluationInput) -> float:
-    input_image_np = np.array(evaluation_input.input_image)
-    edited_image_np = np.array(evaluation_input.edited_image)
-    if edited_image_np.shape != input_image_np.shape:
-        edited_image_resized = evaluation_input.edited_image.resize(
-            evaluation_input.input_image.size,
+def compute_ssim_over_mask(
+    input_image: Image.Image,
+    edited_image: Image.Image,
+    mask1: NDArray,
+    mask2: NDArray | None = None,
+    *,
+    background: bool = False,
+) -> float:
+    input_image_array = np.array(input_image)
+    edited_image_array = np.array(edited_image)
+
+    if edited_image_array.shape != input_image_array.shape:
+        edited_image_resized = edited_image.resize(
+            input_image.size,
             Image.Resampling.LANCZOS,
         )
-        edited_image_np = np.array(edited_image_resized)
+        edited_image_array = np.array(edited_image_resized)
 
-    mask = (
-        evaluation_input.input_detection_segmentation_result.segmentation_output.masks[
-            0
-        ]
-        .cpu()
-        .numpy()
-    )
-    input_image_masked = apply_mask(input_image_np, mask)
-    edited_image_masked = apply_mask(edited_image_np, mask)
+    if mask2 is None:
+        mask2 = mask1
+    input_image_masked = apply_mask(input_image_array, mask1)
+    edited_image_masked = apply_mask(edited_image_array, mask2)
+    if background:
+        input_image_masked = apply_mask(input_image_array, ~mask1)
+        edited_image_masked = apply_mask(edited_image_array, ~mask2)
 
     return float(ssim(input_image_masked, edited_image_masked, channel_axis=2))
 
