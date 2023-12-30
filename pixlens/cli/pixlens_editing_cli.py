@@ -59,7 +59,7 @@ def main() -> None:
         in_path = args.input
         prompt = args.prompt
 
-    model = NAME_TO_MODEL[args.model].from_yaml(args.params_yaml)
+    model = NAME_TO_MODEL[args.model].from_yaml(args.model_params_yaml)
 
     output = model.edit(prompt, in_path)
     if args.input is None:
