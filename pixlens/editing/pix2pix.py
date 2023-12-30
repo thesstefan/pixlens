@@ -8,7 +8,11 @@ from diffusers import (
 from PIL import Image
 
 from pixlens.editing import interfaces
-from pixlens.editing.utils import log_model_if_not_in_cache
+from pixlens.editing.utils import (
+    generate_instruction_based_prompt,
+    log_model_if_not_in_cache,
+)
+from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
 from pixlens.utils.yaml_constructible import YamlConstructible
 
@@ -65,6 +69,7 @@ class Pix2pix(
         self,
         prompt: str,
         image_path: str,
+        edit_info: Edit,
     ) -> Image.Image:
         input_image = Image.open(image_path)
         output = self.model(
@@ -76,3 +81,6 @@ class Pix2pix(
         )  # TODO: controlnet this is not detected as a mistake.
         output_images: list[Image.Image] = output.images
         return output_images[0]
+
+    def generate_prompt(self, edit: Edit) -> str:
+        return generate_instruction_based_prompt(edit)

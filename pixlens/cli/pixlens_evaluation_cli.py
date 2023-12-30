@@ -62,7 +62,7 @@ def check_args(args: argparse.Namespace) -> None:
         raise ValueError(error_msg) from None
     if args.edit_type is not None:
         try:
-            EditType.from_type_name(args.edit_type)
+            EditType(args.edit_type)
         except ValueError as err:
             error_msg = "Invalid edit type provided"
             raise ValueError(error_msg) from err
@@ -137,7 +137,7 @@ def main() -> None:
         logging.info("Category: %s", edit.category)
         logging.info("From attribute: %s", edit.from_attribute)
         logging.info("To attribute: %s", edit.to_attribute)
-        logging.info("Prompt: %s", PreprocessingPipeline.generate_prompt(edit))
+        logging.info("Prompt: %s", editing_model.generate_prompt(edit))
 
         # Get all inputs for the edit
         evaluation_input = evaluation_pipeline.get_all_inputs_for_edit(edit)
@@ -148,17 +148,19 @@ def main() -> None:
         # then call the evaluate_edit method of the class with the evaluation_input
         # as the argument
         # for example:
-        if edit.edit_type.type_name == "object_addition":
+        if edit.edit_type == EditType.OBJECT_ADDITION:
             evaluation_output = ObjectAddition().evaluate_edit(
                 evaluation_input,
             )
-        elif edit.edit_type.type_name == "color":
+        elif edit.edit_type == EditType.COLOR:
             evaluation_output = ColorEdit().evaluate_edit(evaluation_input)
-        elif edit.edit_type.type_name == "size":
+        elif edit.edit_type == EditType.SIZE:
             evaluation_output = SizeEdit().evaluate_edit(evaluation_input)
-        elif edit.edit_type.type_name == "object_removal":
+        elif edit.edit_type == EditType.OBJECT_REMOVAL:
             evaluation_output = ObjectRemoval().evaluate_edit(evaluation_input)
-        # print the evaluation score if successful otherwise print evaluation failed
+
+        # print the evaluation score if successful
+        # otherwise print evaluation failed
         if evaluation_output.success:
             successful_edits += 1
             overall_score += evaluation_output.edit_specific_score
@@ -172,7 +174,8 @@ def main() -> None:
 
     logging.info("Overall score: %s", overall_score / successful_edits)
     logging.info(
-        "Percentage of successful edits: %s", successful_edits / len(edits)
+        "Percentage of successful edits: %s",
+        successful_edits / len(edits),
     )
 
 

@@ -13,7 +13,11 @@ from diffusers.pipelines.controlnet.pipeline_controlnet import (
 from PIL import Image
 
 from pixlens.editing import interfaces
-from pixlens.editing.utils import log_model_if_not_in_cache
+from pixlens.editing.utils import (
+    generate_instruction_based_prompt,
+    log_model_if_not_in_cache,
+)
+from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
 from pixlens.utils.yaml_constructible import YamlConstructible
 
@@ -87,6 +91,7 @@ class ControlNet(interfaces.PromptableImageEditingModel, YamlConstructible):
         self,
         prompt: str,
         image_path: str,
+        edit_info: Edit | None = None,
     ) -> Image.Image:
         input_image = self.prepare_image(image_path)
         output = self.model(
@@ -99,3 +104,6 @@ class ControlNet(interfaces.PromptableImageEditingModel, YamlConstructible):
         )
         output_images: list[Image.Image] = output.images
         return output_images[0]
+
+    def generate_prompt(self, edit: Edit) -> str:
+        return generate_instruction_based_prompt(edit)

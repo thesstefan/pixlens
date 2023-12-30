@@ -110,7 +110,7 @@ class PreprocessingPipeline:
                 image_id=edit["image_id"],
                 image_path=edit["input_image_path"],
                 category=edit["class"],
-                edit_type=EditType.from_type_name(edit["edit_type"]),
+                edit_type=EditType(edit["edit_type"]),
                 from_attribute=edit["from_attribute"],
                 to_attribute=edit["to_attribute"],
             )
@@ -136,40 +136,15 @@ class PreprocessingPipeline:
             for idx in self.edit_dataset.index:
                 edit = self.get_edit(idx, self.edit_dataset)
                 # if (
-                #     edit.edit_type.type_name != "color"
+                #     edit.edit_type != EditType.ACTION
+                #     or edit.edit_type != EditType.VIEWPOINT
+                #     or edit.edit_type != EditType.BACKGROUND
                 # ):  # TODO: remove this line  # noqa: FIX002, TD003, TD002
                 #     continue
-                prompt = self.generate_prompt(edit)
+                prompt = model.generate_prompt(edit)
                 logging.info("prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)
-                model.edit(prompt, edit.image_path)
-
-    @staticmethod
-    def generate_prompt(edit: Edit) -> str:
-        category = "".join(
-            char if char.isalpha() or char.isspace() else " "
-            for char in edit.category
-        )
-        if edit.to_attribute is not np.nan:
-            to_attribute = "".join(
-                char if char.isalpha() or char.isspace() else " "
-                for char in edit.to_attribute
-            )
-        else:
-            to_attribute = ""
-
-        if edit.from_attribute is not np.nan:
-            from_attribute = "".join(
-                char if char.isalpha() or char.isspace() else " "
-                for char in edit.from_attribute
-            )
-        else:
-            from_attribute = ""
-        return edit.edit_type.prompt.format(
-            category=category,
-            to=to_attribute if hasattr(edit, "to_attribute") else "",
-            from_=from_attribute if hasattr(edit, "from_attribute") else "",
-        )
+                model.edit(prompt, edit.image_path, edit)
 
     def add_object_removal(self, records: list[dict]) -> list[dict]:
         for category_path in Path(self.dataset_path).iterdir():

@@ -5,7 +5,7 @@
             "name": "Debug GroundedSAM",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_cli.py",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_detection_cli.py",
             "args": [
                 "--model",
                 "GroundedSAM",
@@ -13,7 +13,7 @@
                 "editval_instances/backpack/000000163866.jpg",
                 "--prompt",
                 "suitcase . backpack",
-                "--out",
+                "--out_image",
                 "${workspaceFolder}/results/result_suitcase_backpack_grounded_sam.png",
                 "--model_params_yaml",
                 "model_cfgs/grounded_sam.yaml",
@@ -26,18 +26,18 @@
             "justMyCode": true
         },
         {
-            "name": "Debug OwL-ViT+SAM",
+            "name": "Debug OwlViTSAM",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_cli.py",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_detection_cli.py",
             "args": [
                 "--model",
-                "Owl-Vit+SAM",
+                "OwlViTSAM",
                 "--image",
                 "editval_instances/backpack/000000163866.jpg",
                 "--prompt",
                 "suitcase,backpack",
-                "--out",
+                "--out_image",
                 "${workspaceFolder}/results/result_suitcase_backpack_owlvit_sam.png",
                 "--model_params_yaml",
                 "model_cfgs/owlvit_sam.yaml",
@@ -53,11 +53,11 @@
             "name": "Pixlens Edit CLI - Controlnet",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/pixlens/cli/pixlens_edit_cli.py",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_editing_cli.py",
             "console": "integratedTerminal",
             "args": [
                 "--model",
-                "controlnet",
+                "ControlNet",
                 "--output",
                 "${workspaceFolder}/results/edit_output_controlnet.png",
                 "--model_params_yaml",
@@ -68,7 +68,7 @@
             "name": "Pixlens Edit CLI - Pix2pix",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/pixlens/cli/pixlens_edit_cli.py",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_editing_cli.py",
             "console": "integratedTerminal",
             "args": [
                 "--model",
@@ -80,13 +80,13 @@
             ]
         },
         {
-            "name": "Debug BLIP Caption CLI",
+            "name": "Debug BLIP1 Caption CLI",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_caption_cli.py",
             "args": [
                 "--model",
-                "blip"
+                "blip1"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
@@ -94,7 +94,7 @@
             "stopOnEntry": false,
             "jinja": false,
             "justMyCode": true
-        }
+        },
         {
             "name": "Debug BLIP2 Caption CLI",
             "type": "python",
@@ -115,7 +115,7 @@
             "name": "Debug PixLens Evaluation Pipeline - Default",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_pipeline_cli.py",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--edit-id",
                 "0", // Replace with the desired edit ID
@@ -135,7 +135,7 @@
             "name": "Debug PixLens Evaluation Pipeline - Color",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_pipeline_cli.py",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
                 "pix2pix", // Replace with the desired editing model name
@@ -155,7 +155,7 @@
             "name": "Debug PixLens Evaluation Pipeline - Size",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_pipeline_cli.py",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
                 "pix2pix", // Replace with the desired editing model name

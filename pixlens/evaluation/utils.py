@@ -17,9 +17,9 @@ edits = list(EditType)
 new_object = ["object_addition", "object_replacement", "background", "texture"]
 new_object_with_indication = ["alter_parts", "positional_addition"]
 same_object = [
-    edit.type_name
+    edit
     for edit in edits
-    if edit.type_name not in new_object + new_object_with_indication
+    if edit not in new_object + new_object_with_indication
 ]
 tol = 1e-6
 DIVDING_BY_ZERO_MSG = "Cannot divide by zero"
@@ -48,7 +48,7 @@ def get_updated_to(edit: Edit) -> str | None:
         char if char.isalpha() or char.isspace() else " "
         for char in edit.to_attribute
     )
-    if edit.edit_type.type_name in new_object:
+    if edit.edit_type in new_object:
         return to_attribute
     if edit.edit_id in new_object_with_indication:
         return remove_words_from_string(
