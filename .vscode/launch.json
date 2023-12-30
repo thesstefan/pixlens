@@ -57,7 +57,7 @@
             "console": "integratedTerminal",
             "args": [
                 "--model",
-                "controlnet",
+                "ControlNet",
                 "--output",
                 "${workspaceFolder}/results/edit_output_controlnet.png",
                 "--model_params_yaml",
