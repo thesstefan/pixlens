@@ -91,6 +91,7 @@ class ControlNet(interfaces.PromptableImageEditingModel, YamlConstructible):
         self,
         prompt: str,
         image_path: str,
+        edit_info: Edit | None = None,
     ) -> Image.Image:
         input_image = self.prepare_image(image_path)
         output = self.model(
