@@ -128,6 +128,8 @@ def main() -> None:
             evaluation_pipeline.edit_dataset,
         )
         edits = [edit]
+    overall_score = 0.0
+    successful_edits = 0
     for edit in edits:
         logging.info("Running edit: %s", edit.edit_id)
         logging.info("Edit type: %s", edit.edit_type)
@@ -158,13 +160,20 @@ def main() -> None:
             evaluation_output = ObjectRemoval().evaluate_edit(evaluation_input)
         # print the evaluation score if successful otherwise print evaluation failed
         if evaluation_output.success:
-            if evaluation_output.score > 0:
+            successful_edits += 1
+            overall_score += evaluation_output.edit_specific_score
+            if evaluation_output.edit_specific_score > 0:
                 logging.info("Good sample!")
-                logging.info(evaluation_output.score)
+                logging.info(evaluation_output.edit_specific_score)
                 logging.info(edit.image_path)
-            logging.info(evaluation_output.score)
+            logging.info(evaluation_output.edit_specific_score)
         else:
             logging.info("Evaluation failed")
+
+    logging.info("Overall score: %s", overall_score / successful_edits)
+    logging.info(
+        "Percentage of successful edits: %s", successful_edits / len(edits)
+    )
 
 
 if __name__ == "__main__":
