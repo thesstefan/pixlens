@@ -139,8 +139,6 @@ class PreprocessingPipeline:
                 #     or edit.edit_type != EditType.BACKGROUND
                 # ):  # TODO: remove this line  # noqa: FIX002, TD003, TD002
                 #     continue
-                if edit.edit_type != EditType.POSITION_REPLACEMENT:
-                    continue
                 prompt = model.generate_prompt(edit)
                 logging.info("prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)
