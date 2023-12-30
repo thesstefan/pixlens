@@ -183,8 +183,7 @@
                 "groundedsam", // Replace with the desired detection model name
                 "--edit-type",
                 "object_removal",
-                "--edit-id",
-                "340",
+                "--do-all-edits",
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",

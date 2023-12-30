@@ -43,6 +43,12 @@ parser.add_argument(
     required=False,
     help="Name of the edit type to evaluate",
 )
+parser.add_argument(
+    "--do-all-edits",
+    action="store_true",
+    help="Evaluate all edits of the given edit type",
+    required=False,
+)
 
 
 # check arguments function. Check that either edit type or edit id is provided
@@ -83,7 +89,7 @@ def main() -> None:
     # Initialize the EvaluationPipeline
     evaluation_pipeline = EvaluationPipeline(device=device)
     detection_model = (
-        GroundedSAM(device=device)
+        GroundedSAM(device=device, detection_confidence_threshold=0.5)
         if args.detection_model.lower() == "groundedsam"
         else OwlViTSAM(device=device)
     )  # Replace with actual model initialization
@@ -98,55 +104,67 @@ def main() -> None:
         all_edits_by_type = preprocessing_pipe.get_all_edits_edit_type(
             args.edit_type,
         )
-        # get first edit from the all_edits_by_type dataframe
-        random_edit_record = all_edits_by_type.iloc[[1]]
-        #     # random_edit_record = all_edits_by_type.sample(n=1)  # noqa: ERA001
-        edit = preprocessing_pipe.get_edit(
-            (random_edit_record["edit_id"].astype(int).to_numpy()[0]),
-            evaluation_pipeline.edit_dataset,
-        )
-        #
+        if args.do_all_edits is False:
+            # get first edit from the all_edits_by_type dataframe
+            random_edit_record = all_edits_by_type.iloc[[1]]
+            #     # random_edit_record = all_edits_by_type.sample(n=1)  # noqa: ERA001
+            edit = preprocessing_pipe.get_edit(
+                (random_edit_record["edit_id"].astype(int).to_numpy()[0]),
+                evaluation_pipeline.edit_dataset,
+            )
+            edits = [edit]
+        else:
+            edits = []
+            for i in range(len(all_edits_by_type)):
+                random_edit_record = all_edits_by_type.iloc[[i]]
+                edit = preprocessing_pipe.get_edit(
+                    (random_edit_record["edit_id"].astype(int).to_numpy()[0]),
+                    evaluation_pipeline.edit_dataset,
+                )
+                edits.append(edit)
     else:
         edit = preprocessing_pipe.get_edit(
             args.edit_id,
             evaluation_pipeline.edit_dataset,
         )
-    logging.info("Running edit: %s", edit.edit_id)
-    logging.info("Edit type: %s", edit.edit_type)
-    logging.info("Image path: %s", edit.image_path)
-    logging.info("Category: %s", edit.category)
-    logging.info("From attribute: %s", edit.from_attribute)
-    logging.info("To attribute: %s", edit.to_attribute)
-    logging.info("Prompt: %s", PreprocessingPipeline.generate_prompt(edit))
+        edits = [edit]
+    for edit in edits:
+        logging.info("Running edit: %s", edit.edit_id)
+        logging.info("Edit type: %s", edit.edit_type)
+        logging.info("Image path: %s", edit.image_path)
+        logging.info("Category: %s", edit.category)
+        logging.info("From attribute: %s", edit.from_attribute)
+        logging.info("To attribute: %s", edit.to_attribute)
+        logging.info("Prompt: %s", PreprocessingPipeline.generate_prompt(edit))
 
-    # Get all inputs for the edit
-    evaluation_input = evaluation_pipeline.get_all_inputs_for_edit(edit)
+        # Get all inputs for the edit
+        evaluation_input = evaluation_pipeline.get_all_inputs_for_edit(edit)
 
-    # evaluate the edit using the corresponding operation
-    # infer it from the edit type, so if edit type is "background" then use
-    # Background() class from valuation/operations/background.py and so on
-    # then call the evaluate_edit method of the class with the evaluation_input
-    # as the argument
-    # for example:
-    if edit.edit_type.type_name == "object_addition":
-        evaluation_output = ObjectAddition().evaluate_edit(
-            evaluation_input,
-        )
-    elif edit.edit_type.type_name == "color":
-        evaluation_output = ColorEdit().evaluate_edit(evaluation_input)
-    elif edit.edit_type.type_name == "size":
-        evaluation_output = SizeEdit().evaluate_edit(evaluation_input)
-    elif edit.edit_type.type_name == "object_removal":
-        evaluation_output = ObjectRemoval().evaluate_edit(evaluation_input)
-    # print the evaluation score if successful otherwise print evaluation failed
-    if evaluation_output.success:
-        if evaluation_output.score > 0:
-            logging.info("Good sample!")
+        # evaluate the edit using the corresponding operation
+        # infer it from the edit type, so if edit type is "background" then use
+        # Background() class from valuation/operations/background.py and so on
+        # then call the evaluate_edit method of the class with the evaluation_input
+        # as the argument
+        # for example:
+        if edit.edit_type.type_name == "object_addition":
+            evaluation_output = ObjectAddition().evaluate_edit(
+                evaluation_input,
+            )
+        elif edit.edit_type.type_name == "color":
+            evaluation_output = ColorEdit().evaluate_edit(evaluation_input)
+        elif edit.edit_type.type_name == "size":
+            evaluation_output = SizeEdit().evaluate_edit(evaluation_input)
+        elif edit.edit_type.type_name == "object_removal":
+            evaluation_output = ObjectRemoval().evaluate_edit(evaluation_input)
+        # print the evaluation score if successful otherwise print evaluation failed
+        if evaluation_output.success:
+            if evaluation_output.score > 0:
+                logging.info("Good sample!")
+                logging.info(evaluation_output.score)
+                logging.info(edit.image_path)
             logging.info(evaluation_output.score)
-            logging.info(edit.image_path)
-        logging.info(evaluation_output.score)
-    else:
-        logging.info("Evaluation failed")
+        else:
+            logging.info("Evaluation failed")
 
 
 if __name__ == "__main__":
