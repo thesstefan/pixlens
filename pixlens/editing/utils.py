@@ -32,6 +32,27 @@ def generate_description_based_prompt(edit: Edit) -> str:
     to_attribute = edit.to_attribute
     category = edit.category
 
+    category = "".join(
+        char if char.isalpha() or char.isspace() else " "
+        for char in edit.category
+    )
+
+    if not pd.isna(edit.to_attribute):
+        to_attribute = "".join(
+            char if char.isalpha() or char.isspace() else " "
+            for char in edit.to_attribute
+        )
+    else:
+        to_attribute = ""
+
+    if not pd.isna(edit.from_attribute):
+        from_attribute = "".join(
+            char if char.isalpha() or char.isspace() else " "
+            for char in edit.from_attribute
+        )
+    else:
+        from_attribute = ""
+
     prompt_templates: dict[EditType, str] = {
         # TODO: add prompts in a description based way
         # e.g. instead of "Add a red apple to the image", "A red apple".
