@@ -69,6 +69,7 @@ class Pix2pix(
         self,
         prompt: str,
         image_path: str,
+        edit_info: Edit,
     ) -> Image.Image:
         input_image = Image.open(image_path)
         output = self.model(

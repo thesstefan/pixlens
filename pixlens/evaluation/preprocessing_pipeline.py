@@ -144,4 +144,4 @@ class PreprocessingPipeline:
                 prompt = model.generate_prompt(edit)
                 logging.info("prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)
-                model.edit(prompt, edit.image_path)
+                model.edit(prompt, edit.image_path, edit)
