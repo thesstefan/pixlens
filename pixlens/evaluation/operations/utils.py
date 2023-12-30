@@ -9,7 +9,7 @@ def apply_mask(np_image: NDArray, mask: NDArray) -> NDArray:
     # Apply the mask to each channel
     masked_image = np.zeros_like(np_image)
     for i in range(
-        np_image.shape[2]
+        np_image.shape[2],
     ):  # Assuming image has shape [Height, Width, Channels]
         masked_image[:, :, i] = np_image[:, :, i] * mask
 
