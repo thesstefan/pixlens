@@ -80,13 +80,13 @@
             ]
         },
         {
-            "name": "Debug BLIP Caption CLI",
+            "name": "Debug BLIP1 Caption CLI",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_caption_cli.py",
             "args": [
                 "--model",
-                "blip"
+                "blip1"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
