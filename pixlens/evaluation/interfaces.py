@@ -53,7 +53,9 @@ class UpdatedStrings:
 @dataclasses.dataclass
 class EvaluationInput:
     input_image: Image.Image
+    annotated_input_image: Image.Image
     edited_image: Image.Image
+    annotated_edited_image: Image.Image
     prompt: str
     input_detection_segmentation_result: DetectionSegmentationResult
     edited_detection_segmentation_result: DetectionSegmentationResult

@@ -71,4 +71,5 @@ class PromptableImageEditingModel(Model, ImageEditor):
             edited_image = self.edit_image(prompt, image_path, edit_info)
             path_of_image.parent.mkdir(parents=True, exist_ok=True)
             edited_image.save(path_of_image)
+            logging.info("Image (and annotation) saved to %s", path_of_image)
         return edited_image

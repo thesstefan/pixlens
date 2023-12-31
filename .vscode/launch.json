@@ -175,7 +175,7 @@
             "name": "Debug PixLens Evaluation Pipeline - Removal",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_pipeline_cli.py",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
                 "pix2pix", // Replace with the desired editing model name

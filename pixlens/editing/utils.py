@@ -43,7 +43,7 @@ def generate_description_based_prompt(edit: Edit) -> str:
             for char in edit.to_attribute
         )
     else:
-        to_attribute = ""
+        to_attribute = pd.NA
 
     if not pd.isna(edit.from_attribute):
         from_attribute = "".join(
@@ -51,7 +51,7 @@ def generate_description_based_prompt(edit: Edit) -> str:
             for char in edit.from_attribute
         )
     else:
-        from_attribute = ""
+        from_attribute = pd.NA
 
     prompt_templates: dict[EditType, str] = {
         # TODO: add prompts in a description based way
@@ -163,7 +163,7 @@ def generate_instruction_based_prompt(edit: Edit) -> str:
             for char in edit.to_attribute
         )
     else:
-        to_attribute = ""
+        to_attribute = pd.NA
 
     if not pd.isna(edit.from_attribute):
         from_attribute = "".join(
@@ -171,7 +171,7 @@ def generate_instruction_based_prompt(edit: Edit) -> str:
             for char in edit.from_attribute
         )
     else:
-        from_attribute = ""
+        from_attribute = pd.NA
 
     prompt_templates = {
         EditType.COLOR: f"Change the color of the {category} to {to_attribute}",
