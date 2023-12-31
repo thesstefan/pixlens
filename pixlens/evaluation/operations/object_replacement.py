@@ -1,8 +1,5 @@
 import logging
 
-import numpy as np
-from numpy import linalg as LA
-
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
 from pixlens.evaluation import interfaces as evaluation_interfaces
 from pixlens.evaluation.utils import compute_bbox_iou

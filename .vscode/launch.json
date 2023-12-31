@@ -177,8 +177,6 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_pipeline_cli.py",
             "args": [
-                "--edit-id",
-                "77", // Replace with the desired edit ID
                 "--editing-model",
                 "pix2pix", // Replace with the desired editing model name
                 "--detection-model",
