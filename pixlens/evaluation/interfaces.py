@@ -1,5 +1,5 @@
 import dataclasses
-from enum import Enum
+import enum
 from typing import Protocol
 
 from PIL import Image
@@ -7,42 +7,28 @@ from PIL import Image
 from pixlens.detection.interfaces import DetectionSegmentationResult
 
 
-class EditType(Enum):
-    SIZE = ("size", "Change the size of {category} to {to}")
-    COLOR = ("color", "Change the color of {category} to {to}")
-    OBJECT_ADDITION = ("object_addition", "Add a {to} to the image")
-    POSITIONAL_ADDITION = (
-        "positional_addition",
-        "Add a {to} the {category}",
-    )
-    OBJECT_REMOVAL = ("object_removal", "Remove {category}")
-    OBJECT_REPLACEMENT = ("object_replacement", "Replace {from_} with {to}")
-    POSITION_REPLACEMENT = ("position_replacement", "Move {from_} to {to}")
-    OBJECT_DUPLICATION = ("object_duplication", "Duplicate {category}")
-    TEXTURE = ("texture", "Change the texture of {category} to {to}")
-    ACTION = ("action", "{category} doing {to}")
-    VIEWPOINT = ("viewpoint", "Change the viewpoint to {to}")
-    BACKGROUND = ("background", "Change the background to {to}")
-    STYLE = ("style", "Change the style of {category} to {to}")
-    SHAPE = ("shape", "Change the shape of {category} to {to}")
-    ALTER_PARTS = ("alter_parts", "{to} to {category}")
-
-    def __init__(self, type_name: str, prompt: str) -> None:
-        self.type_name = type_name
-        self.prompt = prompt
-
-    @classmethod
-    def from_type_name(cls, type_name: str) -> "EditType":
-        for edit_type in cls:
-            if edit_type.type_name == type_name:
-                return edit_type
-        error_msg = f"No such EditType with type_name: {type_name}"
-        raise ValueError(error_msg)
+class EditType(enum.StrEnum):
+    SIZE = "size"
+    COLOR = "color"
+    OBJECT_ADDITION = "object_addition"
+    POSITIONAL_ADDITION = "positional_addition"
+    OBJECT_REMOVAL = "object_removal"
+    OBJECT_REPLACEMENT = "object_replacement"
+    POSITION_REPLACEMENT = "position_replacement"
+    OBJECT_DUPLICATION = "object_duplication"
+    TEXTURE = "texture"
+    ACTION = "action"
+    BACKGROUND = "background"
+    VIEWPOINT = "viewpoint"
+    STYLE = "style"
+    SHAPE = "shape"
+    ALTER_PARTS = "alter_parts"
 
 
 @dataclasses.dataclass
 class EvaluationOutput:
-    score: float
+    edit_specific_score: float
+    ssim_score: float | None
     success: bool
 
 

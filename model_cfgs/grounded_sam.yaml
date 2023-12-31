@@ -3,3 +3,4 @@ params:
     grounding_dino_type: swin_t
     sam_type: vit_h
     detection_confidence_threshold: 0.3
+    device: cuda

@@ -26,8 +26,8 @@ def main() -> None:
     elif args.model == "blip2":
         bliptype = blip.BlipType.BLIP2
     else:
-        msg = "Invalid model"
-        raise ValueError(msg)
+        error_msg = "Invalid model"
+        raise ValueError(error_msg)
     image_to_objects = nltk_extractor.ImageToObjectsNLTK(
         device=torch.device("cpu"),
         blip_type=bliptype,

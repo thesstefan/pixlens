@@ -1,6 +1,8 @@
 import torch
 
 from pixlens.detection import interfaces
+from pixlens.detection.grounded_sam import GroundedSAM
+from pixlens.detection.owl_vit_sam import OwlViTSAM
 
 
 def get_detection_segmentation_result_of_target(
@@ -37,3 +39,11 @@ def get_detection_segmentation_result_of_target(
         detection_output=targeted_detection_output,
         segmentation_output=targeted_segmentation_output,
     )
+
+
+def get_separator(model: interfaces.PromptDetectAndBBoxSegmentModel) -> str:
+    if isinstance(model, GroundedSAM):
+        return "."
+    if isinstance(model, OwlViTSAM):
+        return ","
+    raise ValueError("Invalid model type")

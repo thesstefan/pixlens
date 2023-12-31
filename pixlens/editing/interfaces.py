@@ -5,6 +5,7 @@ from typing import Protocol
 
 from PIL import Image
 
+from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
 
 
@@ -22,7 +23,16 @@ class ImageEditor(Protocol):
 
 class PromptableImageEditingModel(Model, ImageEditor):
     @abstractmethod
-    def edit_image(self, prompt: str, image_path: str) -> Image.Image:
+    def edit_image(
+        self,
+        prompt: str,
+        image_path: str,
+        edit_info: Edit | None = None,
+    ) -> Image.Image:
+        ...
+
+    @abstractmethod
+    def generate_prompt(self, edit: Edit) -> str:
         ...
 
     def check_if_image_exists(
@@ -43,7 +53,12 @@ class PromptableImageEditingModel(Model, ImageEditor):
         return full_path.exists(), full_path
 
     # TODO: fix this, check if image exists and saving should be done somewhere else
-    def edit(self, prompt: str, image_path: str) -> Image.Image:
+    def edit(
+        self,
+        prompt: str,
+        image_path: str,
+        edit_info: Edit | None = None,
+    ) -> Image.Image:
         image_exists_bool, path_of_image = self.check_if_image_exists(
             prompt,
             image_path,
@@ -53,7 +68,7 @@ class PromptableImageEditingModel(Model, ImageEditor):
             edited_image = Image.open(path_of_image)
         else:
             logging.info("Editing image...")
-            edited_image = self.edit_image(prompt, image_path)
+            edited_image = self.edit_image(prompt, image_path, edit_info)
             path_of_image.parent.mkdir(parents=True, exist_ok=True)
             edited_image.save(path_of_image)
         return edited_image

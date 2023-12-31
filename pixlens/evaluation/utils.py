@@ -1,24 +1,25 @@
 from collections import Counter
 
-import colorspacious as cs
 import numpy as np
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as F  # noqa: N812
+from numpy.typing import NDArray
 from PIL import Image, ImageColor
 
 # import delta e color similarity function
 from skimage.color import deltaE_ciede2000, rgb2lab
+from skimage.metrics import structural_similarity as ssim
 
-from pixlens.evaluation.interfaces import Edit, EditType
+from pixlens.evaluation.interfaces import Edit, EditType, EvaluationInput
 
 directions_and_instructions = ["add", "to", "right", "left", "below"]
 edits = list(EditType)
 new_object = ["object_addition", "object_replacement", "background", "texture"]
 new_object_with_indication = ["alter_parts", "positional_addition"]
 same_object = [
-    edit.type_name
+    edit
     for edit in edits
-    if edit.type_name not in new_object + new_object_with_indication
+    if edit not in new_object + new_object_with_indication
 ]
 tol = 1e-6
 DIVDING_BY_ZERO_MSG = "Cannot divide by zero"
@@ -41,31 +42,20 @@ def remove_words_from_string(
 
 
 def get_updated_to(edit: Edit) -> str | None:
-    if edit.edit_type.type_name in new_object:
-        return edit.to_attribute
+    if edit.to_attribute is np.nan:
+        return None
+    to_attribute = "".join(
+        char if char.isalpha() or char.isspace() else " "
+        for char in edit.to_attribute
+    )
+    if edit.edit_type in new_object:
+        return to_attribute
     if edit.edit_id in new_object_with_indication:
         return remove_words_from_string(
-            edit.to_attribute,
+            to_attribute,
             directions_and_instructions,
         )
     return None
-
-
-def get_prompt_for_output_detection(edit: Edit) -> str:
-    if edit.edit_type.type_name in new_object:
-        return edit.to_attribute
-    if edit.edit_id in new_object_with_indication:
-        return remove_words_from_string(
-            edit.to_attribute,
-            directions_and_instructions,
-        )
-    return edit.category
-
-
-def get_prompt_for_input_detection(edit: Edit) -> str:
-    if edit.edit_type.type_name in ("background", "object_replacement"):
-        return edit.from_attribute
-    return edit.category
 
 
 def compute_area(tensor1: torch.Tensor) -> float:
@@ -189,3 +179,61 @@ def color_change_applied_correctly(
 
     # Check if the target color is in the 5 closest colors
     return target_color in [color[0] for color in closest_colors]
+
+
+def apply_mask(np_image: NDArray, mask: NDArray) -> NDArray:
+    # Ensure the mask is a boolean array
+    mask = mask.astype(bool)
+
+    # Apply the mask to each channel
+    masked_image = np.zeros_like(np_image)
+    for i in range(
+        np_image.shape[2],
+    ):  # Assuming image has shape [Height, Width, Channels]
+        masked_image[:, :, i] = np_image[:, :, i] * mask
+
+    return masked_image
+
+
+def compute_ssim_over_mask(
+    input_image: Image.Image,
+    edited_image: Image.Image,
+    mask1: NDArray,
+    mask2: NDArray | None = None,
+    *,
+    background: bool = False,
+) -> float:
+    input_image_array = np.array(input_image)
+    edited_image_array = np.array(edited_image)
+
+    if edited_image_array.shape != input_image_array.shape:
+        edited_image_resized = edited_image.resize(
+            input_image.size,
+            Image.Resampling.LANCZOS,
+        )
+        edited_image_array = np.array(edited_image_resized)
+
+    if mask2 is None:
+        mask2 = mask1
+    input_image_masked = apply_mask(input_image_array, mask1)
+    edited_image_masked = apply_mask(edited_image_array, mask2)
+    if background:
+        input_image_masked = apply_mask(input_image_array, ~mask1)
+        edited_image_masked = apply_mask(edited_image_array, ~mask2)
+
+    return float(ssim(input_image_masked, edited_image_masked, channel_axis=2))
+
+
+def compute_ssim(
+    evaluation_input: EvaluationInput,
+) -> float:
+    input_image_np = np.array(evaluation_input.input_image)
+    edited_image_np = np.array(evaluation_input.edited_image)
+    if edited_image_np.shape != input_image_np.shape:
+        edited_image_resized = evaluation_input.edited_image.resize(
+            evaluation_input.input_image.size,
+            Image.Resampling.LANCZOS,
+        )
+        edited_image_np = np.array(edited_image_resized)
+
+    return float(ssim(input_image_np, edited_image_np, channel_axis=2))
