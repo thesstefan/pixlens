@@ -17,7 +17,12 @@ class Model(ABC):
 
 class ImageEditor(Protocol):
     @abstractmethod
-    def edit_image(self, prompt: str, image_path: str) -> Image.Image:
+    def edit_image(
+        self,
+        prompt: str,
+        image_path: str,
+        edit_info: Edit | None = None,
+    ) -> Image.Image:
         pass
 
 

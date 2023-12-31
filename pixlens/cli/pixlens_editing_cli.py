@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from pixlens.editing import controlnet, pix2pix
+from pixlens.editing import controlnet, pix2pix, diffedit
 from pixlens.utils import utils
 from pixlens.evaluation.interfaces import Edit, EditType
 
@@ -38,10 +38,22 @@ parser.add_argument(
 
 NAME_TO_MODEL: dict[
     str,
-    type[controlnet.ControlNet] | type[pix2pix.Pix2pix],
+    type[controlnet.ControlNet]
+    | type[pix2pix.Pix2pix]
+    | type[diffedit.DiffEdit],
 ] = {
     "ControlNet": controlnet.ControlNet,
     "InstructPix2Pix": pix2pix.Pix2pix,
+    "DiffEdit": diffedit.DiffEdit,
+}
+
+MODEL_IS_INSTRUCTIVE: dict[
+    str,
+    bool,
+] = {
+    "ControlNet": True,
+    "InstructPix2Pix": True,
+    "DiffEdit": False,
 }
 
 
@@ -54,7 +66,11 @@ def main() -> None:
         url = "https://raw.githubusercontent.com/timothybrooks/instruct-pix2pix/main/imgs/example.jpg"
         image = utils.download_image(url)
         image.save(in_path)
-        prompt = "turn him into cyborg"
+
+        if MODEL_IS_INSTRUCTIVE[args.model]:
+            prompt = "turn him into a cyborg"
+        else:
+            prompt = "A photo of the sculpture of David[SEP]A photo of a cyborg"
     else:
         in_path = args.input
         prompt = args.prompt

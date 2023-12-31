@@ -1,0 +1,3 @@
+class: DiffEdit 
+params:
+    device: cuda
