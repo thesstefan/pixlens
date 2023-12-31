@@ -17,7 +17,7 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
                 "No {to} attribute provided in an object replacement operation.",
             )
             return evaluation_interfaces.EvaluationOutput(
-                score=0,
+                edit_specific_score=0,
                 success=False,
             )
         if from_attribute is None:
@@ -25,7 +25,7 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
                 "No {from} attribute provided in an object replacement operation.",
             )
             return evaluation_interfaces.EvaluationOutput(
-                score=0,
+                edit_specific_score=0,
                 success=False,
             )
 
@@ -41,7 +41,7 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
         # if no from in input detected, then return 0
         if len(froms_in_input.detection_output.phrases) == 0:
             return evaluation_interfaces.EvaluationOutput(
-                score=0,
+                edit_specific_score=0,
                 success=False,
             )
 
@@ -62,7 +62,7 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
         # for each from object in input image, check for a corresponding to object with the highest IoU in edited image  # noqa: E501
         # that is not used yet
         for from_object_index, _ in enumerate(
-            froms_in_input.detection_output.phrases,
+            froms_in_input.detection_output.bounding_boxes,
         ):
             from_object_bbox = froms_in_input.detection_output.bounding_boxes[
                 from_object_index
@@ -70,7 +70,7 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
             max_iou = 0.0
             max_iou_index = -1
             for to_object_index, _ in enumerate(
-                tos_in_edited.detection_output.phrases,
+                tos_in_edited.detection_output.bounding_boxes,
             ):
                 if to_object_index in used_tos_in_edited:
                     continue
@@ -79,6 +79,11 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
                 ]
                 iou = compute_bbox_iou(from_object_bbox, to_object_bbox)
                 if iou > max_iou:
+                    # we could compare here iou with a threshold to make
+                    # it more robust but for the moment as max_iou
+                    # is initialized with 0.0, it will work kind of as
+                    # an implicit threshold, by checking that at least
+                    # the {to} object covers the {from} object
                     max_iou = iou
                     max_iou_index = to_object_index
 
@@ -93,7 +98,9 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
 
         # compute the number of to objects that are not used
         # in the edited image
-        false_positives = len(tos_in_edited.detection_output.phrases) - len(
+        false_positives = len(
+            tos_in_edited.detection_output.bounding_boxes,
+        ) - len(
             used_tos_in_edited,
         )
 
@@ -102,6 +109,6 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
 
         f1_score = 2 * (precision * recall) / (precision + recall)
         return evaluation_interfaces.EvaluationOutput(
-            score=f1_score,
+            edit_specific_score=f1_score,
             success=True,
         )

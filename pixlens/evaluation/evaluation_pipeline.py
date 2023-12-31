@@ -99,6 +99,9 @@ class EvaluationPipeline:
             for item in [category, from_attribute, to_attribute]
             if item is not None
         ]
+
+        list_for_det_seg = list(set(list_for_det_seg))
+
         separator = get_separator(self.detection_model)
         prompt_for_det_seg = separator.join(list_for_det_seg)
 

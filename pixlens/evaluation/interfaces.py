@@ -28,8 +28,8 @@ class EditType(enum.StrEnum):
 @dataclasses.dataclass
 class EvaluationOutput:
     edit_specific_score: float
-    ssim_score: float | None
     success: bool
+    ssim_score: float | None = None
 
 
 @dataclasses.dataclass
