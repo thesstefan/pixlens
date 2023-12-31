@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from pixlens.editing import controlnet, pix2pix
+from pixlens.editing import controlnet, pix2pix, null_text_inversion
 from pixlens.utils import utils
 from pixlens.evaluation.interfaces import Edit, EditType
 
@@ -36,12 +36,16 @@ parser.add_argument(
     required=True,
 )
 
+# FIXME(thesstefan): This typing is horrible. :(
 NAME_TO_MODEL: dict[
     str,
-    type[controlnet.ControlNet] | type[pix2pix.Pix2pix],
+    type[controlnet.ControlNet]
+    | type[pix2pix.Pix2pix]
+    | type[null_text_inversion.NullTextInversion],
 ] = {
     "ControlNet": controlnet.ControlNet,
     "InstructPix2Pix": pix2pix.Pix2pix,
+    "NullTextInversion": null_text_inversion.NullTextInversion,
 }
 
 
@@ -50,18 +54,37 @@ def main() -> None:
 
     # check if args.in defined
     in_path = "example_input.jpg"
+    edit_info = None
     if args.input is None:
         url = "https://raw.githubusercontent.com/timothybrooks/instruct-pix2pix/main/imgs/example.jpg"
         image = utils.download_image(url)
         image.save(in_path)
-        prompt = "turn him into cyborg"
+
+        prompt_instruction = "turn marble statue into cyborg"
+        prompt_description = "Statue inside a room[SEP]Cyborg inside a room"
+
+        prompt = (
+            prompt_description
+            if args.model == "NullTextInversion"
+            else prompt_instruction
+        )
+
+        edit_info = Edit(
+            0,
+            in_path,
+            0,
+            "",
+            EditType.OBJECT_REPLACEMENT,
+            from_attribute="statue",
+            to_attribute="cyborg",
+        )
     else:
         in_path = args.input
         prompt = args.prompt
 
     model = NAME_TO_MODEL[args.model].from_yaml(args.model_params_yaml)
 
-    output = model.edit(prompt, in_path)
+    output = model.edit(prompt, in_path, edit_info)
     if args.input is None:
         Path(in_path).unlink()
 
