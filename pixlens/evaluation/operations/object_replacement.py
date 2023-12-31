@@ -14,7 +14,8 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
         to_attribute = evaluation_input.updated_strings.to_attribute
         if to_attribute is None:
             logging.warning(
-                "No {to} attribute provided in an object replacement operation.",
+                "No {to} attribute provided in an "
+                "object replacement operation.",
             )
             return evaluation_interfaces.EvaluationOutput(
                 edit_specific_score=0,
@@ -22,7 +23,8 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
             )
         if from_attribute is None:
             logging.warning(
-                "No {from} attribute provided in an object replacement operation.",
+                "No {from} attribute provided in an "
+                "object replacement operation.",
             )
             return evaluation_interfaces.EvaluationOutput(
                 edit_specific_score=0,
