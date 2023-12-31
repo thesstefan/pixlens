@@ -16,7 +16,7 @@ from pixlens.utils.utils import get_cache_dir, get_image_extension
 
 class EvaluationPipeline:
     def __init__(self, device: torch.device) -> None:
-        self.device = "cpu" #original was cuda
+        self.device = "cpu"  # original was cuda
         self.edit_dataset: pd.DataFrame
         self.get_edit_dataset()
         self.detection_model: detection_interfaces.PromptDetectAndBBoxSegmentModel  # noqa: E501

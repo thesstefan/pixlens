@@ -84,11 +84,26 @@ def compute_area_ratio(
     return area1 / area2
 
 
-def compute_iou(tensor1: torch.Tensor, tensor2: torch.Tensor) -> float:
+def compute_mask_iou(tensor1: torch.Tensor, tensor2: torch.Tensor) -> float:
     intersection = torch.logical_and(tensor1, tensor2).sum()
     union = torch.logical_or(tensor1, tensor2).sum()
     iou = intersection.float() / union.float()
     return iou.item()
+
+
+def compute_bbox_iou(bbox1: torch.Tensor, bbox2: torch.Tensor) -> float:
+    # bbox1 = [x1, y1, x2, y2]  # noqa: ERA001
+    # bbox2 = [x1, y1, x2, y2]  # noqa: ERA001
+    x1 = max(bbox1[0].item(), bbox2[0].item())
+    y1 = max(bbox1[1].item(), bbox2[1].item())
+    x2 = min(bbox1[2].item(), bbox2[2].item())
+    y2 = min(bbox1[3].item(), bbox2[3].item())
+    intersection_area = (x2 - x1 + 1) * (y2 - y1 + 1)
+    bbox1_area = (bbox1[2] - bbox1[0] + 1) * (bbox1[3] - bbox1[1] + 1)
+    bbox2_area = (bbox2[2] - bbox2[0] + 1) * (bbox2[3] - bbox2[1] + 1)
+    return intersection_area / float(
+        bbox1_area + bbox2_area - intersection_area,
+    )
 
 
 def is_small_area_within_big_area(
