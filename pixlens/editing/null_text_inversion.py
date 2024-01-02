@@ -123,17 +123,46 @@ class NullTextInversion(
         # TODO(thesstefan): Play more with this parameters and see what
         #                   can be achieved with them. May need to make them
         #                   more operation specific!
-        blend_words = (
-            (edit_info.to_attribute,),
-            (edit_info.from_attribute or edit_info.to_attribute,),
-        )
         equalizer_params = {
             "words": (edit_info.to_attribute,),
             "values": (self.subject_amplification,),
         }
 
-        # FIXME(thesstefan): Using this parameter throws a KeyError
-        # in the implementation. It's quite important, so fix it.
+        """
+        blend_words = (
+            (edit_info.to_attribute,),
+            (
+                edit_info.to_attribute if is_replace_controller
+                else edit_info.from_attribute,
+            ),
+        )
+        """
+
+        # FIXME(thesstefan): Using the blend_words parameter
+        # makes the implementation code raise a KeyError. This
+        # seems to be because of our pinned diffusers version.
+        # This parameters seems to be quite important since it
+        # defines "locality" in the edit.
+        #
+        # Here are some related issues that I found:
+        #   https://github.com/google/prompt-to-prompt/issues/57
+        #   https://github.com/google/prompt-to-prompt/issues/72
+        #   https://github.com/google/prompt-to-prompt/issues/37
+        #
+        # Pinning the diffusers version to something earlier like
+        # 0.10.0 makes it work. I can't reproduce the results
+        # from the paper though. We can't downgrade because we need
+        # other things from newer versions. For example ControlNet
+        # is introduced in 0.25.0.
+        #
+        # We have two choices:
+        #   - Try to run this model in a separate environment
+        #   and remove the other dependencies e.g. ControlNet that
+        #   use a newer version of version.
+        #
+        #   - Wait for an official HF version to be implemented.
+        #   There seems to be some recent work being done on it (8 days ago):
+        #       https://github.com/huggingface/diffusers/issues/6313
         controller = controllers.make_controller(
             [src, dst],
             self.ldm_stable.tokenizer,
