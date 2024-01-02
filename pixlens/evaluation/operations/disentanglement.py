@@ -275,8 +275,6 @@ class Disentanglement:
             cos_similarities = []
             angles = []
             results[attribute_type] = {}
-
-            # Iterate over each pair of attributes within this type
             for i in range(len(attributes)):
                 for j in range(i + 1, len(attributes)):
                     a1, a2 = attributes[i], attributes[j]
