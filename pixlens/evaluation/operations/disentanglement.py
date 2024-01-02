@@ -2,6 +2,7 @@ import json
 from itertools import permutations
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from PIL import Image
 
@@ -26,14 +27,19 @@ class Disentanglement:
         self.model: editing_interfaces.PromptableImageEditingModel
         self.json_file_path: Path = Path(json_file_path)
         self.image_data_path: Path = Path(image_data_path)
-        self.data_attributes, self.obejcts = self.load_attributes_and_objects()
+        self.data_attributes, self.objects = self.load_attributes_and_objects()
 
     def evaluate_model(
         self,
         model: editing_interfaces.PromptableImageEditingModel,
     ) -> None:
         self.init_model(model)
-        self.generate_dataset()
+        pd_data_path, path_exists = self.check_if_pd_dataset_existent()
+        if path_exists:
+            self.dataset = pd.read_csv(pd_data_path)
+        else:
+            self.generate_dataset()
+        self.intra_sample_evaluation()
 
     def check_if_pd_dataset_existent(self) -> tuple[str, bool]:
         cache_dir = get_cache_dir()
@@ -68,7 +74,7 @@ class Disentanglement:
         z_0 = self.model.get_latent(prompt="", image_path=str_img_path)
         for attribute in list(self.data_attributes.keys()):
             for o0, a0, o1, a1 in self.generate_ordered_unique_combinations(
-                self.obejcts,
+                self.objects,
                 self.data_attributes[attribute],
             ):
                 prompt1 = self.get_prompt(o0, a1, attribute)
@@ -171,6 +177,45 @@ class Disentanglement:
 
             # Crop the center of the image
             return img.crop((left, top, right, bottom))
+
+    def intra_sample_evaluation(self) -> None:
+        raise NotImplementedError
+
+    def compute_norms(self) -> tuple[dict[str, list[float]], list]:
+        # Initialize a dictionary to store the norms for each attribute type
+        norms_per_attribute_type: dict[str, list[float]] = {
+            attr_type: [] for attr_type in self.data_attributes
+        }
+
+        # List to store norms for all samples
+        all_norms: list[float] = []
+
+        # Iterate over the dataset
+        for _, row in self.dataset.iterrows():
+            # Compute the norm for the current sample using PyTorch
+            norm = torch.norm(
+                row["z_y"] - (row["z_2"] + row["z_1"] - row["z_neg"]),
+            )
+
+            # Append the norm to the respective attribute type list and to the overall list
+            norms_per_attribute_type[row["attribute_type"]].append(norm.item())
+            all_norms.append(norm.item())
+
+        return norms_per_attribute_type, all_norms
+
+    def calculate_statistics(self) -> tuple[dict[str, float], float]:
+        norms_per_attribute_type, all_norms = self.compute_norms()
+
+        # Compute average norms per attribute type
+        avg_norms_per_attribute_type: dict[str, float] = {
+            attr_type: np.mean(norms)
+            for attr_type, norms in norms_per_attribute_type.items()
+        }
+
+        # Compute overall average norm
+        overall_avg_norm = np.mean(all_norms)
+
+        return avg_norms_per_attribute_type, overall_avg_norm
 
 
 import torch
