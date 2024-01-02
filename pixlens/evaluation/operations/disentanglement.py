@@ -1,10 +1,12 @@
 import json
+import logging
 from itertools import permutations
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from PIL import Image
+from scipy.spatial.distance import cosine
 
 from pixlens.editing import interfaces as editing_interfaces
 from pixlens.utils.utils import get_cache_dir
@@ -22,12 +24,17 @@ class Disentanglement:
                 "z_2",
                 "z_neg",
                 "z_y",
+                "norm",
             ],
         )
         self.model: editing_interfaces.PromptableImageEditingModel
         self.json_file_path: Path = Path(json_file_path)
         self.image_data_path: Path = Path(image_data_path)
         self.data_attributes, self.objects = self.load_attributes_and_objects()
+        self.results_path = Path("results.json")
+        self.results = {}
+        if self.results_path.exists():
+            self.results = json.load(self.results_path.open())
 
     def evaluate_model(
         self,
@@ -36,10 +43,29 @@ class Disentanglement:
         self.init_model(model)
         pd_data_path, path_exists = self.check_if_pd_dataset_existent()
         if path_exists:
+            logging.info("Loading existing dataset")
             self.dataset = pd.read_csv(pd_data_path)
         else:
+            logging.info("Generating dataset")
             self.generate_dataset()
-        self.intra_sample_evaluation()
+
+        if "Avg_norm" not in self.results:
+            logging.info("Doing intra sample evaluation")
+            att_norms, avg_norm = self.intra_sample_evaluation()
+            self.results["Avg_norm"] = avg_norm
+            self.results["Avg_norm_per_attribute"] = att_norms
+        for attribute in self.data_attributes:
+            logging.info(
+                "Average norm for attribute %s : %f",
+                attribute,
+                self.results["Avg_norm_per_attribute"][attribute],
+            )
+        logging.info("Average norm overall: %f", self.results["Avg_norm"])
+        logging.info("Doing  inter sample and intra attirbute evaluation")
+        if "Inter_sample_and_intra_attribute" not in self.results:
+            self.results[
+                "Inter_sample_and_intra_attribute"
+            ] = self.inter_sample_and_intra_attribute()
 
     def check_if_pd_dataset_existent(self) -> tuple[str, bool]:
         cache_dir = get_cache_dir()
@@ -61,6 +87,7 @@ class Disentanglement:
                 )  # Let's do only one image for now per class
                 if image_file.is_file():
                     self.generate_all_latents_for_image(image_file)
+        self.dataset["norm"] = None
         self.dataset.to_csv(pandas_path)
 
     def generate_all_latents_for_image(self, image_path: Path) -> None:
@@ -178,44 +205,96 @@ class Disentanglement:
             # Crop the center of the image
             return img.crop((left, top, right, bottom))
 
-    def intra_sample_evaluation(self) -> None:
-        raise NotImplementedError
-
     def compute_norms(self) -> tuple[dict[str, list[float]], list]:
-        # Initialize a dictionary to store the norms for each attribute type
         norms_per_attribute_type: dict[str, list[float]] = {
             attr_type: [] for attr_type in self.data_attributes
         }
-
-        # List to store norms for all samples
         all_norms: list[float] = []
-
-        # Iterate over the dataset
         for _, row in self.dataset.iterrows():
-            # Compute the norm for the current sample using PyTorch
             norm = torch.norm(
                 row["z_y"] - (row["z_2"] + row["z_1"] - row["z_neg"]),
             )
-
-            # Append the norm to the respective attribute type list and to the overall list
+            row["norm"] = norm.item()
             norms_per_attribute_type[row["attribute_type"]].append(norm.item())
             all_norms.append(norm.item())
 
         return norms_per_attribute_type, all_norms
 
-    def calculate_statistics(self) -> tuple[dict[str, float], float]:
+    def intra_sample_evaluation(self) -> tuple[dict[str, float], float]:
         norms_per_attribute_type, all_norms = self.compute_norms()
 
-        # Compute average norms per attribute type
         avg_norms_per_attribute_type: dict[str, float] = {
-            attr_type: np.mean(norms)
+            attr_type: float(np.mean(norms))
             for attr_type, norms in norms_per_attribute_type.items()
         }
 
-        # Compute overall average norm
         overall_avg_norm = np.mean(all_norms)
 
         return avg_norms_per_attribute_type, overall_avg_norm
+
+    def compute_attribute_directions(
+        self,
+        a1: str,
+        a2: str,
+    ) -> tuple[float, float]:
+        filtered_rows = self.dataset[
+            (self.dataset["attribute_old"] == a1)
+            & (self.dataset["attribute_new"] == a2)
+        ]
+
+        # Compute vectors
+        vectors = []
+        for _, row in filtered_rows.iterrows():
+            v1 = row["z_y"] - row["z_2"]
+            v2 = row["z_1"] - row["z_neg"]
+            vectors.extend([v1, v2])
+
+        cos_similarities = []
+        angles = []
+        for i in range(len(vectors)):
+            for j in range(i + 1, len(vectors)):
+                cos_sim = 1 - cosine(
+                    vectors[i],
+                    vectors[j],
+                )  # cosine similarity
+                angle_rad = np.arccos(cos_sim)  # angle in radians
+
+                cos_similarities.append(cos_sim)
+                angles.append(angle_rad)
+
+        avg_cos_similarity = np.mean(cos_similarities)
+        avg_angle = np.mean(angles)
+
+        return avg_cos_similarity, avg_angle
+
+    def inter_sample_and_intra_attribute(self) -> dict:
+        results: dict = {}
+
+        # Iterate over each attribute type
+        for attribute_type, attributes in self.data_attributes.items():
+            cos_similarities = []
+            angles = []
+            results[attribute_type] = {}
+
+            # Iterate over each pair of attributes within this type
+            for i in range(len(attributes)):
+                for j in range(i + 1, len(attributes)):
+                    a1, a2 = attributes[i], attributes[j]
+                    (
+                        avg_cos_similarity,
+                        avg_angle,
+                    ) = self.compute_attribute_directions(a1, a2)
+                    angles.append(avg_angle)
+                    cos_similarities.append(avg_cos_similarity)
+                    results[attribute_type][(a1, a2)] = {
+                        "Average Cosine Similarity": avg_cos_similarity,
+                        "Average Angle": avg_angle,
+                    }
+            results[attribute_type]["Average Cosine Similarity"] = np.mean(
+                cos_similarities,
+            )
+            results[attribute_type]["Average Angle"] = np.mean(angles)
+        return results
 
 
 import torch
