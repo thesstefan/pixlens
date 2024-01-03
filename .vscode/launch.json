@@ -80,6 +80,20 @@
             ]
         },
         {
+            "name": "Debug Edit CLI Null-Text-Inversion",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_editing_cli.py",
+            "args": [
+                "--model",
+                "NullTextInversion",
+                "--output",
+                "${workspaceFolder}/results/edit_output_null_text_inversion.png",
+                "--model_params_yaml",
+                "model_cfgs/null_text_inversion.yaml",
+            ],
+        },
+        {
             "name": "Debug BLIP1 Caption CLI",
             "type": "python",
             "request": "launch",
