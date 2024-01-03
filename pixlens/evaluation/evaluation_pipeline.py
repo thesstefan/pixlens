@@ -17,7 +17,7 @@ from pixlens.visualization import annotation
 
 class EvaluationPipeline:
     def __init__(self, device: torch.device) -> None:
-        self.device = device
+        self.device = "cpu"  # original was cuda
         self.edit_dataset: pd.DataFrame
         self.get_edit_dataset()
         self.detection_model: detection_interfaces.PromptDetectAndBBoxSegmentModel  # noqa: E501
@@ -87,7 +87,7 @@ class EvaluationPipeline:
         edited_image = self.get_edited_image_from_edit(edit, self.editing_model)
         prompt = self.editing_model.generate_prompt(edit)
         from_attribute = (
-            None if np.isnan(edit.from_attribute) else edit.from_attribute
+            None if pd.isna(edit.from_attribute) else edit.from_attribute
         )
         to_attribute = get_updated_to(edit)
         category = "".join(
@@ -99,6 +99,9 @@ class EvaluationPipeline:
             for item in [category, from_attribute, to_attribute]
             if item is not None
         ]
+
+        list_for_det_seg = list(set(list_for_det_seg))
+
         separator = get_separator(self.detection_model)
         prompt_for_det_seg = separator.join(list_for_det_seg)
 
