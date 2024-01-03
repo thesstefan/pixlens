@@ -80,6 +80,21 @@
             ]
         },
         {
+            "name": "Pixlens Edit CLI - DiffEdit",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_editing_cli.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--model",
+                "DiffEdit",
+                "--output",
+                "${workspaceFolder}/results/edit_output_diffedit.png",
+                "--model_params_yaml",
+                "model_cfgs/diffedit.yaml",
+            ]
+        },
+        {
             "name": "Debug BLIP1 Caption CLI",
             "type": "python",
             "request": "launch",
