@@ -11,9 +11,7 @@ def get_detection_segmentation_result_of_target(
 ) -> interfaces.DetectionSegmentationResult:
     detection_output = detection_segmentation_result.detection_output
     segmentation_output = detection_segmentation_result.segmentation_output
-    try:
-        _ = detection_output.phrases.index(target)
-    except ValueError:
+    if target not in detection_output.phrases:
         return interfaces.DetectionSegmentationResult(
             detection_output=interfaces.DetectionOutput(
                 logits=torch.tensor([]),
