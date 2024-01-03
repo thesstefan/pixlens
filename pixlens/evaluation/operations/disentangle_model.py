@@ -54,6 +54,18 @@ class Classifier:
         self.dataset = dataset
         self.label_encoder = LabelEncoder()
 
+    def save_checkpoint(self, filename: str) -> None:
+        checkpoint = {
+            "model_state_dict": self.model.state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict(),
+        }
+        torch.save(checkpoint, filename)
+
+    def load_checkpoint(self, filename: str) -> None:
+        checkpoint = torch.load(filename)
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
     def prepare_data(self) -> None:
         inputs = np.array(
             self.dataset["z_y"] - self.dataset["z_1"],
@@ -87,19 +99,20 @@ class Classifier:
 
     def train_classifier(self, num_epochs: int = 50) -> None:
         num_classes = len(np.unique(self.dataset["attribute_type"]))
-        model = CNNClassifier(num_classes)
-        criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(model.parameters(), lr=0.001)
+        self.model = CNNClassifier(num_classes)
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
 
         for _ in range(num_epochs):
             for inputs, labels in self.train_loader:
-                optimizer.zero_grad()
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
+                self.optimizer.zero_grad()
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, labels)
                 loss.backward()
-                optimizer.step()
+                self.optimizer.step()
 
-        self.model = model
+        # Optionally save the model after training
+        self.save_checkpoint("model_checkpoint.pth")
 
     def evaluate_classifier(self) -> float:
         self.model.eval()
