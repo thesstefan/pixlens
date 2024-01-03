@@ -71,23 +71,21 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
             ]
             max_iou = 0.0
             max_iou_index = -1
-            for to_object_index, _ in enumerate(
+
+            iou = box_iou(
+                from_object_bbox.unsqueeze(0),
                 tos_in_edited.detection_output.bounding_boxes,
-            ):
-                if to_object_index in used_tos_in_edited:
-                    continue
-                to_object_bbox = tos_in_edited.detection_output.bounding_boxes[
-                    to_object_index
-                ]
-                iou = box_iou(from_object_bbox, to_object_bbox)
-                if iou > max_iou:
-                    # we could compare here iou with a threshold to make
-                    # it more robust but for the moment as max_iou
-                    # is initialized with 0.0, it will work kind of as
-                    # an implicit threshold, by checking that at least
-                    # the {to} object covers the {from} object
-                    max_iou = iou
-                    max_iou_index = to_object_index
+            )[0]
+
+            if iou.max() > max_iou:
+                max_iou = iou.max().item()
+                max_iou_index = iou.argmax().item()
+
+            # we could compare here iou with a threshold to make
+            # it more robust but for the moment as max_iou
+            # is initialized with 0.0, it will work kind of as
+            # an implicit threshold, by checking that at least
+            # the {to} object covers the {from} object
 
             if max_iou_index != -1:
                 # detected a corresponding to object that
