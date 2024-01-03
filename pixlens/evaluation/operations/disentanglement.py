@@ -31,7 +31,7 @@ class Disentanglement:
         self.json_file_path: Path = Path(json_file_path)
         self.image_data_path: Path = Path(image_data_path)
         self.data_attributes, self.objects = self.load_attributes_and_objects()
-        self.results_path = Path("results.json")
+        self.results_path = Path("results_disentanglement.json")
         self.results = {}
         if self.results_path.exists():
             self.results = json.load(self.results_path.open())
@@ -41,54 +41,65 @@ class Disentanglement:
         model: editing_interfaces.PromptableImageEditingModel,
     ) -> None:
         self.init_model(model)
-        pd_data_path, path_exists = self.check_if_pd_dataset_existent()
-        if path_exists:
-            logging.info("Loading existing dataset")
-            self.dataset = pd.read_csv(pd_data_path)
-        else:
-            logging.info("Generating dataset")
-            self.generate_dataset()
-
-        if "Avg_norm" not in self.results:
+        if self.model.get_model_name() not in self.results:
+            self.results[self.model.get_model_name()] = {}
+        self.generate_dataset()
+        if "Avg_norm" not in self.results[self.model.get_model_name()]:
             logging.info("Doing intra sample evaluation")
             att_norms, avg_norm = self.intra_sample_evaluation()
-            self.results["Avg_norm"] = avg_norm
-            self.results["Avg_norm_per_attribute"] = att_norms
+            self.results[self.model.get_model_name()]["Avg_norm"] = avg_norm
+            self.results[self.model.get_model_name()][
+                "Avg_norm_per_attribute"
+            ] = att_norms
+
         for attribute in self.data_attributes:
             logging.info(
                 "Average norm for attribute %s : %f",
                 attribute,
-                self.results["Avg_norm_per_attribute"][attribute],
+                self.results[self.model.get_model_name()][
+                    "Avg_norm_per_attribute"
+                ][attribute],
             )
-        logging.info("Average norm overall: %f", self.results["Avg_norm"])
+        with Path.open(self.results_path, "w") as file:
+            json.dump(self.results, file, indent=4)
+        logging.info(
+            "Average norm overall: %f",
+            self.results[self.model.get_model_name()]["Avg_norm"],
+        )
         logging.info("Doing  inter sample and intra attirbute evaluation")
-        if "Inter_sample_and_intra_attribute" not in self.results:
-            self.results[
+        if (
+            "Inter_sample_and_intra_attribute"
+            not in self.results[self.model.get_model_name()]
+        ):
+            self.results[self.model.get_model_name()][
                 "Inter_sample_and_intra_attribute"
             ] = self.inter_sample_and_intra_attribute()
+            with Path.open(self.results_path, "w") as file:
+                json.dump(self.results, file, indent=4)
 
     def check_if_pd_dataset_existent(self) -> tuple[str, bool]:
         cache_dir = get_cache_dir()
         pandas_path = (
             cache_dir
             / Path("models--" + self.model.get_model_name())
-            / "disentanglement.csv"
+            / "disentanglement.pkl"
         )
         return str(pandas_path), pandas_path.exists()
 
     def generate_dataset(self) -> None:
         pandas_path, boolean = self.check_if_pd_dataset_existent()
         if boolean:
-            self.dataset = pd.read_csv(pandas_path)
-        for image_class_dir in self.image_data_path.iterdir():
-            if image_class_dir.is_dir():
-                image_file = next(
-                    image_class_dir.iterdir()
-                )  # Let's do only one image for now per class
-                if image_file.is_file():
-                    self.generate_all_latents_for_image(image_file)
-        self.dataset["norm"] = None
-        self.dataset.to_csv(pandas_path)
+            logging.info("Loading existing dataset")
+            self.dataset = pd.read_pickle(pandas_path)
+        else:
+            logging.info("Generating dataset")
+            # For now we only use the first image
+            image_file = self.image_data_path / Path(
+                "000000000000.jpg",
+            )  # / Path("dog/000000001025.jpg")
+            self.generate_all_latents_for_image(image_file)
+            self.dataset["norm"] = None
+            self.dataset.to_pickle(pandas_path)
 
     def generate_all_latents_for_image(self, image_path: Path) -> None:
         data_to_append = []
@@ -97,10 +108,11 @@ class Disentanglement:
         )  # TODO: this should be done somewhere else, the load image -> crop -> save -> delete. It would be more efficient to crop the image inside the model.edit() maybe?
         cropped_path = image_path.parent / "cropped.png"
         cropped_image.save(cropped_path)
-        str_img_path = str(cropped_path)
+        # str_img_path = str(cropped_path)
+        str_img_path = str(image_path)
         z_0 = self.model.get_latent(prompt="", image_path=str_img_path)
         for attribute in list(self.data_attributes.keys()):
-            for o0, a0, o1, a1 in self.generate_ordered_unique_combinations(
+            for o0, o1, a0, a1 in self.generate_ordered_unique_combinations(
                 self.objects,
                 self.data_attributes[attribute],
             ):
@@ -176,18 +188,21 @@ class Disentanglement:
         objects: list,
         attributes: list,
     ) -> list[tuple[str, str, str, str]]:
-        # Generate all permutations of objects and attributes
-        object_perms = permutations(objects, 2)
-        attribute_perms = permutations(attributes, 2)
+        object_pairs = set(permutations(objects, 2))
+        attribute_pairs = set(permutations(attributes, 2))
+
+        object_pairs = {tuple(sorted(pair)) for pair in object_pairs}
+        attribute_pairs = {tuple(sorted(pair)) for pair in attribute_pairs}
         return [
-            (obj_pair[0], attr_pair[0], obj_pair[1], attr_pair[1])
-            for obj_pair in object_perms
-            for attr_pair in attribute_perms
+            (*obj_pair, *attr_pair)
+            for obj_pair in object_pairs
+            for attr_pair in attribute_pairs
         ]
 
     @staticmethod
     def get_prompt(object_: str, attribute: str, attribute_type: str) -> str:
-        return f"Add {object_} with {attribute_type} {attribute}"
+        # return f"Replace the dog with a {attribute} {object_}"
+        return f"Add a {attribute} {object_} to the center of the image"
 
     def crop_image_to_min_dimensions(
         self,
@@ -254,8 +269,8 @@ class Disentanglement:
         for i in range(len(vectors)):
             for j in range(i + 1, len(vectors)):
                 cos_sim = 1 - cosine(
-                    vectors[i],
-                    vectors[j],
+                    vectors[i].cpu().numpy(),
+                    vectors[j].cpu().numpy(),
                 )  # cosine similarity
                 angle_rad = np.arccos(cos_sim)  # angle in radians
 

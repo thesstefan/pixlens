@@ -3,19 +3,19 @@
         "chair",
         "table"
     ],
-    "textures": [
+    "texture": [
         "steel",
-        "wood"
+        "wooden"
     ],
-    "sizes": [
+    "size": [
         "big",
         "small"
     ],
-    "colors": [
+    "color": [
         "red",
         "blue"
     ],
-    "styles": [
+    "style": [
         "vintage",
         "modern"
     ]
