@@ -1,8 +1,9 @@
 import logging
 
+from torchvision.ops import box_iou
+
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
 from pixlens.evaluation import interfaces as evaluation_interfaces
-from pixlens.evaluation.utils import compute_bbox_iou
 
 
 class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
@@ -40,7 +41,6 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
             to_attribute,
         )
 
-        # if no from in input detected, then return 0
         if len(froms_in_input.detection_output.phrases) == 0:
             return evaluation_interfaces.EvaluationOutput(
                 edit_specific_score=0,
@@ -79,7 +79,7 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
                 to_object_bbox = tos_in_edited.detection_output.bounding_boxes[
                     to_object_index
                 ]
-                iou = compute_bbox_iou(from_object_bbox, to_object_bbox)
+                iou = box_iou(from_object_bbox, to_object_bbox)
                 if iou > max_iou:
                     # we could compare here iou with a threshold to make
                     # it more robust but for the moment as max_iou
