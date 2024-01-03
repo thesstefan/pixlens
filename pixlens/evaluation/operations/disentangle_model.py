@@ -1,8 +1,13 @@
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from torch import nn
@@ -50,18 +55,20 @@ class CNNClassifier(nn.Module):
 
 
 class Classifier:
-    def __init__(self, dataset: pd.DataFrame) -> None:
+    def __init__(self, dataset: pd.DataFrame, save_data: Path) -> None:
         self.dataset = dataset
         self.label_encoder = LabelEncoder()
+        self.save_data = save_data
+        self.checkpoint_path = save_data / "model_checkpoint.pth"
 
-    def save_checkpoint(self, filename: str) -> None:
+    def save_checkpoint(self, filename: Path) -> None:
         checkpoint = {
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": self.optimizer.state_dict(),
         }
         torch.save(checkpoint, filename)
 
-    def load_checkpoint(self, filename: str) -> None:
+    def load_checkpoint(self, filename: Path) -> None:
         checkpoint = torch.load(filename)
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
@@ -90,7 +97,9 @@ class Classifier:
             random_state=42,
         )
         self.train_loader = DataLoader(
-            TensorDataset(x_train, y_train), batch_size=32, shuffle=True
+            TensorDataset(x_train, y_train),
+            batch_size=32,
+            shuffle=True,
         )
         self.test_loader = DataLoader(
             TensorDataset(x_test, y_test),
@@ -112,7 +121,7 @@ class Classifier:
                 self.optimizer.step()
 
         # Optionally save the model after training
-        self.save_checkpoint("model_checkpoint.pth")
+        self.save_checkpoint(self.checkpoint_path)
 
     def evaluate_classifier(self) -> float:
         self.model.eval()
@@ -123,5 +132,38 @@ class Classifier:
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
-
         return correct / total
+
+    def plot_confusion_matrix(self) -> None:
+        self.model.eval()
+        all_labels = []
+        all_preds = []
+
+        with torch.no_grad():
+            for inputs, labels in self.test_loader:
+                outputs = self.model(inputs)
+                _, predicted = torch.max(outputs, 1)
+                all_labels.extend(labels.cpu().numpy())
+                all_preds.extend(predicted.cpu().numpy())
+
+        cm = confusion_matrix(all_labels, all_preds)
+        plt.figure(figsize=(10, 10))
+
+        # Get class names from LabelEncoder
+        class_names = self.label_encoder.inverse_transform(
+            sorted(set(all_labels)),
+        )
+
+        # Plotting the confusion matrix
+        sns.heatmap(
+            cm,
+            annot=True,
+            fmt="d",
+            cmap="Blues",
+            xticklabels=class_names,
+            yticklabels=class_names,
+        )
+        plt.ylabel("Actual Labels")
+        plt.xlabel("Predicted Labels")
+        plt.title("Confusion Matrix")
+        plt.savefig(self.save_data / "confusion_matrix.png")
