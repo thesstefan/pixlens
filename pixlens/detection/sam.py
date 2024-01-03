@@ -70,7 +70,10 @@ class BBoxSamPredictor(interfaces.BBoxSegmentationModel):
         sam_type: SAMType = SAMType.VIT_H,
         device: torch.device | None = None,
     ) -> None:
-        self.sam_predictor = load_sam_predictor(sam_type, "cpu") #original was device
+        self.sam_predictor = load_sam_predictor(
+            sam_type,
+            device,
+        )
 
     def segment(
         self,
