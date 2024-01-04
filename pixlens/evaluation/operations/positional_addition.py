@@ -48,7 +48,7 @@ class PositionalAddition(OperationEvaluation):
         )
         if len(category_in_input.detection_output.phrases) == 0:
             return self.handle_no_category_in_input(
-                evaluation_input.updated_strings.category
+                evaluation_input.updated_strings.category,
             )
         if len(category_in_input.detection_output.phrases) > 1:
             logging.warning(
@@ -72,6 +72,9 @@ class PositionalAddition(OperationEvaluation):
             warning_msg = f"More than one '{to_attribute}' in the edited image."
             logging.warning(warning_msg)
 
+        # FIXME(julencosta): we are assuming that there is only one object  # noqa: TD001, TD003, FIX001, E501
+        # detected in the edited image and that it is the object that was
+        # added. However, this is not always the case.
         category_center_of_mass = center_of_mass(
             category_in_input.segmentation_output.masks[0],
         )
