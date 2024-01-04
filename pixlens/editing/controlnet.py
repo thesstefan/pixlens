@@ -13,6 +13,7 @@ from diffusers.pipelines.controlnet.pipeline_controlnet import (
 from PIL import Image
 
 from pixlens.editing import interfaces
+from pixlens.editing.stable_diffusion import StableDiffusionType
 from pixlens.editing.utils import (
     generate_instruction_based_prompt,
     log_model_if_not_in_cache,
@@ -22,11 +23,7 @@ from pixlens.utils import utils
 
 
 class ControlNetType(enum.StrEnum):
-    BASE = "lllyasviel/sd-controlnet-canny"
-
-
-class StableDiffusionType(enum.StrEnum):
-    BASE = "runwayml/stable-diffusion-v1-5"
+    CANNY = "lllyasviel/sd-controlnet-canny"
 
 
 def load_controlnet(
@@ -40,7 +37,7 @@ def load_controlnet(
         torch_dtype=torch.float16,
     )
     pipe = StableDiffusionControlNetPipeline.from_pretrained(
-        StableDiffusionType.BASE,
+        StableDiffusionType.V15,
         controlnet=controlnet,
         torch_dtype=torch.float16,
         safety_checker=None,
@@ -58,7 +55,7 @@ def load_controlnet(
 class ControlNet(interfaces.PromptableImageEditingModel):
     def __init__(  # noqa: PLR0913
         self,
-        controlnet_type: ControlNetType = ControlNetType.BASE,
+        controlnet_type: ControlNetType = ControlNetType.CANNY,
         device: torch.device | None = None,
         num_inference_steps: int = 100,
         image_guidance_scale: float = 1.0,

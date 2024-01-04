@@ -7,6 +7,7 @@ from diffusers import (
 from PIL import Image
 
 from pixlens.editing import interfaces
+from pixlens.editing.stable_diffusion import StableDiffusionType
 from pixlens.editing.utils import (
     generate_description_based_prompt,
     log_model_if_not_in_cache,
@@ -22,7 +23,7 @@ def load_diffedit(
     path_to_cache = utils.get_cache_dir()
     log_model_if_not_in_cache(model_name, path_to_cache)
     pipeline = StableDiffusionDiffEditPipeline.from_pretrained(
-        "stabilityai/stable-diffusion-2-1",
+        StableDiffusionType.V21,
         torch_dtype=torch.float16,
         safety_checker=None,
         use_safetensors=True,
@@ -60,7 +61,7 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
             target_prompt=target_prompt,
         )
         inv_latents = self.model.invert(
-            prompt=source_prompt, image=input_image
+            prompt=source_prompt, image=input_image,
         ).latents
 
         output = self.model(
