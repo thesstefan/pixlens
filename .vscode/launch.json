@@ -7,8 +7,6 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_detection_cli.py",
             "args": [
-                "--model",
-                "GroundedSAM",
                 "--image",
                 "editval_instances/backpack/000000163866.jpg",
                 "--prompt",
@@ -31,8 +29,6 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_detection_cli.py",
             "args": [
-                "--model",
-                "OwlViTSAM",
                 "--image",
                 "editval_instances/backpack/000000163866.jpg",
                 "--prompt",
