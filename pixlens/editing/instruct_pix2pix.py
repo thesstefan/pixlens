@@ -16,12 +16,12 @@ from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
 
 
-class Pix2pixType(enum.StrEnum):
+class InstructPix2PixType(enum.StrEnum):
     BASE = "timbrooks/instruct-pix2pix"
 
 
-def load_pix2pix(
-    model_type: Pix2pixType,
+def load_instruct_pix2pix(
+    model_type: InstructPix2PixType,
     device: torch.device | None = None,
 ) -> StableDiffusionInstructPix2PixPipeline:
     path_to_cache = utils.get_cache_dir()
@@ -41,19 +41,19 @@ def load_pix2pix(
     return pipeline
 
 
-class Pix2pix(interfaces.PromptableImageEditingModel):
+class InstructPix2Pix(interfaces.PromptableImageEditingModel):
     device: torch.device | None
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
-        pix2pix_type: Pix2pixType = Pix2pixType.BASE,
+        instruct_pix2pix_type: InstructPix2PixType = InstructPix2PixType.BASE,
         device: torch.device | None = None,
         num_inference_steps: int = 100,
         image_guidance_scale: float = 1.0,
         text_guidance_scale: float = 7.5,
     ) -> None:
         self.device = device
-        self.model = load_pix2pix(pix2pix_type, device)
+        self.model = load_instruct_pix2pix(instruct_pix2pix_type, device)
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
         self.text_guidance_scale = text_guidance_scale
@@ -64,6 +64,8 @@ class Pix2pix(interfaces.PromptableImageEditingModel):
         image_path: str,
         edit_info: Edit | None = None,
     ) -> Image.Image:
+        del edit_info
+
         input_image = Image.open(image_path)
         output = self.model(
             prompt,

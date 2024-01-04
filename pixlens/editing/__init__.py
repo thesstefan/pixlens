@@ -1,7 +1,7 @@
 import logging
 import pathlib
 
-from pixlens.editing import controlnet, diffedit, pix2pix
+from pixlens.editing import controlnet, diffedit, instruct_pix2pix
 from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.utils import yaml_constructible
 
@@ -14,7 +14,7 @@ logging.basicConfig(
 
 NAME_TO_EDITING_MODEL: dict[str, type[PromptableImageEditingModel]] = {
     "ControlNet": controlnet.ControlNet,
-    "Pix2pix": pix2pix.Pix2pix,
+    "InstructPix2Pix": instruct_pix2pix.InstructPix2Pix,
     "DiffEdit": diffedit.DiffEdit,
 }
 
