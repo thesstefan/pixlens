@@ -172,6 +172,7 @@ class Disentanglement:
             [self.obj_dataset, pd.DataFrame(data_to_append)],
             ignore_index=True,
         )
+        self.att_dataset.to_pickle(self.att_dataset_path)
         self.obj_dataset.to_pickle(self.obj_dataset_path)
 
     def generate_reference_attribute_latents(
