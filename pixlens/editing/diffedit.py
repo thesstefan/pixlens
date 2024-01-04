@@ -28,13 +28,14 @@ def load_diffedit(
         safety_checker=None,
         use_safetensors=True,
     )
+    pipeline.to(device)
     pipeline.scheduler = DDIMScheduler.from_config(pipeline.scheduler.config)
     pipeline.inverse_scheduler = DDIMInverseScheduler.from_config(
         pipeline.scheduler.config,
     )
     pipeline.enable_model_cpu_offload()
     pipeline.enable_vae_slicing()
-    return pipeline
+    return pipeline  # type: ignore[no-any-return]
 
 
 class DiffEdit(interfaces.PromptableImageEditingModel):
@@ -53,26 +54,26 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
         image_path: str,
         edit_info: Edit | None = None,
     ) -> Image.Image:
+        del edit_info
+
         source_prompt, target_prompt = prompt.split("[SEP]")
         input_image = Image.open(image_path)
-        mask_image = self.model.generate_mask(
+        mask_image = self.model.generate_mask(  # type: ignore[attr-defined]
             image=input_image,
             source_prompt=source_prompt,
             target_prompt=target_prompt,
         )
-        inv_latents = self.model.invert(
-            prompt=source_prompt, image=input_image,
+        inv_latents = self.model.invert(  # type: ignore[attr-defined]
+            prompt=source_prompt,
+            image=input_image,
         ).latents
 
-        output = self.model(
+        return self.model(  # type: ignore[operator, no-any-return]
             prompt=target_prompt,
             mask_image=mask_image,
             image_latents=inv_latents,
             negative_prompt=source_prompt,
-        )
-
-        output_images: list[Image.Image] = output.images
-        return output_images[0]
+        ).images[0]
 
     @property
     def prompt_type(self) -> interfaces.ImageEditingPromptType:

@@ -1,6 +1,6 @@
 import enum
 
-import cv2
+import cv2  # type: ignore[import]
 import numpy as np
 import torch
 from diffusers import (
@@ -89,16 +89,14 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         del edit_info
 
         input_image = self.prepare_image(image_path)
-        output = self.model(
+        return self.model(  # type: ignore[no-any-return]
             prompt,
             input_image,
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
             guidance_scale=self.text_guidance_scale,
             generator=torch.manual_seed(0),
-        )
-        output_images: list[Image.Image] = output.images
-        return output_images[0]
+        ).images[0]
 
     @property
     def prompt_type(self) -> interfaces.ImageEditingPromptType:

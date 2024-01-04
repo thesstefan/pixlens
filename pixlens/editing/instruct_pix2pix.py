@@ -67,15 +67,14 @@ class InstructPix2Pix(interfaces.PromptableImageEditingModel):
         del edit_info
 
         input_image = Image.open(image_path)
-        output = self.model(
+
+        return self.model(  # type: ignore[operator, no-any-return]
             prompt,
             input_image,
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
             guidance_scale=self.text_guidance_scale,
-        )  # TODO: controlnet this is not detected as a mistake.
-        output_images: list[Image.Image] = output.images
-        return output_images[0]
+        ).images[0]
 
     @property
     def prompt_type(self) -> interfaces.ImageEditingPromptType:
