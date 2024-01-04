@@ -50,7 +50,8 @@ def get_detection_segmentation_result_of_target(
 
 def get_separator(model: interfaces.PromptDetectAndBBoxSegmentModel) -> str:
     if isinstance(model, GroundedSAM):
-        return "."
+        return ". "
     if isinstance(model, OwlViTSAM):
-        return ","
-    raise ValueError("Invalid model type")
+        return ", "
+    error_msg = "Invalid model type"
+    raise ValueError(error_msg)

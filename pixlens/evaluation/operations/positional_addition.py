@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+from PIL import Image, ImageDraw
 
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
 from pixlens.evaluation.interfaces import (
@@ -27,7 +28,10 @@ class PositionalAddition(OperationEvaluation):
         self,
         evaluation_input: EvaluationInput,
     ) -> EvaluationOutput:
-        to_attribute = evaluation_input.updated_strings.to_attribute
+        to_attribute = evaluation_input.edit.to_attribute
+        to_attribute_for_detection = (
+            evaluation_input.updated_strings.to_attribute
+        )
         intended_relative_position = self.get_intended_relative_position(
             to_attribute,
         )
@@ -46,9 +50,14 @@ class PositionalAddition(OperationEvaluation):
             )
 
         tos_in_edited = self.get_tos_in_edited(
-            to_attribute,
+            to_attribute_for_detection
+            if to_attribute_for_detection is not None
+            else "",
             evaluation_input.edited_detection_segmentation_result,
         )
+        if len(tos_in_edited.detection_output.phrases) == 0:
+            return self.handle_no_to_attribute_in_edited()
+
         if len(tos_in_edited.detection_output.phrases) > 1:
             warning_msg = f"More than one '{to_attribute}' in the edited image."
             logging.warning(warning_msg)
@@ -58,6 +67,17 @@ class PositionalAddition(OperationEvaluation):
         )
         to_center_of_mass = center_of_mass(
             tos_in_edited.segmentation_output.masks[0],
+        )
+
+        self.draw_center_of_masses(
+            evaluation_input.annotated_input_image,
+            category_center_of_mass,
+            to_center_of_mass,
+        )
+        self.draw_center_of_masses(
+            evaluation_input.annotated_edited_image,
+            category_center_of_mass,
+            to_center_of_mass,
         )
 
         direction_of_movement = self.compute_direction_of_movement(
@@ -86,7 +106,7 @@ class PositionalAddition(OperationEvaluation):
         if "top" in to_attribute:
             return "top"
         if "below" in to_attribute:
-            return "below"
+            return "bottom"
         return None
 
     def handle_no_to_attribute(self) -> EvaluationOutput:
@@ -114,6 +134,12 @@ class PositionalAddition(OperationEvaluation):
             success=False,
         )
 
+    def handle_no_to_attribute_in_edited(self) -> EvaluationOutput:
+        return EvaluationOutput(
+            edit_specific_score=0,
+            success=True,
+        )
+
     def get_tos_in_edited(
         self,
         to_attribute: str,
@@ -131,8 +157,8 @@ class PositionalAddition(OperationEvaluation):
     ) -> np.ndarray:
         return np.array(
             [
-                to_center_of_mass[0] - category_center_of_mass[0],
                 to_center_of_mass[1] - category_center_of_mass[1],
+                category_center_of_mass[0] - to_center_of_mass[0],
             ],
         )
 
@@ -144,7 +170,7 @@ class PositionalAddition(OperationEvaluation):
             "left": np.array([-1, 0]),
             "right": np.array([1, 0]),
             "top": np.array([0, -1]),
-            "below": np.array([0, 1]),
+            "bottom": np.array([0, 1]),
         }
 
         min_angle = 360.0
@@ -168,3 +194,42 @@ class PositionalAddition(OperationEvaluation):
             edit_specific_score=0,
             success=True,
         )
+
+    def draw_center_of_masses(
+        self,
+        annotated_image: Image.Image,
+        ini_center_of_mass: tuple[float, float],
+        end_center_of_mass: tuple[float, float],
+    ) -> Image.Image:
+        draw = ImageDraw.Draw(annotated_image)
+        draw.ellipse(
+            [
+                ini_center_of_mass[1] - 5,
+                ini_center_of_mass[0] - 5,
+                ini_center_of_mass[1] + 5,
+                ini_center_of_mass[0] + 5,
+            ],
+            fill="red",
+        )
+        draw.ellipse(
+            [
+                end_center_of_mass[1] - 5,
+                end_center_of_mass[0] - 5,
+                end_center_of_mass[1] + 5,
+                end_center_of_mass[0] + 5,
+            ],
+            fill="blue",
+        )
+
+        # draw arrow in direction "ini" -> "end"
+        draw.line(
+            [
+                ini_center_of_mass[1],
+                ini_center_of_mass[0],
+                end_center_of_mass[1],
+                end_center_of_mass[0],
+            ],
+            fill="black",
+            width=2,
+        )
+        return annotated_image

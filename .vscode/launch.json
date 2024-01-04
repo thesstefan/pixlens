@@ -228,5 +228,26 @@
             "jinja": false,
             "justMyCode": true
         },
+        {
+            "name": "Debug PixLens Evaluation Pipeline - Positional Addition",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
+            "args": [
+                "--editing-model",
+                "pix2pix", // Replace with the desired editing model name
+                "--detection-model",
+                "groundedsam", // Replace with the desired detection model name
+                "--edit-type",
+                "positional_addition",
+                "--do-all-edits",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        }
     ]
 }

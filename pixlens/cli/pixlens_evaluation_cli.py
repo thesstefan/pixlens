@@ -20,6 +20,7 @@ from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.object_removal import ObjectRemoval
 from pixlens.evaluation.operations.object_replacement import ObjectReplacement
+from pixlens.evaluation.operations.positional_addition import PositionalAddition
 from pixlens.evaluation.operations.size import SizeEdit
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 
@@ -213,6 +214,8 @@ def evaluate_edit(
         return ObjectRemoval().evaluate_edit(evaluation_input)
     if edit.edit_type == EditType.OBJECT_REPLACEMENT:
         return ObjectReplacement().evaluate_edit(evaluation_input)
+    if edit.edit_type == EditType.POSITIONAL_ADDITION:
+        return PositionalAddition().evaluate_edit(evaluation_input)
     error_msg = f"Invalid edit type: {edit.edit_type}"
     raise ValueError(error_msg)
 
