@@ -19,7 +19,6 @@ from pixlens.editing.utils import (
 )
 from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
-from pixlens.utils.yaml_constructible import YamlConstructible
 
 
 class ControlNetType(enum.StrEnum):
@@ -56,7 +55,7 @@ def load_controlnet(
     return pipeline
 
 
-class ControlNet(interfaces.PromptableImageEditingModel, YamlConstructible):
+class ControlNet(interfaces.PromptableImageEditingModel):
     def __init__(
         self,
         pix2pix_type: ControlNetType = ControlNetType.BASE,
@@ -84,9 +83,6 @@ class ControlNet(interfaces.PromptableImageEditingModel, YamlConstructible):
             image_array.astype(np.uint8),
         )  # Convert ndarray back to Image
 
-    def get_model_name(self) -> str:
-        return "ControlNet"
-
     def edit_image(
         self,
         prompt: str,
@@ -104,6 +100,10 @@ class ControlNet(interfaces.PromptableImageEditingModel, YamlConstructible):
         )
         output_images: list[Image.Image] = output.images
         return output_images[0]
+
+    @property
+    def prompt_type(self) -> interfaces.ImageEditingPromptType:
+        return interfaces.ImageEditingPromptType.INSTRUCTION
 
     def generate_prompt(self, edit: Edit) -> str:
         return generate_instruction_based_prompt(edit)

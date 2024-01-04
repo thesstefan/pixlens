@@ -14,7 +14,6 @@ from pixlens.editing.utils import (
 )
 from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
-from pixlens.utils.yaml_constructible import YamlConstructible
 
 
 class Pix2pixType(enum.StrEnum):
@@ -42,10 +41,7 @@ def load_pix2pix(
     return pipeline
 
 
-class Pix2pix(
-    interfaces.PromptableImageEditingModel,
-    YamlConstructible,
-):
+class Pix2pix(interfaces.PromptableImageEditingModel):
     device: torch.device | None
 
     def __init__(
@@ -61,9 +57,6 @@ class Pix2pix(
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
         self.text_guidance_scale = text_guidance_scale
-
-    def get_model_name(self) -> str:
-        return "Pix2pix"
 
     def edit_image(
         self,
@@ -81,6 +74,10 @@ class Pix2pix(
         )  # TODO: controlnet this is not detected as a mistake.
         output_images: list[Image.Image] = output.images
         return output_images[0]
+
+    @property
+    def prompt_type(self) -> interfaces.ImageEditingPromptType:
+        return interfaces.ImageEditingPromptType.INSTRUCTION
 
     def generate_prompt(self, edit: Edit) -> str:
         return generate_instruction_based_prompt(edit)

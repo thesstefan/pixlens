@@ -13,7 +13,6 @@ from pixlens.editing.utils import (
 )
 from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
-from pixlens.utils.yaml_constructible import YamlConstructible
 
 
 def load_diffedit(
@@ -37,10 +36,7 @@ def load_diffedit(
     return pipeline
 
 
-class DiffEdit(
-    interfaces.PromptableImageEditingModel,
-    YamlConstructible,
-):
+class DiffEdit(interfaces.PromptableImageEditingModel):
     device: torch.device | None
 
     def __init__(
@@ -49,9 +45,6 @@ class DiffEdit(
     ) -> None:
         self.device = device
         self.model = load_diffedit(self.get_model_name(), device)
-
-    def get_model_name(self) -> str:
-        return "DiffEdit"
 
     def edit_image(
         self,
@@ -79,6 +72,10 @@ class DiffEdit(
 
         output_images: list[Image.Image] = output.images
         return output_images[0]
+
+    @property
+    def prompt_type(self) -> interfaces.ImageEditingPromptType:
+        return interfaces.ImageEditingPromptType.DESCRIPTION
 
     def generate_prompt(self, edit: Edit) -> str:
         return generate_description_based_prompt(edit)

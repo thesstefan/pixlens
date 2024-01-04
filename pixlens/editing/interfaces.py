@@ -1,32 +1,26 @@
+import enum
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Protocol
 
 from PIL import Image
 
+from pixlens.base_model import BaseModel
 from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
 
 
-class Model(ABC):
+class ImageEditingPromptType(enum.Enum):
+    INSTRUCTION = 1
+    DESCRIPTION = 2
+
+
+class PromptableImageEditingModel(ABC, BaseModel):
+    @property
     @abstractmethod
-    def get_model_name(self) -> str:
-        pass
+    def prompt_type(self) -> ImageEditingPromptType:
+        ...
 
-
-class ImageEditor(Protocol):
-    @abstractmethod
-    def edit_image(
-        self,
-        prompt: str,
-        image_path: str,
-        edit_info: Edit | None = None,
-    ) -> Image.Image:
-        pass
-
-
-class PromptableImageEditingModel(Model, ImageEditor):
     @abstractmethod
     def edit_image(
         self,
@@ -40,6 +34,8 @@ class PromptableImageEditingModel(Model, ImageEditor):
     def generate_prompt(self, edit: Edit) -> str:
         ...
 
+    # FIXME(thesstefan): Checking if the image exists and/or caching
+    #                    should not be done at this level.
     def check_if_image_exists(
         self,
         prompt: str,
@@ -57,7 +53,6 @@ class PromptableImageEditingModel(Model, ImageEditor):
         full_path = full_path.with_suffix(".png")
         return full_path.exists(), full_path
 
-    # TODO: fix this, check if image exists and saving should be done somewhere else
     def edit(
         self,
         prompt: str,
