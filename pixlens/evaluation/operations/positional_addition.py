@@ -47,7 +47,9 @@ class PositionalAddition(OperationEvaluation):
             evaluation_input.input_detection_segmentation_result,
         )
         if len(category_in_input.detection_output.phrases) == 0:
-            return self.handle_no_category_in_input()
+            return self.handle_no_category_in_input(
+                evaluation_input.updated_strings.category
+            )
         if len(category_in_input.detection_output.phrases) > 1:
             logging.warning(
                 "More than one object of the same category in the input image.",
@@ -60,7 +62,11 @@ class PositionalAddition(OperationEvaluation):
             evaluation_input.edited_detection_segmentation_result,
         )
         if len(tos_in_edited.detection_output.phrases) == 0:
-            return self.handle_no_to_attribute_in_edited()
+            return self.handle_no_to_attribute_in_edited(
+                to_attribute_for_detection
+                if to_attribute_for_detection is not None
+                else "",
+            )
 
         if len(tos_in_edited.detection_output.phrases) > 1:
             warning_msg = f"More than one '{to_attribute}' in the edited image."
@@ -129,13 +135,25 @@ class PositionalAddition(OperationEvaluation):
             category,
         )
 
-    def handle_no_category_in_input(self) -> EvaluationOutput:
+    def handle_no_category_in_input(
+        self,
+        category: str,
+    ) -> EvaluationOutput:
+        warning_msg = f"No {category} (categiry) detected in the input image."
+        logging.warning(warning_msg)
         return EvaluationOutput(
             edit_specific_score=0,
             success=False,
         )
 
-    def handle_no_to_attribute_in_edited(self) -> EvaluationOutput:
+    def handle_no_to_attribute_in_edited(
+        self,
+        to_attribute: str,
+    ) -> EvaluationOutput:
+        warning_msg = (
+            f"No {to_attribute} (to_attribute) detected in the edited image."
+        )
+        logging.warning(warning_msg)
         return EvaluationOutput(
             edit_specific_score=0,
             success=True,
@@ -182,23 +200,15 @@ class PositionalAddition(OperationEvaluation):
 
         angle_in_degrees = radians_to_degrees(angle)
 
-        # if angle is between 0 and 45 degrees, the score is 1
-        # if angle is between 45 and 90 degrees, the score is 0.5
-        # if angle is between 90 and 180 degrees, the score is 0
-        acceptable_angle = 45.0
-        partially_acceptable_angle = 90.0
-        if angle_in_degrees < acceptable_angle:
-            return EvaluationOutput(
-                edit_specific_score=1,
-                success=True,
-            )
-        if angle_in_degrees < partially_acceptable_angle:
-            return EvaluationOutput(
-                edit_specific_score=0.5,
-                success=True,
-            )
+        # score of edit is a linear interpolation between 0 (perfect angle)
+        # and 90 (worst angle), if angle is higher than 90, the score is 0
+        # if angle is 0, the score is 1
+        if angle_in_degrees < 0:
+            logging.warning("Angle is negative")
+
+        score = max(0, (90 - angle_in_degrees) / 90)
         return EvaluationOutput(
-            edit_specific_score=0,
+            edit_specific_score=score,
             success=True,
         )
 

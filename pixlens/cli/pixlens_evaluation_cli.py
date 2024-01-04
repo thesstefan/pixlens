@@ -174,7 +174,7 @@ def evaluate_edits(
     overall_score = 0.0
     successful_edits = 0
     for edit in edits:
-        logging.info("Running edit: %s", edit.edit_id)
+        logging.info("Evaluating edit: %s", edit.edit_id)
         logging.info("Edit type: %s", edit.edit_type)
         logging.info("Image path: %s", edit.image_path)
         logging.info("Category: %s", edit.category)
@@ -189,13 +189,13 @@ def evaluate_edits(
         if evaluation_output.success:
             successful_edits += 1
             overall_score += evaluation_output.edit_specific_score
-            if evaluation_output.edit_specific_score > 0:
-                logging.info("Good sample!")
-                logging.info(evaluation_output.edit_specific_score)
-                logging.info(edit.image_path)
-            logging.info(evaluation_output.edit_specific_score)
+            logging.info("Evaluation was successful")
+            score_msg = f"Score: {evaluation_output.edit_specific_score}"
+            logging.info(score_msg)
         else:
             logging.info("Evaluation failed")
+
+        logging.info("")
 
     return overall_score, successful_edits
 
