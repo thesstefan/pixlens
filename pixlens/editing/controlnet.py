@@ -56,16 +56,16 @@ def load_controlnet(
 
 
 class ControlNet(interfaces.PromptableImageEditingModel):
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
-        pix2pix_type: ControlNetType = ControlNetType.BASE,
+        controlnet_type: ControlNetType = ControlNetType.BASE,
         device: torch.device | None = None,
         num_inference_steps: int = 100,
         image_guidance_scale: float = 1.0,
         text_guidance_scale: float = 7.0,
     ) -> None:
         self.device = device
-        self.model = load_controlnet(pix2pix_type, device)
+        self.model = load_controlnet(controlnet_type, device)
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
         self.text_guidance_scale = text_guidance_scale
@@ -89,6 +89,8 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         image_path: str,
         edit_info: Edit | None = None,
     ) -> Image.Image:
+        del edit_info
+
         input_image = self.prepare_image(image_path)
         output = self.model(
             prompt,
