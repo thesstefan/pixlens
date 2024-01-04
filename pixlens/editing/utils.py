@@ -66,7 +66,7 @@ def generate_description_based_prompt(edit: Edit) -> str:
         ),
         EditType.POSITIONAL_ADDITION: (
             f"A photo of a {category}"
-            "[SEP]A photo of a {category} and a {to_attribute}"
+            f"[SEP]A photo of a {category} and a {to_attribute}"
         ),
         EditType.OBJECT_REMOVAL: (
             f"A photo of a {category}"

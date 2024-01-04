@@ -215,3 +215,32 @@ def compute_ssim(
         edited_image_np = np.array(edited_image_resized)
 
     return float(ssim(input_image_np, edited_image_np, channel_axis=2))
+
+
+def center_of_mass(segmentation_mask: torch.Tensor) -> tuple[float, float]:
+    # Create coordinate grids
+    y, x = torch.meshgrid(
+        torch.arange(segmentation_mask.size(0)),
+        torch.arange(segmentation_mask.size(1)),
+    )
+
+    # Convert the coordinates to float and move them to the device of the segmentation mask
+    y = y.float().to(segmentation_mask.device)
+    x = x.float().to(segmentation_mask.device)
+
+    # Multiply coordinates with the segmentation mask to get weighted coordinates
+    weighted_y = y * segmentation_mask
+    weighted_x = x * segmentation_mask
+
+    # Sum the weighted coordinates along each axis
+    sum_y = torch.sum(weighted_y)
+    sum_x = torch.sum(weighted_x)
+
+    # Count the total number of True values in the segmentation mask
+    total_true_values = torch.sum(segmentation_mask.float())
+
+    # Compute the center of mass
+    center_of_mass_y = sum_y / total_true_values
+    center_of_mass_x = sum_x / total_true_values
+
+    return center_of_mass_y.item(), center_of_mass_x.item()
