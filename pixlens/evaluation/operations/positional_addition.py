@@ -23,6 +23,10 @@ def angle_between(v1: np.ndarray, v2: np.ndarray) -> float:
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
 
+def radians_to_degrees(radians: float) -> float:
+    return radians * 180 / np.pi
+
+
 class PositionalAddition(OperationEvaluation):
     def evaluate_edit(
         self,
@@ -85,13 +89,10 @@ class PositionalAddition(OperationEvaluation):
             to_center_of_mass,
         )
 
-        closest_direction = self.compute_closest_direction(
+        return self.compute_score(
             direction_of_movement,
+            intended_relative_position,
         )
-
-        if closest_direction == intended_relative_position:
-            return self.handle_success()
-        return self.handle_failure()
 
     def get_intended_relative_position(
         self,
@@ -162,34 +163,40 @@ class PositionalAddition(OperationEvaluation):
             ],
         )
 
-    def compute_closest_direction(
+    def compute_score(
         self,
         direction_of_movement: np.ndarray,
-    ) -> str | None:
+        intended_relative_position: str,
+    ) -> EvaluationOutput:
         direction_vectors = {
             "left": np.array([-1, 0]),
             "right": np.array([1, 0]),
-            "top": np.array([0, -1]),
-            "bottom": np.array([0, 1]),
+            "top": np.array([0, 1]),
+            "bottom": np.array([0, -1]),
         }
 
-        min_angle = 360.0
-        closest_direction = None
-        for direction, vector in direction_vectors.items():
-            angle = angle_between(direction_of_movement, vector)
-            if angle < min_angle:
-                min_angle = angle
-                closest_direction = direction
-
-        return closest_direction
-
-    def handle_success(self) -> EvaluationOutput:
-        return EvaluationOutput(
-            edit_specific_score=1,
-            success=True,
+        angle = angle_between(
+            direction_of_movement,
+            direction_vectors[intended_relative_position],
         )
 
-    def handle_failure(self) -> EvaluationOutput:
+        angle_in_degrees = radians_to_degrees(angle)
+
+        # if angle is between 0 and 45 degrees, the score is 1
+        # if angle is between 45 and 90 degrees, the score is 0.5
+        # if angle is between 90 and 180 degrees, the score is 0
+        acceptable_angle = 45.0
+        partially_acceptable_angle = 90.0
+        if angle_in_degrees < acceptable_angle:
+            return EvaluationOutput(
+                edit_specific_score=1,
+                success=True,
+            )
+        if angle_in_degrees < partially_acceptable_angle:
+            return EvaluationOutput(
+                edit_specific_score=0.5,
+                success=True,
+            )
         return EvaluationOutput(
             edit_specific_score=0,
             success=True,
@@ -221,7 +228,7 @@ class PositionalAddition(OperationEvaluation):
             fill="blue",
         )
 
-        # draw arrow in direction "ini" -> "end"
+        # draw arrow in direction "ini" -> "end" with the tip at "end"
         draw.line(
             [
                 ini_center_of_mass[1],
