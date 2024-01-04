@@ -1,3 +1,4 @@
+import itertools
 import json
 import logging
 from itertools import permutations
@@ -14,18 +15,24 @@ from pixlens.utils.utils import get_cache_dir
 
 class Disentanglement:
     def __init__(self, json_file_path: str, image_data_path: str) -> None:
-        self.dataset: pd.DataFrame = pd.DataFrame(
+        self.dataset = pd.DataFrame(
             columns=[
                 "attribute_type",
+                "object",
                 "attribute_old",
                 "attribute_new",
-                "z_0",
-                "z_1",
-                "z_2",
-                "z_neg",
-                "z_y",
+                "z_start",
+                "z_positive_attribute",
+                "z_negative_attribute",
+                "z_end",
                 "norm",
             ],
+        )
+        self.obj_dataset: pd.DataFrame = pd.DataFrame(
+            columns=["attribute_type", "attribute", "object", "z"],
+        )
+        self.att_dataset: pd.DataFrame = pd.DataFrame(
+            columns=["attribute_type", "attribute", "z"],
         )
         self.model: editing_interfaces.PromptableImageEditingModel
         self.json_file_path: Path = Path(json_file_path)
@@ -35,6 +42,19 @@ class Disentanglement:
         self.results = {}
         if self.results_path.exists():
             self.results = json.load(self.results_path.open())
+
+    def init_model(
+        self,
+        model: editing_interfaces.PromptableImageEditingModel,
+    ) -> None:
+        self.model = model
+
+    def load_attributes_and_objects(self) -> tuple[dict, list]:
+        with Path.open(self.json_file_path) as file:
+            data_loaded = json.load(file)
+        objects = data_loaded["objects"]
+        data_loaded.pop("objects")
+        return data_loaded, objects
 
     def evaluate_model(
         self,
@@ -79,109 +99,138 @@ class Disentanglement:
 
     def check_if_pd_dataset_existent(self) -> tuple[str, bool]:
         cache_dir = get_cache_dir()
-        pandas_path = (
+        self.final_dataset_path = (
             cache_dir
             / Path("models--" + self.model.get_model_name())
             / "disentanglement.pkl"
         )
-        return str(pandas_path), pandas_path.exists()
+        return self.final_dataset_path.exists()
 
     def generate_dataset(self) -> None:
-        pandas_path, boolean = self.check_if_pd_dataset_existent()
+        boolean = self.check_if_pd_dataset_existent()
         if boolean:
             logging.info("Loading existing dataset")
-            self.dataset = pd.read_pickle(pandas_path)
+            self.dataset = pd.read_pickle(self.final_dataset_path)  # noqa: S301
         else:
             logging.info("Generating dataset")
-            # For now we only use the first image
-            image_file = self.image_data_path / Path(
-                "000000000000.jpg",
-            )  # / Path("dog/000000001025.jpg")
-            self.generate_all_latents_for_image(image_file)
-            self.dataset["norm"] = None
-            self.dataset.to_pickle(pandas_path)
+            # For now we only use a white image
+            self.obj_dataset_path = (
+                self.final_dataset_path.parent / "obj_dataset.pkl"
+            )
+            self.att_dataset_path = (
+                self.final_dataset_path.parent / "att_dataset.pkl"
+            )
+            if not self.obj_dataset_path.exists():
+                image_file = self.image_data_path / Path(
+                    "000000000000.jpg",
+                )  # / Path("dog/000000001025.jpg")
+                self.generate_all_latents_for_image(image_file)
+            else:
+                self.object_dataset = pd.read_pickle(self.obj_dataset_path)
+                self.att_dataset = pd.read_pickle(self.att_dataset_path)
+
+            self.generate_final_dataset()
 
     def generate_all_latents_for_image(self, image_path: Path) -> None:
         data_to_append = []
-        cropped_image = self.crop_image_to_min_dimensions(
-            image_path,
-        )  # TODO: this should be done somewhere else, the load image -> crop -> save -> delete. It would be more efficient to crop the image inside the model.edit() maybe?
-        cropped_path = image_path.parent / "cropped.png"
-        cropped_image.save(cropped_path)
-        # str_img_path = str(cropped_path)
         str_img_path = str(image_path)
-        z_0 = self.model.get_latent(prompt="", image_path=str_img_path)
         for attribute in list(self.data_attributes.keys()):
-            for o0, o1, a0, a1 in self.generate_ordered_unique_combinations(
-                self.objects,
-                self.data_attributes[attribute],
+            att_data_to_append = self.generate_reference_attribute_latents(
+                attribute,
+                str_img_path,
+            )
+            self.att_dataset = pd.concat(
+                self.att_dataset,
+                pd.DataFrame(att_data_to_append),
+                ignore_index=True,
+            )
+            self.att_dataset.to_pickle(self.att_dataset_path)
+            for o, a in list(
+                itertools.product(
+                    self.objects,
+                    self.data_attributes[attribute],
+                ),
             ):
-                prompt1 = self.get_prompt(o0, a1, attribute)
-                prompt2 = self.get_prompt(o1, a0, attribute)
-                promptneg = self.get_prompt(o0, a0, attribute)
-                prompty = self.get_prompt(o1, a1, attribute)
-                z_1 = (
-                    self.model.get_latent(
-                        prompt=prompt1,
-                        image_path=str_img_path,
-                    )
-                    # - z_0
+                prompt = self.get_prompt(o, a, attribute)
+                z = self.model.get_latent(
+                    prompt=prompt,
+                    image_path=str_img_path,
                 )
-                z_2 = (
-                    self.model.get_latent(
-                        prompt=prompt2,
-                        image_path=str_img_path,
-                    )
-                    # - z_0
+                self.model.edit(
+                    prompt=prompt,
+                    image_path=str_img_path,
                 )
-                z_neg = (
-                    self.model.get_latent(
-                        prompt=promptneg,
-                        image_path=str_img_path,
-                    )
-                    # - z_0
-                )
-                z_y = (
-                    self.model.get_latent(
-                        prompt=prompty,
-                        image_path=str_img_path,
-                    )
-                    # - z_0
-                )
-                self.model.edit(prompt=prompt1, image_path=str_img_path)
-                self.model.edit(prompt=prompt2, image_path=str_img_path)
-                self.model.edit(prompt=promptneg, image_path=str_img_path)
-                self.model.edit(prompt=prompty, image_path=str_img_path)
                 data_to_append.append(
                     {
                         "attribute_type": attribute,
-                        "attribute_old": a0,
-                        "attribute_new": a1,
-                        "z_0": z_0.flatten(),
-                        "z_1": z_1.flatten(),
-                        "z_2": z_2.flatten(),
-                        "z_neg": z_neg.flatten(),
-                        "z_y": z_y.flatten(),
+                        "attribute": a,
+                        "object": o,
+                        "z": z.flatten(),
                     },
                 )
-        cropped_path.unlink()
+        self.obj_dataset = pd.concat(
+            [self.obj_dataset, pd.DataFrame(data_to_append)],
+            ignore_index=True,
+        )
+        self.obj_dataset.to_pickle(self.obj_dataset_path)
+
+    def generate_reference_attribute_latents(
+        self,
+        attribute: str,
+        image_path: str,
+    ) -> list:
+        data = []
+        for a in self.data_attributes[attribute]:
+            z = self.model.get_latent(prompt=a, image_path=image_path)
+            data.append(
+                {
+                    "attribute_type": attribute,
+                    "attribute": a,
+                    "z": z.flatten(),
+                },
+            )
+        return data
+
+    def generate_final_dataset(self) -> None:
+        data_to_append = []
+        for attribute in list(self.data_attributes.keys()):
+            for a1, a2 in itertools.permutations(
+                self.data_attributes[attribute],
+                2,
+            ):
+                for o in self.objects:
+                    z_start = self.obj_dataset[
+                        (self.obj_dataset["object"] == o)
+                        & (self.obj_dataset["attribute"] == a1)
+                    ]["z"].values[0]
+                    z_end = self.obj_dataset[
+                        (self.obj_dataset["object"] == o)
+                        & (self.obj_dataset["attribute"] == a2)
+                    ]["z"].values[0]
+                    z_positive_attribute = self.att_dataset[
+                        self.att_dataset["attribute"] == a2
+                    ]["z"].values[0]
+                    z_negative_attribute = self.att_dataset[
+                        self.att_dataset["attribute"] == a1
+                    ]["z"].values[0]
+                    data_to_append.append(
+                        {
+                            "attribute_type": attribute,
+                            "object": o,
+                            "attribute_old": a1,
+                            "attribute_new": a2,
+                            "z_start": z_start,
+                            "z_positive_attribute": z_positive_attribute,
+                            "z_negative_attribute": z_negative_attribute,
+                            "z_end": z_end,
+                            "norm": None,
+                        },
+                    )
         self.dataset = pd.concat(
             [self.dataset, pd.DataFrame(data_to_append)],
             ignore_index=True,
         )
-
-    def init_model(
-        self,
-        model: editing_interfaces.PromptableImageEditingModel,
-    ) -> None:
-        self.model = model
-
-    def load_attributes_and_objects(self) -> tuple[dict, list]:
-        with Path.open(self.json_file_path) as file:
-            data_loaded = json.load(file)
-        objects = data_loaded["objects"]
-        data_loaded.pop("objects")
-        return data_loaded, objects
+        self.dataset.to_pickle(self.final_dataset_path)
 
     @staticmethod
     def generate_ordered_unique_combinations(
@@ -201,8 +250,7 @@ class Disentanglement:
 
     @staticmethod
     def get_prompt(object_: str, attribute: str, attribute_type: str) -> str:
-        # return f"Replace the dog with a {attribute} {object_}"
-        return f"Add a {attribute} {object_} to the center of the image"
+        return f"{attribute} {object_}"
 
     def crop_image_to_min_dimensions(
         self,
@@ -315,7 +363,7 @@ from pixlens.editing.pix2pix import Pix2pix
 from pixlens.editing.controlnet import ControlNet
 
 disentangle = Disentanglement(
-    json_file_path="objects_textures_sizes_colors_styles_test.json",
+    json_file_path="objects_textures_sizes_colors_styles.json",
     image_data_path="editval_instances",
 )
 disentangle.evaluate_model(Pix2pix(device=torch.device("cuda")))
