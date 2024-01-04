@@ -1,18 +1,12 @@
 import argparse
 from pathlib import Path
 
-from pixlens.editing import controlnet, pix2pix, diffedit
+from pixlens.editing import load_editing_model_from_yaml
+from pixlens.editing.interfaces import ImageEditingPromptType
 from pixlens.utils import utils
-from pixlens.evaluation.interfaces import Edit, EditType
 
 parser = argparse.ArgumentParser(
     description="PixLens - Evaluate & understand image editing models",
-)
-parser.add_argument(
-    "--model",
-    type=str,
-    default="InstructPix2Pix",
-    help=("Image editing model: pix2pix, dreambooth, etc."),
 )
 parser.add_argument(
     "--output",
@@ -32,33 +26,15 @@ parser.add_argument("--prompt", type=str, help=("Prompt with edit instruction"))
 parser.add_argument(
     "--model_params_yaml",
     type=str,
-    help=("Path to YAML containing model params"),
+    help=("Path to YAML containing the model configuration"),
     required=True,
 )
-
-NAME_TO_MODEL: dict[
-    str,
-    type[controlnet.ControlNet]
-    | type[pix2pix.Pix2pix]
-    | type[diffedit.DiffEdit],
-] = {
-    "ControlNet": controlnet.ControlNet,
-    "InstructPix2Pix": pix2pix.Pix2pix,
-    "DiffEdit": diffedit.DiffEdit,
-}
-
-MODEL_IS_INSTRUCTIVE: dict[
-    str,
-    bool,
-] = {
-    "ControlNet": True,
-    "InstructPix2Pix": True,
-    "DiffEdit": False,
-}
 
 
 def main() -> None:
     args = parser.parse_args()
+
+    model = load_editing_model_from_yaml(args.model_params_yaml)
 
     # check if args.in defined
     in_path = "example_input.jpg"
@@ -67,15 +43,17 @@ def main() -> None:
         image = utils.download_image(url)
         image.save(in_path)
 
-        if MODEL_IS_INSTRUCTIVE[args.model]:
-            prompt = "turn him into a cyborg"
-        else:
-            prompt = "A photo of the sculpture of David[SEP]A photo of a cyborg"
+        type_to_prompt = {
+            ImageEditingPromptType.INSTRUCTION: "turn him into a cyborg",
+            ImageEditingPromptType.DESCRIPTION: (
+                "A photo of the sculpture of David[SEP]A photo of a cyborg"
+            ),
+        }
+        prompt = type_to_prompt[model.prompt_type]
+
     else:
         in_path = args.input
         prompt = args.prompt
-
-    model = NAME_TO_MODEL[args.model].from_yaml(args.model_params_yaml)
 
     output = model.edit(prompt, in_path)
     if args.input is None:

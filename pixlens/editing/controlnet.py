@@ -1,6 +1,6 @@
 import enum
 
-import cv2
+import cv2  # type: ignore[import]
 import numpy as np
 import torch
 from diffusers import (
@@ -13,21 +13,17 @@ from diffusers.pipelines.controlnet.pipeline_controlnet import (
 from PIL import Image
 
 from pixlens.editing import interfaces
+from pixlens.editing.stable_diffusion import StableDiffusionType
 from pixlens.editing.utils import (
     generate_instruction_based_prompt,
     log_model_if_not_in_cache,
 )
 from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
-from pixlens.utils.yaml_constructible import YamlConstructible
 
 
 class ControlNetType(enum.StrEnum):
-    BASE = "lllyasviel/sd-controlnet-canny"
-
-
-class StableDiffusionType(enum.StrEnum):
-    BASE = "runwayml/stable-diffusion-v1-5"
+    CANNY = "lllyasviel/sd-controlnet-canny"
 
 
 def load_controlnet(
@@ -41,7 +37,7 @@ def load_controlnet(
         torch_dtype=torch.float16,
     )
     pipe = StableDiffusionControlNetPipeline.from_pretrained(
-        StableDiffusionType.BASE,
+        StableDiffusionType.V15,
         controlnet=controlnet,
         torch_dtype=torch.float16,
         safety_checker=None,
@@ -56,17 +52,17 @@ def load_controlnet(
     return pipeline
 
 
-class ControlNet(interfaces.PromptableImageEditingModel, YamlConstructible):
-    def __init__(
+class ControlNet(interfaces.PromptableImageEditingModel):
+    def __init__(  # noqa: PLR0913
         self,
-        pix2pix_type: ControlNetType = ControlNetType.BASE,
+        controlnet_type: ControlNetType = ControlNetType.CANNY,
         device: torch.device | None = None,
         num_inference_steps: int = 100,
         image_guidance_scale: float = 1.0,
         text_guidance_scale: float = 7.0,
     ) -> None:
         self.device = device
-        self.model = load_controlnet(pix2pix_type, device)
+        self.model = load_controlnet(controlnet_type, device)
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
         self.text_guidance_scale = text_guidance_scale
@@ -84,26 +80,27 @@ class ControlNet(interfaces.PromptableImageEditingModel, YamlConstructible):
             image_array.astype(np.uint8),
         )  # Convert ndarray back to Image
 
-    def get_model_name(self) -> str:
-        return "ControlNet"
-
     def edit_image(
         self,
         prompt: str,
         image_path: str,
         edit_info: Edit | None = None,
     ) -> Image.Image:
+        del edit_info
+
         input_image = self.prepare_image(image_path)
-        output = self.model(
+        return self.model(  # type: ignore[no-any-return]
             prompt,
             input_image,
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
             guidance_scale=self.text_guidance_scale,
             generator=torch.manual_seed(0),
-        )
-        output_images: list[Image.Image] = output.images
-        return output_images[0]
+        ).images[0]
+
+    @property
+    def prompt_type(self) -> interfaces.ImageEditingPromptType:
+        return interfaces.ImageEditingPromptType.INSTRUCTION
 
     def generate_prompt(self, edit: Edit) -> str:
         return generate_instruction_based_prompt(edit)
