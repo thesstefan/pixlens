@@ -1,16 +1,18 @@
 import itertools
 import json
 import logging
-from itertools import permutations
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from PIL import Image
-from scipy.spatial.distance import cosine
+
 
 from pixlens.editing import interfaces as editing_interfaces
 from pixlens.utils.utils import get_cache_dir
+from pixlens.evaluation.operations.disentanglement_operation.disentangle_model import (
+    Classifier,
+)
+import pixlens.evaluation.operations.disentanglement_operation.utils as utils
 
 
 class Disentanglement:
@@ -38,10 +40,6 @@ class Disentanglement:
         self.json_file_path: Path = Path(json_file_path)
         self.image_data_path: Path = Path(image_data_path)
         self.data_attributes, self.objects = self.load_attributes_and_objects()
-        self.results_path = Path("results_disentanglement.json")
-        self.results = {}
-        if self.results_path.exists():
-            self.results = json.load(self.results_path.open())
 
     def init_model(
         self,
@@ -61,6 +59,15 @@ class Disentanglement:
         model: editing_interfaces.PromptableImageEditingModel,
     ) -> None:
         self.init_model(model)
+        self.results_path = (
+            get_cache_dir()
+            / Path("models--" + self.model.get_model_name())
+            / Path("results.json")
+        )
+        self.results = {}
+        if self.results_path.exists():
+            with Path.open(self.results_path) as file:
+                self.results = json.load(file)
         if self.model.get_model_name() not in self.results:
             self.results[self.model.get_model_name()] = {}
         self.generate_dataset()
@@ -96,14 +103,23 @@ class Disentanglement:
             ] = self.inter_sample_and_intra_attribute()
             with Path.open(self.results_path, "w") as file:
                 json.dump(self.results, file, indent=4)
+        if "Inter_attribute" not in self.results[self.model.get_model_name()]:
+            logging.info("Doing inter attribute evaluation")
+            self.results[self.model.get_model_name()][
+                "Inter_attribute"
+            ] = self.inter_attribute()
+            with Path.open(self.results_path, "w") as file:
+                json.dump(self.results, file, indent=4)
 
     def check_if_pd_dataset_existent(self) -> tuple[str, bool]:
         cache_dir = get_cache_dir()
-        self.final_dataset_path = (
+        parent_folder = (
             cache_dir
             / Path("models--" + self.model.get_model_name())
-            / "disentanglement.pkl"
+            / Path("disentanglement/")
         )
+        parent_folder.mkdir(parents=True, exist_ok=True)
+        self.final_dataset_path = parent_folder / Path("disentanglement.pkl")
         return self.final_dataset_path.exists()
 
     def generate_dataset(self) -> None:
@@ -122,8 +138,8 @@ class Disentanglement:
             )
             if not self.obj_dataset_path.exists():
                 image_file = self.image_data_path / Path(
-                    "000000000000.jpg",
-                )  # / Path("dog/000000001025.jpg")
+                    "000000000002.jpg",
+                )
                 self.generate_all_latents_for_image(image_file)
             else:
                 self.object_dataset = pd.read_pickle(self.obj_dataset_path)
@@ -140,8 +156,7 @@ class Disentanglement:
                 str_img_path,
             )
             self.att_dataset = pd.concat(
-                self.att_dataset,
-                pd.DataFrame(att_data_to_append),
+                [self.att_dataset, pd.DataFrame(att_data_to_append)],
                 ignore_index=True,
             )
             self.att_dataset.to_pickle(self.att_dataset_path)
@@ -151,12 +166,8 @@ class Disentanglement:
                     self.data_attributes[attribute],
                 ),
             ):
-                prompt = self.get_prompt(o, a, attribute)
+                prompt = utils.get_prompt(o, a)
                 z = self.model.get_latent(
-                    prompt=prompt,
-                    image_path=str_img_path,
-                )
-                self.model.edit(
                     prompt=prompt,
                     image_path=str_img_path,
                 )
@@ -200,20 +211,44 @@ class Disentanglement:
                 2,
             ):
                 for o in self.objects:
-                    z_start = self.obj_dataset[
+                    z_start_tensor = self.obj_dataset[
                         (self.obj_dataset["object"] == o)
                         & (self.obj_dataset["attribute"] == a1)
-                    ]["z"].values[0]
-                    z_end = self.obj_dataset[
+                    ]["z"].to_numpy()[0]  # This is a tensor
+
+                    z_end_tensor = self.obj_dataset[
                         (self.obj_dataset["object"] == o)
                         & (self.obj_dataset["attribute"] == a2)
-                    ]["z"].values[0]
-                    z_positive_attribute = self.att_dataset[
+                    ]["z"].to_numpy()[0]  # This is a tensor
+
+                    z_positive_attribute_tensor = self.att_dataset[
                         self.att_dataset["attribute"] == a2
-                    ]["z"].values[0]
-                    z_negative_attribute = self.att_dataset[
+                    ]["z"].to_numpy()[0]  # This is a tensor
+
+                    z_negative_attribute_tensor = self.att_dataset[
                         self.att_dataset["attribute"] == a1
-                    ]["z"].values[0]
+                    ]["z"].to_numpy()[0]  # This is a tensor
+                    z_start = (
+                        z_start_tensor.cpu().numpy()
+                        if z_start_tensor.is_cuda
+                        else z_start_tensor.numpy()
+                    )
+                    z_end = (
+                        z_end_tensor.cpu().numpy()
+                        if z_end_tensor.is_cuda
+                        else z_end_tensor.numpy()
+                    )
+                    z_positive_attribute = (
+                        z_positive_attribute_tensor.cpu().numpy()
+                        if z_positive_attribute_tensor.is_cuda
+                        else z_positive_attribute_tensor.numpy()
+                    )
+                    z_negative_attribute = (
+                        z_negative_attribute_tensor.cpu().numpy()
+                        if z_negative_attribute_tensor.is_cuda
+                        else z_negative_attribute_tensor.numpy()
+                    )
+
                     data_to_append.append(
                         {
                             "attribute_type": attribute,
@@ -233,60 +268,11 @@ class Disentanglement:
         )
         self.dataset.to_pickle(self.final_dataset_path)
 
-    @staticmethod
-    def generate_ordered_unique_combinations(
-        objects: list,
-        attributes: list,
-    ) -> list[tuple[str, str, str, str]]:
-        object_pairs = set(permutations(objects, 2))
-        attribute_pairs = set(permutations(attributes, 2))
-
-        object_pairs = {tuple(sorted(pair)) for pair in object_pairs}
-        attribute_pairs = {tuple(sorted(pair)) for pair in attribute_pairs}
-        return [
-            (*obj_pair, *attr_pair)
-            for obj_pair in object_pairs
-            for attr_pair in attribute_pairs
-        ]
-
-    @staticmethod
-    def get_prompt(object_: str, attribute: str, attribute_type: str) -> str:
-        return f"{attribute} {object_}"
-
-    def crop_image_to_min_dimensions(
-        self,
-        image_path: Path,
-        min_width: int = 320,  # min of widths from editval
-        min_height: int = 186,  # min of heights from editval
-    ) -> Image.Image:
-        with Image.open(image_path) as img:
-            width, height = img.size
-            left = int((width - min_width) / 2)
-            top = int((height - min_height) / 2)
-            right = int((width + min_width) / 2)
-            bottom = int((height + min_height) / 2)
-
-            # Crop the center of the image
-            return img.crop((left, top, right, bottom))
-
-    def compute_norms(self) -> tuple[dict[str, list[float]], list]:
-        norms_per_attribute_type: dict[str, list[float]] = {
-            attr_type: [] for attr_type in self.data_attributes
-        }
-        all_norms: list[float] = []
-        for _, row in self.dataset.iterrows():
-            norm = torch.norm(
-                row["z_y"] - (row["z_2"] + row["z_1"] - row["z_neg"]),
-            )
-            row["norm"] = norm.item()
-            norms_per_attribute_type[row["attribute_type"]].append(norm.item())
-            all_norms.append(norm.item())
-
-        return norms_per_attribute_type, all_norms
-
     def intra_sample_evaluation(self) -> tuple[dict[str, float], float]:
-        norms_per_attribute_type, all_norms = self.compute_norms()
-
+        norms_per_attribute_type, all_norms = utils.compute_norms(
+            self.dataset,
+            self.data_attributes,
+        )
         avg_norms_per_attribute_type: dict[str, float] = {
             attr_type: float(np.mean(norms))
             for attr_type, norms in norms_per_attribute_type.items()
@@ -295,41 +281,6 @@ class Disentanglement:
         overall_avg_norm = np.mean(all_norms)
 
         return avg_norms_per_attribute_type, overall_avg_norm
-
-    def compute_attribute_directions(
-        self,
-        a1: str,
-        a2: str,
-    ) -> tuple[float, float]:
-        filtered_rows = self.dataset[
-            (self.dataset["attribute_old"] == a1)
-            & (self.dataset["attribute_new"] == a2)
-        ]
-
-        # Compute vectors
-        vectors = []
-        for _, row in filtered_rows.iterrows():
-            v1 = row["z_y"] - row["z_2"]
-            v2 = row["z_1"] - row["z_neg"]
-            vectors.extend([v1, v2])
-
-        cos_similarities = []
-        angles = []
-        for i in range(len(vectors)):
-            for j in range(i + 1, len(vectors)):
-                cos_sim = 1 - cosine(
-                    vectors[i].cpu().numpy(),
-                    vectors[j].cpu().numpy(),
-                )  # cosine similarity
-                angle_rad = np.arccos(cos_sim)  # angle in radians
-
-                cos_similarities.append(cos_sim)
-                angles.append(angle_rad)
-
-        avg_cos_similarity = np.mean(cos_similarities)
-        avg_angle = np.mean(angles)
-
-        return avg_cos_similarity, avg_angle
 
     def inter_sample_and_intra_attribute(self) -> dict:
         results: dict = {}
@@ -345,10 +296,10 @@ class Disentanglement:
                     (
                         avg_cos_similarity,
                         avg_angle,
-                    ) = self.compute_attribute_directions(a1, a2)
+                    ) = utils.compute_attribute_directions(self.dataset, a1, a2)
                     angles.append(avg_angle)
                     cos_similarities.append(avg_cos_similarity)
-                    results[attribute_type][(a1, a2)] = {
+                    results[attribute_type][a1 + "_" + a2] = {
                         "Average Cosine Similarity": avg_cos_similarity,
                         "Average Angle": avg_angle,
                     }
@@ -358,13 +309,22 @@ class Disentanglement:
             results[attribute_type]["Average Angle"] = np.mean(angles)
         return results
 
+    def inter_attribute(self) -> float:
+        classifier = Classifier(self.dataset, self.final_dataset_path.parent)
+        classifier.prepare_data()
+        classifier.train_classifier(num_epochs=50)
+        classifier.save_checkpoint(classifier.checkpoint_path)
+        acc = classifier.evaluate_classifier()
+        classifier.plot_confusion_matrix()
+        return acc
+
 
 import torch
 from pixlens.editing.pix2pix import Pix2pix
 from pixlens.editing.controlnet import ControlNet
 
 disentangle = Disentanglement(
-    json_file_path="objects_textures_sizes_colors_styles.json",
+    json_file_path="objects_textures_sizes_colors_styles_extended.json",
     image_data_path="editval_instances",
 )
 disentangle.evaluate_model(Pix2pix(device=torch.device("cuda")))

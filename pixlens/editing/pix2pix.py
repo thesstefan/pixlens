@@ -52,6 +52,8 @@ class Pix2pix(interfaces.PromptableImageEditingModel):
         self.model = load_pix2pix(pix2pix_type, device)
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
+        self.generator = torch.Generator()
+        self.generator.manual_seed(4)
 
     def get_model_name(self) -> str:
         return "Pix2pix"
@@ -67,7 +69,8 @@ class Pix2pix(interfaces.PromptableImageEditingModel):
             input_image,
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
-        )  # TODO: controlnet this is not detected as a mistake.
+            generator=self.generator,
+        )
         output_images: list[Image.Image] = output.images
         return output_images[0]
 
@@ -79,6 +82,8 @@ class Pix2pix(interfaces.PromptableImageEditingModel):
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
             output_type="latent",
+            generator=self.generator,
+            guidance_scale=25,
         )
         output_images: list[torch.Tensor] = output.images
         return output_images[0]

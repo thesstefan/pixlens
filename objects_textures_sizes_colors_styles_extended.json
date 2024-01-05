@@ -3,14 +3,13 @@
         "chair",
         "bowl",
         "plate",
-        "brick",
         "nail",
-        "broom",
         "bucket",
-        "hammer",
         "backpack",
         "book",
-        "ball"
+        "ball",
+        "clock",
+        "donut"
     ],
     "texture": [
         "steel",
@@ -22,15 +21,14 @@
         "silk"
     ],
     "color": [
+        "verdant",
         "red",
-        "blue",
+        "azure",
         "green",
-        "yellow",
+        "gold",
         "purple",
-        "orange",
         "black",
-        "pink",
-        "gray"
+        "pink"
     ],
     "style": [
         "vintage",
@@ -38,17 +36,21 @@
         "abstract",
         "realistic",
         "cartoon",
-        "minimalist",
         "surreal",
         "expressionist",
         "futuristic",
         "retro"
     ],
-    "shape": [
-        "square",
-        "round",
-        "triangular",
-        "cylindrical",
-        "conical"
+    "pattern": [
+        "striped",
+        "polka dot",
+        "plaid",
+        "paisley",
+        "floral",
+        "geometric",
+        "abstract",
+        "animal print",
+        "checkered",
+        "herringbone"
     ]
 }

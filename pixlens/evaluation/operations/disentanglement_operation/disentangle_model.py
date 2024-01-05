@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -5,13 +6,18 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
-import torch.nn.functional as F
-import torch.optim as optim
+import torch.nn.functional as F  # noqa: N812
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from torch import nn
+from torch import nn, optim
 from torch.utils.data import DataLoader, TensorDataset
+from tqdm import tqdm
+
+
+class ClassifierType(Enum):
+    CNN = auto()
+    LINEAR = auto()
 
 
 class CNNClassifier(nn.Module):
@@ -51,7 +57,19 @@ class CNNClassifier(nn.Module):
         x = x.view(x.size(0), -1)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        return self.fc3(x)
+        output: torch.Tensor = self.fc3(x)
+        return output
+
+
+class LinearClassifier(nn.Module):
+    def __init__(self, input_features: int, num_classes: int) -> None:
+        super().__init__()
+        self.fc = nn.Linear(input_features, num_classes)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x.view(x.size(0), -1)  # Flatten the tensor
+        output: torch.Tensor = self.fc(x)
+        return output
 
 
 class Classifier:
@@ -60,8 +78,12 @@ class Classifier:
         self.label_encoder = LabelEncoder()
         self.save_data = save_data
         self.checkpoint_path = save_data / "model_checkpoint.pth"
+        self.classifier_type = ClassifierType.LINEAR
+        self.model: nn.Module
 
-    def save_checkpoint(self, filename: Path) -> None:
+    def save_checkpoint(self, filename: Path | None = None) -> None:
+        if filename is None:
+            filename = self.checkpoint_path
         checkpoint = {
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": self.optimizer.state_dict(),
@@ -74,18 +96,34 @@ class Classifier:
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
 
     def prepare_data(self) -> None:
-        inputs = np.array(
-            self.dataset["z_y"] - self.dataset["z_1"],
-        )
-        inputs_2 = np.array(
-            self.dataset["z_2"] - self.dataset["z_neg"],
-        )
-        inputs = np.concatenate((inputs, inputs_2), axis=0)
-        labels = self.label_encoder.fit_transform(
-            self.dataset["attribute_type"],
-        )
+        inputs_list = []
+        labels_list = []
 
-        inputs = torch.from_numpy(inputs).float()
+        for i in range(len(self.dataset)):
+            current_attribute_new = self.dataset.loc[i, "attribute_new"]
+            current_z_end = self.dataset.loc[i, "z_end"]
+
+            # Find all rows with the same 'attribute_new'
+            filtered_dataset = self.dataset.iloc[i + 1 :]
+
+            # Find matching rows in the filtered dataset
+            matching_rows = filtered_dataset[
+                filtered_dataset["attribute_new"] == current_attribute_new
+            ]
+
+            for _, row in matching_rows.iterrows():
+                z_end_diff = current_z_end - row["z_end"]
+                z_end_diff = z_end_diff.to("cpu", dtype=torch.float32)
+                inputs_list.append(z_end_diff)
+
+                label = self.dataset.loc[i, "attribute_type"]
+                labels_list.append(label)
+
+        # Stack all tensors in the list into a single tensor
+        inputs = torch.stack(inputs_list)
+
+        # Transform labels to numerical values
+        labels = self.label_encoder.fit_transform(labels_list)
         labels = torch.tensor(labels, dtype=torch.long)
 
         # Reshape inputs if necessary for CNN
@@ -108,17 +146,31 @@ class Classifier:
 
     def train_classifier(self, num_epochs: int = 50) -> None:
         num_classes = len(np.unique(self.dataset["attribute_type"]))
-        self.model = CNNClassifier(num_classes)
+        if self.classifier_type == ClassifierType.CNN:
+            self.model = CNNClassifier(num_classes)
+        elif self.classifier_type == ClassifierType.LINEAR:
+            # Adjust input_features based on your input size
+            input_features = 45 * 45 * 4
+            self.model = LinearClassifier(input_features, num_classes)
+        else:
+            msg = "Invalid classifier type."
+            raise ValueError(msg)
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
 
-        for _ in range(num_epochs):
-            for inputs, labels in self.train_loader:
+        for epoch in range(num_epochs):
+            self.model.train()
+            running_loss = 0.0
+            for inputs, labels in tqdm(
+                self.train_loader,
+                desc=f"Epoch {epoch + 1}/{num_epochs}",
+            ):
                 self.optimizer.zero_grad()
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, labels)
                 loss.backward()
                 self.optimizer.step()
+                running_loss += loss.item()
 
         # Optionally save the model after training
         self.save_checkpoint(self.checkpoint_path)

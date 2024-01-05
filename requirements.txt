@@ -11,3 +11,5 @@ xformers==0.0.23
 pandera==0.18.0
 colorspacious==1.1.2
 scikit-image==0.22.0
+scikit-learn==1.3.2
+seaborn==0.13.1
