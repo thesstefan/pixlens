@@ -10,15 +10,7 @@ def create_app() -> flask.Flask:
     app.register_blueprint(bp)
     app.config.from_object(Config)
 
-    config = Config()
-
-    if config.DETECT_SEGMENT_MODEL:
-        ml_models.get_detect_segment_model(
-            config.DETECT_SEGMENT_MODEL,
-            config.DEVICE,
-        )
-
-    if config.EDIT_MODEL:
-        ml_models.get_edit_model(config.EDIT_MODEL, config.DEVICE)
+    with app.app_context():
+        ml_models.load_model()
 
     return app

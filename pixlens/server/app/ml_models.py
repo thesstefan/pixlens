@@ -1,62 +1,34 @@
-import functools
-from collections.abc import Callable
-from typing import ParamSpec, TypeVar
+import enum
 
-import torch
+from flask import current_app
 
-from pixlens.detection import grounded_sam, owl_vit_sam
-from pixlens.detection import interfaces as detection_interfaces
-from pixlens.editing import controlnet, pix2pix
-from pixlens.editing import interfaces as editing_interfaces
-
-T = TypeVar(
-    "T",
-    bound=detection_interfaces.PromptDetectAndBBoxSegmentModel
-    | editing_interfaces.PromptableImageEditingModel,
-)
-
-P = ParamSpec("P")
+from pixlens.detection import load_detect_segment_model_from_yaml
+from pixlens.detection.interfaces import PromptDetectAndBBoxSegmentModel
+from pixlens.editing import load_editing_model_from_yaml
+from pixlens.editing.interfaces import PromptableImageEditingModel
 
 
-def get_model(
-    model_init: Callable[P, T],
-    *args: P.args,
-    **kwargs: P.kwargs,
-) -> T:
-    return model_init(*args, **kwargs)
+class InferenceType(enum.StrEnum):
+    EDITING = "EDITING"
+    DETECTION = "DETECTION"
 
 
-@functools.cache
-def get_detect_segment_model(
-    model_type: str,
-    device: torch.device,
-) -> detection_interfaces.PromptDetectAndBBoxSegmentModel:
-    match model_type:
-        case "GroundedSAM":
-            return get_model(grounded_sam.GroundedSAM, device=device)
-        case "OwlViTSAM":
-            return get_model(owl_vit_sam.OwlViTSAM, device=device)
-        case _:
-            raise NotImplementedError
+editing_model: PromptableImageEditingModel | None = None
+detect_segment_model: PromptDetectAndBBoxSegmentModel | None = None
 
 
-@functools.cache
-def get_edit_model(
-    model_type: str,
-    device: torch.device,
-) -> editing_interfaces.PromptableImageEditingModel:
-    match model_type:
-        case "InstructPix2Pix":
-            return get_model(
-                pix2pix.Pix2pix,
-                pix2pix_type=pix2pix.Pix2pixType.BASE,
-                device=device,
-            )
-        case "ControlNet":
-            return get_model(
-                controlnet.ControlNet,
-                pix2pix_type=controlnet.ControlNetType.BASE,
-                device=device,
-            )
-        case _:
-            raise NotImplementedError
+def load_model() -> None:
+    # TODO(thesstefan): Find a better way of doing this
+    global editing_model  # noqa: PLW0603
+    global detect_segment_model  # noqa: PLW0603
+
+    inference_type = InferenceType(current_app.config["INFERENCE_TYPE"])
+
+    if inference_type == InferenceType.EDITING:
+        editing_model = load_editing_model_from_yaml(
+            current_app.config["MODEL_PARAMS_YAML"],
+        )
+    else:
+        detect_segment_model = load_detect_segment_model_from_yaml(
+            current_app.config["MODEL_PARAMS_YAML"],
+        )

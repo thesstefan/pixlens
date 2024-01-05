@@ -44,35 +44,41 @@ def create_image_response(image: Image.Image) -> flask.Response:
 
 @bp.route("/edit", methods=["POST"])
 def edit() -> flask.Response:
+    if not ml_models.editing_model:
+        return flask.Response(
+            "No editing model is available on the server!",
+            400,
+        )
+
     image_path, image = save_tmp_image(flask.request.files["image"])
     prompt = flask.request.form["prompt"]
 
-    model = ml_models.get_edit_model(
-        config.EDIT_MODEL,
-        config.DEVICE,
-    )
-    edit_output = model.edit(prompt, str(image_path))
-
+    edited_image = ml_models.editing_model.edit(prompt, str(image_path))
     image_path.unlink()
 
-    return create_image_response(edit_output.image)
+    return create_image_response(edited_image)
 
 
 @bp.route("/detect_and_segment", methods=["POST"])
 def detect_and_segment() -> flask.Response:
-    image_path, image = save_tmp_image(flask.request.files["image"])
-    prompt = flask.request.form["prompt"]
+    if not ml_models.detect_segment_model:
+        return flask.Response(
+            "No editing model is available on the server!",
+            400,
+        )
 
-    model = ml_models.get_detect_segment_model(
-        config.DETECT_SEGMENT_MODEL,
-        config.DEVICE,
-    )
+    prompt = flask.request.form["prompt"]
+    image = Image.open(
+        io.BytesIO(
+            flask.request.files["image"].read(),
+        ),
+    ).convert("RGB")
+
     (
         segmentation_output,
         detection_output,
-    ) = model.detect_and_segment(prompt, str(image_path))
+    ) = ml_models.detect_segment_model.detect_and_segment(prompt, image)
 
-    image_path.unlink()
     image_source = np.asarray(image)
 
     annotated_image = annotation.annotate_detection_output(
