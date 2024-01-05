@@ -137,8 +137,6 @@ class PreprocessingPipeline:
                 edit = self.get_edit(idx, self.edit_dataset)
                 # if (
                 #     edit.edit_type != EditType.ACTION
-                #     or edit.edit_type != EditType.VIEWPOINT
-                #     or edit.edit_type != EditType.BACKGROUND
                 # ):  # TODO: remove this line  # noqa: FIX002, TD003, TD002
                 #     continue
                 prompt = model.generate_prompt(edit)

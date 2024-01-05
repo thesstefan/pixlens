@@ -7,8 +7,6 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_detection_cli.py",
             "args": [
-                "--model",
-                "GroundedSAM",
                 "--image",
                 "editval_instances/backpack/000000163866.jpg",
                 "--prompt",
@@ -31,8 +29,6 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_detection_cli.py",
             "args": [
-                "--model",
-                "OwlViTSAM",
                 "--image",
                 "editval_instances/backpack/000000163866.jpg",
                 "--prompt",
@@ -92,6 +88,19 @@
                 "--model_params_yaml",
                 "model_cfgs/null_text_inversion.yaml",
             ],
+            "name": "Pixlens Edit CLI - DiffEdit",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_editing_cli.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--model",
+                "DiffEdit",
+                "--output",
+                "${workspaceFolder}/results/edit_output_diffedit.png",
+                "--model_params_yaml",
+                "model_cfgs/diffedit.yaml",
+            ]
         },
         {
             "name": "Debug BLIP1 Caption CLI",
@@ -189,7 +198,7 @@
             "name": "Debug PixLens Evaluation Pipeline - Removal",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/pixlens/cli/pixlens_eval_pipeline_cli.py",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
                 "pix2pix", // Replace with the desired editing model name
@@ -197,6 +206,27 @@
                 "groundedsam", // Replace with the desired detection model name
                 "--edit-type",
                 "object_removal",
+                "--do-all-edits",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        },
+        {
+            "name": "Debug PixLens Evaluation Pipeline - Object Replacement",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
+            "args": [
+                "--editing-model",
+                "pix2pix", // Replace with the desired editing model name
+                "--detection-model",
+                "groundedsam", // Replace with the desired detection model name
+                "--edit-type",
+                "object_replacement",
                 "--do-all-edits",
             ],
             "console": "integratedTerminal",
