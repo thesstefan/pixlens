@@ -2,6 +2,7 @@ import json
 import logging
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pandera as pa
 from pandera import Column
@@ -35,7 +36,7 @@ class PreprocessingPipeline:
                     "edit_type": Column(pa.String),
                     "class": Column(pa.String),
                     "from_attribute": Column(pa.String, nullable=True),
-                    "to_attribute": Column(pa.String),
+                    "to_attribute": Column(pa.String, nullable=True),
                     "input_image_path": Column(pa.String),
                 },
             )
@@ -96,6 +97,7 @@ class PreprocessingPipeline:
                         )
 
         # Create a pandas DataFrame from the records
+        records = self.add_object_removal(records)
         self.edit_dataset = pd.DataFrame(records)
         self.edit_dataset.to_csv(pandas_path, index=False)
 
@@ -108,7 +110,7 @@ class PreprocessingPipeline:
                 image_id=edit["image_id"],
                 image_path=edit["input_image_path"],
                 category=edit["class"],
-                edit_type=EditType.from_type_name(edit["edit_type"]),
+                edit_type=EditType(edit["edit_type"]),
                 from_attribute=edit["from_attribute"],
                 to_attribute=edit["to_attribute"],
             )
@@ -122,6 +124,9 @@ class PreprocessingPipeline:
     def get_all_edits_ms_coco_class(self, ms_coco_class: str) -> pd.DataFrame:
         return self.edit_dataset[self.edit_dataset["class"] == ms_coco_class]
 
+    def get_all_edits_edit_type(self, edit_type: str) -> pd.DataFrame:
+        return self.edit_dataset[self.edit_dataset["edit_type"] == edit_type]
+
     def execute_pipeline(
         self,
         models: list[PromptableImageEditingModel],
@@ -130,20 +135,52 @@ class PreprocessingPipeline:
             logging.info("Running model: %s", model.get_model_name())
             for idx in self.edit_dataset.index:
                 edit = self.get_edit(idx, self.edit_dataset)
-                prompt = self.generate_prompt(edit)
+                # if (
+                #     edit.edit_type != EditType.ACTION
+                # ):  # TODO: remove this line  # noqa: FIX002, TD003, TD002
+                #     continue
+                prompt = model.generate_prompt(edit)
                 logging.info("prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)
-                model.edit(prompt, edit.image_path)
+                model.edit(prompt, edit.image_path, edit)
 
-                if idx == 5:  # noqa: PLR2004 TODO: remove later...
-                    break
+    def add_object_removal(self, records: list[dict]) -> list[dict]:
+        for category_path in Path(self.dataset_path).iterdir():
+            if category_path.is_dir():
+                for image_path in category_path.iterdir():
+                    if image_path.is_file() and image_path.suffix in [
+                        ".png",
+                        ".jpg",
+                        ".jpeg",
+                    ]:
+                        image_id = (
+                            image_path.stem.lstrip("0") or "0"
+                        )  # Remove leading zeros
+                        obj_class = category_path.name
+                        edit_type = (
+                            "object_removal"  # Assuming edit_type is constant
+                        )
+                        from_val = (
+                            None  # Set appropriate value for from_attribute
+                        )
+                        to_val = None  # Set appropriate value for to_attribute
 
-    @staticmethod
-    def generate_prompt(edit: Edit) -> str:
-        return edit.edit_type.prompt.format(
-            category=edit.category,
-            to=edit.to_attribute,
-            from_=edit.from_attribute
-            if hasattr(edit, "from_attribute")
-            else "",
-        )
+                        records.append(
+                            {
+                                "edit_id": len(records),
+                                "image_id": image_id,
+                                "class": obj_class,
+                                "edit_type": edit_type,
+                                "from_attribute": from_val,
+                                "to_attribute": to_val,
+                                "input_image_path": "./"
+                                + self.dataset_path
+                                + "/"
+                                + obj_class
+                                + "/"
+                                + "0" * (12 - len(str(image_id)))
+                                + image_id
+                                + ".jpg",
+                            },
+                        )
+        return records

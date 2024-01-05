@@ -1,3 +1,5 @@
+import torch
+
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
 from pixlens.evaluation import interfaces as evaluation_interfaces
 
@@ -26,7 +28,8 @@ class ObjectAddition(evaluation_interfaces.OperationEvaluation):
             if get_detection_segmentation_result_of_target(
                 evaluation_input.edited_detection_segmentation_result,
                 evaluation_input.updated_strings.category,
-            ).detection_output.logits
+            ).detection_output.logits.size()
+            != torch.Size([0])
             else 0
         )
         is_category_in_input = bool(

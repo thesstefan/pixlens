@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -6,17 +7,17 @@ import torch
 from PIL import Image
 
 from pixlens.detection import interfaces as detection_interfaces
+from pixlens.detection.utils import get_separator
 from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation import interfaces
-from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 from pixlens.evaluation.utils import get_updated_to
-
 from pixlens.utils.utils import get_cache_dir, get_image_extension
+from pixlens.visualization import annotation
 
 
 class EvaluationPipeline:
     def __init__(self, device: torch.device) -> None:
-        self.device = device
+        self.device = "cpu"  # original was cuda
         self.edit_dataset: pd.DataFrame
         self.get_edit_dataset()
         self.detection_model: detection_interfaces.PromptDetectAndBBoxSegmentModel  # noqa: E501
@@ -27,6 +28,7 @@ class EvaluationPipeline:
         if pandas_path.exists():
             self.edit_dataset = pd.read_csv(pandas_path)
         else:
+            logging.error(f"Edit dataset ({pandas_path}) not cached")  # noqa: G004
             raise FileNotFoundError
 
     def get_input_image_from_edit_id(self, edit_id: int) -> Image.Image:
@@ -42,7 +44,7 @@ class EvaluationPipeline:
         edit: interfaces.Edit,
         model: PromptableImageEditingModel,
     ) -> Image.Image:
-        prompt = PreprocessingPipeline.generate_prompt(edit)
+        prompt = model.generate_prompt(edit)
         edit_path = Path(
             get_cache_dir(),
             "models--" + model.get_model_name(),
@@ -83,17 +85,25 @@ class EvaluationPipeline:
     ) -> interfaces.EvaluationInput:
         input_image = self.get_input_image_from_edit_id(edit.edit_id)
         edited_image = self.get_edited_image_from_edit(edit, self.editing_model)
-        prompt = PreprocessingPipeline.generate_prompt(edit)
+        prompt = self.editing_model.generate_prompt(edit)
         from_attribute = (
-            None if np.isnan(edit.from_attribute) else edit.from_attribute
+            None if pd.isna(edit.from_attribute) else edit.from_attribute
         )
         to_attribute = get_updated_to(edit)
+        category = "".join(
+            char if char.isalpha() or char.isspace() else " "
+            for char in edit.category
+        )
         list_for_det_seg = [
             item
-            for item in [edit.category, from_attribute, to_attribute]
+            for item in [category, from_attribute, to_attribute]
             if item is not None
         ]
-        prompt_for_det_seg = ",".join(list_for_det_seg)
+
+        list_for_det_seg = list(set(list_for_det_seg))
+
+        separator = get_separator(self.detection_model)
+        prompt_for_det_seg = separator.join(list_for_det_seg)
 
         input_detection_segmentation_result = (
             self.do_detection_and_segmentation(
@@ -107,15 +117,54 @@ class EvaluationPipeline:
                 prompt_for_det_seg,
             )
         )
+
+        # Input image
+        if input_detection_segmentation_result.detection_output.bounding_boxes.any():
+            annotated_input_image = annotation.annotate_detection_output(
+                np.asarray(input_image),
+                input_detection_segmentation_result.detection_output,
+            )
+
+            if input_detection_segmentation_result.segmentation_output.masks.any():
+                masked_annotated_input_image = annotation.annotate_mask(
+                    input_detection_segmentation_result.segmentation_output.masks,
+                    annotated_input_image,
+                )
+            else:
+                masked_annotated_input_image = annotated_input_image
+        else:
+            annotated_input_image = input_image
+            masked_annotated_input_image = input_image
+
+        # Edited image
+        if edited_detection_segmentation_result.detection_output.bounding_boxes.any():
+            annotated_edited_image = annotation.annotate_detection_output(
+                np.asarray(edited_image),
+                edited_detection_segmentation_result.detection_output,
+            )
+
+            if edited_detection_segmentation_result.segmentation_output.masks.any():
+                masked_annotated_edited_image = annotation.annotate_mask(
+                    edited_detection_segmentation_result.segmentation_output.masks,
+                    annotated_edited_image,
+                )
+            else:
+                masked_annotated_edited_image = annotated_edited_image
+        else:
+            annotated_edited_image = edited_image
+            masked_annotated_edited_image = edited_image
+
         return interfaces.EvaluationInput(
             input_image=input_image,
             edited_image=edited_image,
+            annotated_input_image=masked_annotated_input_image,
+            annotated_edited_image=masked_annotated_edited_image,
             prompt=prompt,
             input_detection_segmentation_result=input_detection_segmentation_result,
             edited_detection_segmentation_result=edited_detection_segmentation_result,
             edit=edit,
             updated_strings=interfaces.UpdatedStrings(
-                category=edit.category,
+                category=category,
                 from_attribute=from_attribute,
                 to_attribute=to_attribute,
             ),

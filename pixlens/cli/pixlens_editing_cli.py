@@ -1,24 +1,12 @@
 import argparse
-import logging
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-import torch
-
-from pixlens.editing import controlnet, pix2pix
+from pixlens.editing import load_editing_model_from_yaml
+from pixlens.editing.interfaces import ImageEditingPromptType
 from pixlens.utils import utils
-
-if TYPE_CHECKING:
-    from pixlens.editing.interfaces import PromptableImageEditingModel
 
 parser = argparse.ArgumentParser(
     description="PixLens - Evaluate & understand image editing models",
-)
-parser.add_argument(
-    "--edit-model",
-    type=str,
-    default="InstructPix2Pix",
-    help=("Image editing model: pix2pix, dreambooth, etc."),
 )
 parser.add_argument(
     "--output",
@@ -35,13 +23,18 @@ parser.add_argument(
 )
 
 parser.add_argument("--prompt", type=str, help=("Prompt with edit instruction"))
+parser.add_argument(
+    "--model_params_yaml",
+    type=str,
+    help=("Path to YAML containing the model configuration"),
+    required=True,
+)
 
 
 def main() -> None:
     args = parser.parse_args()
-    model: PromptableImageEditingModel
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logging.info("Using device: %s", device)
+
+    model = load_editing_model_from_yaml(args.model_params_yaml)
 
     # check if args.in defined
     in_path = "example_input.jpg"
@@ -49,18 +42,18 @@ def main() -> None:
         url = "https://raw.githubusercontent.com/timothybrooks/instruct-pix2pix/main/imgs/example.jpg"
         image = utils.download_image(url)
         image.save(in_path)
-        prompt = "turn him into cyborg"
+
+        type_to_prompt = {
+            ImageEditingPromptType.INSTRUCTION: "turn him into a cyborg",
+            ImageEditingPromptType.DESCRIPTION: (
+                "A photo of the sculpture of David[SEP]A photo of a cyborg"
+            ),
+        }
+        prompt = type_to_prompt[model.prompt_type]
+
     else:
         in_path = args.input
         prompt = args.prompt
-
-    # code to instantiate and run pix2pix
-    if args.edit_model == "InstructPix2Pix":
-        model = pix2pix.Pix2pix(pix2pix.Pix2pixType.BASE, device)
-    elif args.edit_model == "controlnet":
-        model = controlnet.ControlNet(controlnet.ControlNetType.BASE, device)
-    else:
-        raise NotImplementedError
 
     output = model.edit(prompt, in_path)
     if args.input is None:

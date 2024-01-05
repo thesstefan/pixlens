@@ -10,10 +10,10 @@ from pixlens.detection import sam as eval_sam
 class GroundedSAM(interfaces.PromptDetectAndBBoxSegmentModel):
     def __init__(
         self,
-        sam_type: eval_sam.SAMType = eval_sam.SAMType.VIT_H,
         grounding_dino_type: eval_grounding_dino.GroundingDINOType = (
             eval_grounding_dino.GroundingDINOType.SWIN_T
         ),
+        sam_type: eval_sam.SAMType = eval_sam.SAMType.VIT_H,
         detection_confidence_threshold: float = 0.3,
         device: torch.device | None = None,
     ) -> None:

@@ -1,10 +1,7 @@
-# ruff: noqa: FBT001, PLR0913
-
-import torch
 from _typeshed import Incomplete
 from transformers.processing_utils import ProcessorMixin
 
-class Owlv2Processor(ProcessorMixin):
+class AutoProcessor(ProcessorMixin):
     def __call__(
         self,
         text: Incomplete | None = ...,
@@ -14,8 +11,3 @@ class Owlv2Processor(ProcessorMixin):
         return_tensors: str = ...,
         **kwargs: Incomplete,
     ) -> Incomplete: ...
-    def post_process_object_detection(
-        self,
-        *args: Incomplete,
-        **kwargs: Incomplete,
-    ) -> list[dict[str, torch.Tensor]]: ...

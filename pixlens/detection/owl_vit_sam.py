@@ -5,9 +5,13 @@ import torch
 from pixlens.detection import interfaces
 from pixlens.detection import owl_vit as eval_owl_vit
 from pixlens.detection import sam as eval_sam
+from pixlens.utils.yaml_constructible import YamlConstructible
 
 
-class OwlViTSAM(interfaces.PromptDetectAndBBoxSegmentModel):
+class OwlViTSAM(
+    interfaces.PromptDetectAndBBoxSegmentModel,
+    YamlConstructible,
+):
     def __init__(
         self,
         owlvit_type: eval_owl_vit.OwlViTType = eval_owl_vit.OwlViTType.LARGE,
