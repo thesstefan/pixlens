@@ -1,5 +1,5 @@
 pytorch==2.1.2 #2.1.2 Needed for xformers
-pytorch-cuda==12.3
+pytorch-cuda==12.1
 #torchvision==0.16.0
 groundingdino-py==0.4.0
 segment-anything==1.0
@@ -7,4 +7,10 @@ transformers==4.36.0
 scipy==1.11.4
 diffusers==0.24.0
 accelerate==0.25.0
+#xformers==0.0.23 Use pip
+nltk==3.8.1
 xformers==0.0.23
+pandera==0.18.0
+colorspacious==1.1.2
+scikit-image==0.22.0
+pyyaml==6.0.1

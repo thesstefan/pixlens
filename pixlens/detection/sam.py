@@ -70,20 +70,23 @@ class BBoxSamPredictor(interfaces.BBoxSegmentationModel):
         sam_type: SAMType = SAMType.VIT_H,
         device: torch.device | None = None,
     ) -> None:
-        self.sam_predictor = load_sam_predictor(sam_type, device)
+        self.sam_predictor = load_sam_predictor(
+            sam_type,
+            device,
+        )
 
     def segment(
         self,
         bbox: torch.Tensor,
-        image_path: str,
+        image: Image.Image,
     ) -> interfaces.SegmentationOutput:
-        image = np.asarray(Image.open(image_path).convert("RGB"))
+        image_array = np.asarray(image)
 
-        self.sam_predictor.set_image(image)
+        self.sam_predictor.set_image(image_array)
 
         transformed_boxes = self.sam_predictor.transform.apply_boxes_torch(
             bbox,
-            image.shape[:2],
+            image_array.shape[:2],
         ).to(self.sam_predictor.device)
 
         masks, logits, _ = self.sam_predictor.predict_torch(

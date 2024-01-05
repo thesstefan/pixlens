@@ -1,8 +1,12 @@
-import abc
 import dataclasses
+import logging
 from typing import Protocol
 
 import torch
+from PIL import Image
+from torchvision.ops import nms
+
+from pixlens.base_model import BaseModel
 
 
 @dataclasses.dataclass
@@ -22,30 +26,32 @@ class PromptableDetectionModel(Protocol):
     def detect(
         self,
         prompt: str,
-        image_path: str,
+        image: Image.Image,
     ) -> DetectionOutput:
         ...
+
+
+@dataclasses.dataclass
+class DetectionSegmentationResult:
+    detection_output: DetectionOutput
+    segmentation_output: SegmentationOutput
 
 
 class BBoxSegmentationModel(Protocol):
     def segment(
         self,
         bbox: torch.Tensor,
-        image_path: str,
+        image: Image.Image,
     ) -> SegmentationOutput:
         ...
 
 
 class PromptableSegmentationModel(Protocol):
-    def segment(
-        self,
-        prompt: str,
-        image_path: str,
-    ) -> SegmentationOutput:
+    def segment(self, prompt: str, image: Image.Image) -> SegmentationOutput:
         ...
 
 
-class PromptDetectAndBBoxSegmentModel(abc.ABC, PromptableSegmentationModel):
+class PromptDetectAndBBoxSegmentModel(BaseModel, PromptableSegmentationModel):
     def __init__(
         self,
         promptable_detection_model: PromptableDetectionModel,
@@ -63,16 +69,18 @@ class PromptDetectAndBBoxSegmentModel(abc.ABC, PromptableSegmentationModel):
         confident_predictions = torch.where(
             detection_output.logits > self.detection_confidence_threshold,
         )[0]
+        filtered_boxes = detection_output.bounding_boxes[confident_predictions]
+        filtered_logits = detection_output.logits[confident_predictions]
 
-        detection_output.logits = detection_output.logits[confident_predictions]
-        detection_output.bounding_boxes = detection_output.bounding_boxes[
-            confident_predictions
-        ]
+        # Apply Non-Maximum Suppression
+        iou_threshold = 0.5  # You can adjust this threshold
+        keep = nms(filtered_boxes, filtered_logits, iou_threshold)
 
+        # Update detection_output with NMS results
+        detection_output.bounding_boxes = filtered_boxes[keep]
+        detection_output.logits = filtered_logits[keep]
         detection_output.phrases = [
-            phrase
-            for index, phrase in enumerate(detection_output.phrases)
-            if index in confident_predictions
+            detection_output.phrases[i] for i in confident_predictions[keep]
         ]
 
         return detection_output
@@ -80,17 +88,25 @@ class PromptDetectAndBBoxSegmentModel(abc.ABC, PromptableSegmentationModel):
     def detect_and_segment(
         self,
         prompt: str,
-        image_path: str,
+        image: Image.Image,
     ) -> tuple[SegmentationOutput, DetectionOutput]:
         detection_output = self.promptable_detection_model.detect(
             prompt,
-            image_path,
+            image,
         )
         detection_output = self.filter_detection_output(detection_output)
 
+        if detection_output.bounding_boxes.shape[0] == 0:
+            logging.warning("No objects detected")
+            return SegmentationOutput(
+                # no objects detected so logits should be empty and same for masks
+                masks=torch.tensor([]),
+                logits=torch.tensor([]),
+            ), detection_output
+
         segmentation_output = self.bbox_segmentation_model.segment(
             detection_output.bounding_boxes,
-            image_path,
+            image,
         )
 
         return segmentation_output, detection_output
@@ -98,6 +114,6 @@ class PromptDetectAndBBoxSegmentModel(abc.ABC, PromptableSegmentationModel):
     def segment(
         self,
         prompt: str,
-        image_path: str,
+        image: Image.Image,
     ) -> SegmentationOutput:
-        return self.detect_and_segment(prompt, image_path)[0]
+        return self.detect_and_segment(prompt, image)[0]
