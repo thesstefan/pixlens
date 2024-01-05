@@ -23,7 +23,7 @@ LOW_RESOURCE = False
 
 class LocalBlend:
     
-    def get_mask(self, maps, alpha, use_pool):
+    def get_mask(self, maps, alpha, use_pool, x_t):
         k = 1
         maps = (maps * alpha).sum(-1).mean(1)
         if use_pool:
@@ -41,9 +41,9 @@ class LocalBlend:
             maps = attention_store["down_cross"][2:4] + attention_store["up_cross"][:3]
             maps = [item.reshape(self.alpha_layers.shape[0], -1, 1, 16, 16, self.max_num_words) for item in maps]
             maps = torch.cat(maps, dim=1)
-            mask = self.get_mask(maps, self.alpha_layers, True)
+            mask = self.get_mask(maps, self.alpha_layers, True, x_t)
             if self.substruct_layers is not None:
-                maps_sub = ~self.get_mask(maps, self.substruct_layers, False)
+                maps_sub = ~self.get_mask(maps, self.substruct_layers, False, x_t)
                 mask = mask * maps_sub
             mask = mask.float()
             x_t = x_t[:1] + mask * (x_t - x_t[:1])
