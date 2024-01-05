@@ -9,6 +9,8 @@ from transformers import (
     Blip2ForConditionalGeneration,
     Blip2Processor,
     BlipForConditionalGeneration,
+    BlipForQuestionAnswering,
+    BlipProcessor
 )
 
 from pixlens.detection.automatic_label.interfaces import (
@@ -18,11 +20,12 @@ from pixlens.utils.utils import (
     get_cache_dir,
     log_if_hugging_face_model_not_in_cache,
 )
-
+import requests
 
 class BlipType(enum.StrEnum):
     BLIP2 = "Salesforce/blip2-opt-2.7b"
     BLIP1 = "Salesforce/blip-image-captioning-base"
+    BLIPCAP = "Salesforce/blip-vqa-base"
 
 
 def load_blip(
@@ -37,11 +40,16 @@ def load_blip(
     model = (
         Blip2ForConditionalGeneration
         if blip_type == BlipType.BLIP2
+        else BlipForQuestionAnswering
+        if blip_type == BlipType.BLIPCAP
         else BlipForConditionalGeneration
-    ).from_pretrained(blip_type, cache_dir=path_to_cache)
+    ).from_pretrained(blip_type, cache_dir = path_to_cache)
     processor = (
-        Blip2Processor if blip_type == BlipType.BLIP2 else AutoProcessor
-    ).from_pretrained(blip_type, cache_dir=path_to_cache)
+        Blip2Processor if blip_type == BlipType.BLIP2
+        else BlipProcessor
+        if blip_type == BlipType.BLIPCAP
+        else AutoProcessor
+    ).from_pretrained(blip_type, cache_dir = path_to_cache)
 
     model.to(device)
     model.eval()
@@ -58,8 +66,9 @@ class Blip(ImageDescriptorModel):
         device: torch.device | None = None,
     ) -> None:
         self.device = device
-        self.model, self.processor = load_blip(blip_type, device)
         self.blip_type = blip_type
+        self.model, self.processor = load_blip(blip_type, device)
+        
 
     def image_caption(self, image: Image.Image, text: str = "") -> str:
         if self.blip_type == BlipType.BLIP2:
@@ -99,3 +108,36 @@ class Blip(ImageDescriptorModel):
         if "yes" in caption.lower():
             return True
         return False
+    
+    def ask_blip(
+            self, 
+            image: Image.Image,
+            question: str,
+            ) -> str:
+        inputs = self.processor(image, question, return_tensors="pt")
+        out = self.model.generate(**inputs)
+
+        return self.processor.decode(out[0], skip_special_tokens=True)
+
+
+
+
+# def main():
+#     myblip = Blip(blip_type=BlipType.BLIPCAP)
+#     print("finished loading blip")
+#     img_url = 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/demo.jpg' 
+#     raw_image = Image.open(requests.get(img_url, stream=True).raw).convert('RGB')   
+#     answer = myblip.ask_blip(raw_image, "how many dogs are in the picture?") 
+
+#     print(answer)
+
+#     return 0
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+

@@ -1,6 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
+    
         {
             "name": "Debug GroundedSAM",
             "type": "python",
@@ -16,7 +17,7 @@
                 "--out",
                 "${workspaceFolder}/results/result_suitcase_backpack_grounded_sam.png",
                 "--model_params_yaml",
-                "model_cfgs/grounded_sam.yaml",
+                "model_cfgs/grounded_sam.yaml"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
@@ -40,7 +41,7 @@
                 "--out",
                 "${workspaceFolder}/results/result_suitcase_backpack_owlvit_sam.png",
                 "--model_params_yaml",
-                "model_cfgs/owlvit_sam.yaml",
+                "model_cfgs/owlvit_sam.yaml"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
@@ -61,7 +62,7 @@
                 "--output",
                 "${workspaceFolder}/results/edit_output_controlnet.png",
                 "--model_params_yaml",
-                "model_cfgs/controlnet.yaml",
+                "model_cfgs/controlnet.yaml"
             ]
         },
         {
@@ -76,7 +77,7 @@
                 "--output",
                 "${workspaceFolder}/results/edit_output_pix2pix.png",
                 "--model_params_yaml",
-                "model_cfgs/instruct_pix2pix.yaml",
+                "model_cfgs/instruct_pix2pix.yaml"
             ]
         },
         {
@@ -118,11 +119,11 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--edit-id",
-                "0", // Replace with the desired edit ID
+                "0",
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "pix2pix",
                 "--detection-model",
-                "groundedsam" // Replace with the desired detection model name
+                "groundedsam"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
@@ -138,9 +139,9 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "pix2pix",
                 "--detection-model",
-                "groundedsam", // Replace with the desired detection model name
+                "groundedsam",
                 "--edit-type",
                 "color"
             ],
@@ -158,9 +159,9 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "pix2pix",
                 "--detection-model",
-                "groundedsam", // Replace with the desired detection model name
+                "groundedsam",
                 "--edit-type",
                 "size"
             ],
@@ -171,5 +172,11 @@
             "jinja": false,
             "justMyCode": true
         },
+        {
+            "name": "Python Debugger: Python File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}"
+        }
     ]
 }
