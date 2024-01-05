@@ -6,6 +6,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+import torch
 
 from pixlens.editing import interfaces as editing_interfaces
 from pixlens.evaluation.operations.disentanglement_operation import utils
@@ -116,7 +117,7 @@ class Disentanglement:
             with Path.open(self.results_path, "w") as file:
                 json.dump(self.results, file, indent=4)
 
-    def check_if_pd_dataset_existent(self) -> tuple[str, bool]:
+    def check_if_pd_dataset_existent(self) -> bool:
         cache_dir = get_cache_dir()
         parent_folder = (
             cache_dir
@@ -154,21 +155,21 @@ class Disentanglement:
 
             self.generate_final_dataset()
         self.dataset["z_end"] = self.dataset["z_end"].apply(
-            lambda x: torch.tensor(x),
+            lambda x: torch.tensor(x),  # type: ignore[arg-type, return-value]
         )
         self.dataset["z_start"] = self.dataset["z_start"].apply(
-            lambda x: torch.tensor(x),
+            lambda x: torch.tensor(x),  # type: ignore[arg-type, return-value]
         )
         self.dataset["z_positive_attribute"] = self.dataset[
             "z_positive_attribute"
         ].apply(
-            lambda x: torch.tensor(x),
+            lambda x: torch.tensor(x),  # type: ignore[arg-type, return-value]
         )
 
         self.dataset["z_negative_attribute"] = self.dataset[
             "z_negative_attribute"
         ].apply(
-            lambda x: torch.tensor(x),
+            lambda x: torch.tensor(x),  # type: ignore[arg-type, return-value]
         )
 
     def generate_all_latents_for_image(self, image_path: Path) -> None:
