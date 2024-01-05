@@ -81,19 +81,3 @@ def compute_norms(
         norms_per_attribute_type[row["attribute_type"]].append(norm.item())
         all_norms.append(norm.item())
     return norms_per_attribute_type, all_norms
-
-
-def generate_ordered_unique_combinations(
-    objects: list,
-    attributes: list,
-) -> list[tuple[str, str, str, str]]:
-    object_pairs = set(permutations(objects, 2))
-    attribute_pairs = set(permutations(attributes, 2))
-
-    object_pairs = {tuple(sorted(pair)) for pair in object_pairs}
-    attribute_pairs = {tuple(sorted(pair)) for pair in attribute_pairs}
-    return [
-        (*obj_pair, *attr_pair)
-        for obj_pair in object_pairs
-        for attr_pair in attribute_pairs
-    ]

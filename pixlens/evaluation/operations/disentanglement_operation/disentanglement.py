@@ -3,16 +3,16 @@ import json
 import logging
 from pathlib import Path
 
+import joblib
 import numpy as np
 import pandas as pd
 
-
 from pixlens.editing import interfaces as editing_interfaces
-from pixlens.utils.utils import get_cache_dir
-from pixlens.evaluation.operations.disentanglement_operation.disentangle_model import (
+from pixlens.evaluation.operations.disentanglement_operation import utils
+from pixlens.evaluation.operations.disentanglement_operation.disentangle_model import (  # noqa: E501
     Classifier,
 )
-import pixlens.evaluation.operations.disentanglement_operation.utils as utils
+from pixlens.utils.utils import get_cache_dir
 
 
 class Disentanglement:
@@ -142,8 +142,10 @@ class Disentanglement:
                 )
                 self.generate_all_latents_for_image(image_file)
             else:
-                self.object_dataset = pd.read_pickle(self.obj_dataset_path)
-                self.att_dataset = pd.read_pickle(self.att_dataset_path)
+                with Path.open(self.obj_dataset_path, "rb") as file:
+                    self.object_dataset = joblib.load(file)
+                with Path.open(self.att_dataset_path, "rb") as file:
+                    self.att_dataset = joblib.load(file)
 
             self.generate_final_dataset()
 
