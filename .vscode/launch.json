@@ -173,6 +173,28 @@
             "justMyCode": true
         },
         {
+            "name": "Debug PixLens Evaluation Pipeline - Texture",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
+            "args": [
+                "--editing-model",
+                "pix2pix",
+                "--detection-model",
+                "groundedsam",
+                "--edit-type",
+                "texture", 
+                // "--edit-id",
+                // "205"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        },
+        {
             "name": "Python Debugger: Python File",
             "type": "debugpy",
             "request": "launch",

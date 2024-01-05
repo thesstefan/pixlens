@@ -14,6 +14,7 @@ from pixlens.evaluation.interfaces import EditType
 from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.size import SizeEdit
+from pixlens.evaluation.operations.texture import TextureEdit
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
@@ -64,6 +65,7 @@ def check_args(args: argparse.Namespace) -> None:
 def main() -> None:
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cpu") #TODO: remove this line
 
     check_args(args)
 
@@ -99,7 +101,7 @@ def main() -> None:
         )
         # get first edit from the all_edits_by_type dataframe
         random_edit_record = all_edits_by_type.iloc[[4]]
-        #     # random_edit_record = all_edits_by_type.sample(n=1)  # noqa: ERA001
+        #random_edit_record = all_edits_by_type.sample(n=3)  # noqa: ERA001
         edit = preprocessing_pipe.get_edit(
             (random_edit_record["edit_id"].astype(int).to_numpy()[0]),
             evaluation_pipeline.edit_dataset,
@@ -135,6 +137,8 @@ def main() -> None:
         evaluation_output = ColorEdit().evaluate_edit(evaluation_input)
     elif edit.edit_type == EditType.SIZE:
         evaluation_output = SizeEdit().evaluate_edit(evaluation_input)
+    elif edit.edit_type == EditType.TEXTURE:
+        evaluation_output = TextureEdit().evaluate_edit(evaluation_input)
 
     # print the evaluation score if successful otherwise print evaluation failed
     if evaluation_output.success:
