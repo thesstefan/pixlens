@@ -40,6 +40,7 @@ class Disentanglement:
         self.json_file_path: Path = Path(json_file_path)
         self.image_data_path: Path = Path(image_data_path)
         self.data_attributes, self.objects = self.load_attributes_and_objects()
+        self.generate_images = False
 
     def init_model(
         self,
@@ -57,8 +58,10 @@ class Disentanglement:
     def evaluate_model(
         self,
         model: editing_interfaces.PromptableImageEditingModel,
+        generate_images: bool = False,
     ) -> None:
         self.init_model(model)
+        self.generate_images = generate_images
         self.results_path = (
             get_cache_dir()
             / Path("models--" + self.model.get_model_name())
@@ -148,6 +151,23 @@ class Disentanglement:
                     self.att_dataset = joblib.load(file)
 
             self.generate_final_dataset()
+        self.dataset["z_end"] = self.dataset["z_end"].apply(
+            lambda x: torch.tensor(x),
+        )
+        self.dataset["z_start"] = self.dataset["z_start"].apply(
+            lambda x: torch.tensor(x),
+        )
+        self.dataset["z_positive_attribute"] = self.dataset[
+            "z_positive_attribute"
+        ].apply(
+            lambda x: torch.tensor(x),
+        )
+
+        self.dataset["z_negative_attribute"] = self.dataset[
+            "z_negative_attribute"
+        ].apply(
+            lambda x: torch.tensor(x),
+        )
 
     def generate_all_latents_for_image(self, image_path: Path) -> None:
         data_to_append = []
@@ -173,6 +193,17 @@ class Disentanglement:
                     prompt=prompt,
                     image_path=str_img_path,
                 )
+                if self.generate_images:
+                    image = self.model.edit_image(
+                        prompt=prompt,
+                        image_path=str_img_path,
+                    )
+                    image.save(
+                        get_cache_dir()
+                        / Path("models--" + self.model.get_model_name())
+                        / Path("000000000002")
+                        / Path(prompt + ".png"),
+                    )
                 data_to_append.append(
                     {
                         "attribute_type": attribute,
@@ -196,6 +227,14 @@ class Disentanglement:
         data = []
         for a in self.data_attributes[attribute]:
             z = self.model.get_latent(prompt=a, image_path=image_path)
+            if self.generate_images:
+                image = self.model.edit_image(prompt=a, image_path=image_path)
+                image.save(
+                    get_cache_dir()
+                    / Path("models--" + self.model.get_model_name())
+                    / Path("000000000002")
+                    / Path(a + ".png"),
+                )
             data.append(
                 {
                     "attribute_type": attribute,
@@ -329,4 +368,8 @@ disentangle = Disentanglement(
     json_file_path="objects_textures_sizes_colors_styles_extended.json",
     image_data_path="editval_instances",
 )
-disentangle.evaluate_model(Pix2pix(device=torch.device("cuda")))
+# disentangle.evaluate_model(Pix2pix(device=torch.device("cuda")))
+disentangle.evaluate_model(
+    ControlNet(device=torch.device("cuda")),
+    generate_images=True,
+)

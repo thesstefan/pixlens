@@ -61,6 +61,8 @@ class ControlNet(interfaces.PromptableImageEditingModel):
     ) -> None:
         self.device = device
         self.model = load_controlnet(pix2pix_type, device)
+        self.generator = torch.Generator()
+        self.generator.manual_seed(4)
 
     def prepare_image(self, image_path: str) -> Image.Image:
         image = Image.open(image_path)
@@ -92,6 +94,8 @@ class ControlNet(interfaces.PromptableImageEditingModel):
             input_image,
             num_inference_steps=num_inference_steps,
             image_guidance_scale=image_guidance_scale,
+            guidance_scale=25,
+            generator=self.generator,
         )
         output_images: list[Image.Image] = output.images
         return output_images[0]
@@ -104,6 +108,8 @@ class ControlNet(interfaces.PromptableImageEditingModel):
             num_inference_steps=100,
             image_guidance_scale=1.0,
             output_type="latent",
+            guidance_scale=25,
+            generator=self.generator,
         )
         output_images: list[torch.Tensor] = output.images
         return output_images[0]
