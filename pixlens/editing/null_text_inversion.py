@@ -1,5 +1,3 @@
-import enum
-
 import torch
 from diffusers import StableDiffusionPipeline  # type: ignore[import]
 from PIL import Image
@@ -11,15 +9,9 @@ from pixlens.editing.impl.null_text_inversion import (
     null_inversion,
     ptp_utils,
 )
+from pixlens.editing.stable_diffusion import StableDiffusionType
 from pixlens.evaluation.interfaces import Edit, EditType
 from pixlens.utils import utils
-from pixlens.utils.yaml_constructible import YamlConstructible
-
-
-# TODO(thesstefan): There is another StableDiffusionType in ControlNet.
-#                   Consider merging them together.
-class StableDiffusionType(enum.StrEnum):
-    CompVisV14 = "CompVis/stable-diffusion-v1-4"
 
 
 def load_stable_diffusion(  # type: ignore[no-any-unimported]
@@ -35,14 +27,11 @@ def load_stable_diffusion(  # type: ignore[no-any-unimported]
     ).to(device)
 
 
-class NullTextInversion(
-    interfaces.PromptableImageEditingModel,
-    YamlConstructible,
-):
+class NullTextInversion(interfaces.PromptableImageEditingModel):
     def __init__(  # noqa: PLR0913
         self,
         seed: int,
-        sd_type: StableDiffusionType = StableDiffusionType.CompVisV14,
+        sd_type: StableDiffusionType = StableDiffusionType.V14,
         num_ddim_steps: int = 50,
         guidance_scale: float = 7.5,
         cross_replace_steps: float = 0.8,
@@ -92,16 +81,7 @@ class NullTextInversion(
             uncond_embeddings=uncond_embeddings,
         )
 
-        assert (
-            uncond_embeddings is not None
-        ), "ERROR: uncond_embeddings are NONE after null-text optimization."
         return x_t, uncond_embeddings
-
-    def get_model_name(self) -> str:
-        return "NullTextInversion"
-
-    def generate_prompt(self, edit: Edit) -> str:
-        return editing_utils.generate_description_based_prompt(edit)
 
     def edit_image(
         self,
@@ -116,27 +96,21 @@ class NullTextInversion(
         src, dst = editing_utils.split_description_based_prompt(prompt)
         x_t, uncond_embeddings = self.get_inversion_latent(image_path, src)
 
-        is_replace_controller = (
-            edit_info.edit_type == EditType.OBJECT_REPLACEMENT
-        )
-
-        # TODO(thesstefan): Play more with this parameters and see what
+        # TODO(thesstefan): Play more with these parameters and see what
         #                   can be achieved with them. May need to make them
         #                   more operation specific!
         equalizer_params = {
             "words": (edit_info.to_attribute,),
             "values": (self.subject_amplification,),
         }
-
-        """
         blend_words = (
             (edit_info.to_attribute,),
             (
-                edit_info.to_attribute if is_replace_controller
+                edit_info.to_attribute
+                if edit_info.edit_type == EditType.OBJECT_REPLACEMENT
                 else edit_info.from_attribute,
             ),
         )
-        """
 
         # FIXME(thesstefan): Using the blend_words parameter
         # makes the implementation code raise a KeyError. This
@@ -165,12 +139,12 @@ class NullTextInversion(
         #       https://github.com/huggingface/diffusers/issues/6313
         controller = controllers.make_controller(
             [src, dst],
-            self.ldm_stable.tokenizer,
-            is_replace_controller,
+            self.ldm_stable.tokenizer,  # type: ignore[attr-defined]
+            edit_info.edit_type == EditType.OBJECT_REPLACEMENT,
             {"default_": self.cross_replace_steps},
             self.self_replace_steps,
             num_ddim_steps=50,
-            #           blend_words=blend_words,
+            blend_words=blend_words,
             equalizer_params=equalizer_params,
         )
 
@@ -185,3 +159,10 @@ class NullTextInversion(
         )
 
         return Image.fromarray(images[1])
+
+    @property
+    def prompt_type(self) -> interfaces.ImageEditingPromptType:
+        return interfaces.ImageEditingPromptType.DESCRIPTION
+
+    def generate_prompt(self, edit: Edit) -> str:
+        return editing_utils.generate_description_based_prompt(edit)
