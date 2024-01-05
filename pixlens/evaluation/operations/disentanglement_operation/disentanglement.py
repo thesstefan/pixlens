@@ -58,6 +58,7 @@ class Disentanglement:
     def evaluate_model(
         self,
         model: editing_interfaces.PromptableImageEditingModel,
+        *,
         generate_images: bool = False,
     ) -> None:
         self.init_model(model)
@@ -65,6 +66,7 @@ class Disentanglement:
         self.results_path = (
             get_cache_dir()
             / Path("models--" + self.model.get_model_name())
+            / Path("disentanglement/")
             / Path("results.json")
         )
         self.results = {}
@@ -358,18 +360,3 @@ class Disentanglement:
         acc = classifier.evaluate_classifier()
         classifier.plot_confusion_matrix()
         return acc
-
-
-import torch
-from pixlens.editing.pix2pix import Pix2pix
-from pixlens.editing.controlnet import ControlNet
-
-disentangle = Disentanglement(
-    json_file_path="objects_textures_sizes_colors_styles_extended.json",
-    image_data_path="editval_instances",
-)
-# disentangle.evaluate_model(Pix2pix(device=torch.device("cuda")))
-disentangle.evaluate_model(
-    ControlNet(device=torch.device("cuda")),
-    generate_images=True,
-)
