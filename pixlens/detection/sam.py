@@ -102,5 +102,5 @@ class BBoxSamPredictor(interfaces.BBoxSegmentationModel):
 
     @property
     def device(self) -> torch.device:
-        # return self.sam_predictor.device
-        return "cpu"
+        return self.sam_predictor.device
+        
