@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+import torch
 
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
 from pixlens.evaluation.interfaces import (
@@ -72,14 +73,18 @@ class PositionalAddition(OperationEvaluation):
             warning_msg = f"More than one '{to_attribute}' in the edited image."
             logging.warning(warning_msg)
 
-        # FIXME(julencosta): we are assuming that there is only one object  # noqa: TD001, TD003, FIX001, E501
-        # detected in the edited image and that it is the object that was
-        # added. However, this is not always the case.
         category_center_of_mass = center_of_mass(
             category_in_input.segmentation_output.masks[0],
         )
+
+        biggest_object_index = int(
+            torch.argmax(
+                tos_in_edited.segmentation_output.masks.sum(dim=(2, 3)),
+            ).item(),
+        )
+
         to_center_of_mass = center_of_mass(
-            tos_in_edited.segmentation_output.masks[0],
+            tos_in_edited.segmentation_output.masks[biggest_object_index],
         )
 
         draw_center_of_masses(
@@ -190,7 +195,7 @@ class PositionalAddition(OperationEvaluation):
             "left": np.array([-1, 0]),
             "right": np.array([1, 0]),
             "top": np.array([0, 1]),
-            "bottom": np.array([0, -1]),
+            "below": np.array([0, -1]),
         }
 
         angle = angle_between(
