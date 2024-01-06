@@ -184,8 +184,8 @@
                 "groundedsam",
                 "--edit-type",
                 "texture", 
-                // "--edit-id",
-                // "205"
+                "--edit-id",
+                "205"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",

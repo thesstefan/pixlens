@@ -111,15 +111,21 @@ class TextureEdit(evaluation_interfaces.OperationEvaluation):
             pass
         else:
             answer_original = str_to_int.get(answer_original, answer_original)
-
+        if answer_edited == "many":
+            answer_edited = 4
         # Now you can subtract them
-        try:
-            score -= abs(int(answer_edited) - int(answer_original))*0.2
-        except:
+        if not isinstance(answer_edited, int) and not isinstance(answer_original, int):
             print("blip didn't output a number")
+            return evaluation_interfaces.EvaluationOutput(
+                score=score,
+                success=False,
+            )
+        
+        score -= abs(int(answer_edited) - int(answer_original))*0.1
+
 
         return evaluation_interfaces.EvaluationOutput(
-            score=max(score, 0),
+            score=max(score, 0), #sometimes score even below 0
             success=True,
         )
 
