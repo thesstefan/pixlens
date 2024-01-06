@@ -204,7 +204,7 @@ class Disentanglement:
                     image.save(
                         get_cache_dir()
                         / Path("models--" + self.model.get_model_name())
-                        / Path("000000000002")
+                        / Path("000000000000")
                         / Path(prompt + ".png"),
                     )
                 data_to_append.append(
