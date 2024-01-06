@@ -110,14 +110,10 @@ class PositionalAddition(OperationEvaluation):
     ) -> str | None:
         if to_attribute is None:
             return None
-        if "left" in to_attribute:
-            return "left"
-        if "right" in to_attribute:
-            return "right"
-        if "top" in to_attribute:
-            return "top"
-        if "below" in to_attribute:
-            return "bottom"
+
+        for direction in ["left", "right", "top", "below"]:
+            if direction in to_attribute:
+                return direction
         return None
 
     def handle_no_to_attribute(self) -> EvaluationOutput:
