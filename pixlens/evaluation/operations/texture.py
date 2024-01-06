@@ -36,7 +36,7 @@ class TextureEdit(evaluation_interfaces.OperationEvaluation):
                 "present at input",
             )
             return evaluation_interfaces.EvaluationOutput(
-                score=-1.0,
+                edit_specific_score=-1.0,
                 success=False,
             )  # Object wasn't even present at input
         if not category in edit_detection.phrases:
@@ -45,7 +45,7 @@ class TextureEdit(evaluation_interfaces.OperationEvaluation):
                 "present at output",
             )
             return evaluation_interfaces.EvaluationOutput(
-                score=0,
+                edit_specific_score=0,
                 success=True,
             ) # Object wasn't present at output
         
@@ -117,7 +117,7 @@ class TextureEdit(evaluation_interfaces.OperationEvaluation):
         if not isinstance(answer_edited, int) and not isinstance(answer_original, int):
             print("blip didn't output a number")
             return evaluation_interfaces.EvaluationOutput(
-                score=score,
+                edit_specific_score=score,
                 success=False,
             )
         
@@ -125,7 +125,7 @@ class TextureEdit(evaluation_interfaces.OperationEvaluation):
 
 
         return evaluation_interfaces.EvaluationOutput(
-            score=max(score, 0), #sometimes score even below 0
+            edit_specific_score=max(score, 0), #sometimes score even below 0
             success=True,
         )
 

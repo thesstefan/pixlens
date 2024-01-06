@@ -6,7 +6,7 @@ import torch
 from pixlens.detection.grounded_sam import GroundedSAM
 from pixlens.detection.owl_vit_sam import OwlViTSAM
 from pixlens.editing.controlnet import ControlNet
-from pixlens.editing.pix2pix import Pix2pix
+from pixlens.editing.instruct_pix2pix import InstructPix2Pix
 from pixlens.evaluation.evaluation_pipeline import (
     EvaluationPipeline,
 )
@@ -78,7 +78,7 @@ def check_args(args: argparse.Namespace) -> None:
 def main() -> None:
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #device = torch.device("cpu") #TODO: remove this line
+    # device = torch.device("cpu") #TODO: remove this line
 
     check_args(args)
 
@@ -112,11 +112,11 @@ def main() -> None:
 def get_editing_model(
     model_name: str,
     device: torch.device,
-) -> ControlNet | Pix2pix:
+) -> ControlNet | InstructPix2Pix:
     if model_name.lower() == "controlnet":
         return ControlNet(device=device)
     if model_name.lower() == "pix2pix":
-        return Pix2pix(device=device)
+        return InstructPix2Pix(device=device)
     error_msg = f"Invalid editing model name: {model_name.lower()}"
     raise ValueError(error_msg)
 
@@ -169,7 +169,7 @@ def get_edits(
 
 def evaluate_edits(
     edits: list[Edit],
-    editing_model: ControlNet | Pix2pix,
+    editing_model: ControlNet | InstructPix2Pix,
     evaluation_pipeline: EvaluationPipeline,
 ) -> tuple[float, int]:
     overall_score = 0.0
@@ -215,6 +215,8 @@ def evaluate_edit(
         return ObjectRemoval().evaluate_edit(evaluation_input)
     if edit.edit_type == EditType.OBJECT_REPLACEMENT:
         return ObjectReplacement().evaluate_edit(evaluation_input)
+    if edit.edit_type == EditType.TEXTURE:
+        return TextureEdit().evaluate_edit(evaluation_input)
     error_msg = f"Invalid edit type: {edit.edit_type}"
     raise ValueError(error_msg)
 
