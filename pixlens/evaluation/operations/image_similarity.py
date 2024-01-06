@@ -19,7 +19,8 @@ def image_similarity(img1: Image.Image, img2: Image.Image) -> float:
     img2_array = np.array(img2)
 
     mse_value: float = mean_squared_error(
-        img1_array.flatten(), img2_array.flatten()
+        img1_array.flatten(),
+        img2_array.flatten(),
     )
     ssim_value: float = ssim(img1_array, img2_array, multichannel=True)
 
@@ -46,8 +47,9 @@ def apply_segmentation_mask(
 
     # Check if dimensions of the mask and the image match
     if img_array.shape[:2] != mask.shape:
+        msg = "The dimensions of the image and the mask do not match."
         raise ValueError(
-            "The dimensions of the image and the mask do not match."
+            msg,
         )
 
     # Apply the mask: set pixels to black where mask is True
