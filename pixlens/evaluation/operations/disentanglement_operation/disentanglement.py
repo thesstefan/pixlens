@@ -18,6 +18,13 @@ from pixlens.utils.utils import get_cache_dir
 
 class Disentanglement:
     def __init__(self, json_file_path: str, image_data_path: str) -> None:
+        """Initialize of datasets and variables.
+
+        Obj_dataset represents the tensors of the form object with
+        attribute_type attribute. Att dataset represents the tensors of what
+        the model thinks the attribute looks like.
+        Dataset is the final dataset that essentially combines the two datasets.
+        """
         self.dataset = pd.DataFrame(
             columns=[
                 "attribute_type",
@@ -62,6 +69,17 @@ class Disentanglement:
         *,
         generate_images: bool = False,
     ) -> None:
+        """Evaluate the model.
+
+        After initializing the model, checks what was the last thing computed
+        and starts the process from there. If nothing is computed, first
+        generates the dataset. Then it computes the intra sample evaluation,
+        the inter sample and intra attribute evaluation and finally
+        the inter attribute
+        Args:
+            model: The model to evaluate.
+            generate_images: Whether to generate images or not.
+        """
         self.init_model(model)
         self.generate_images = generate_images
         self.results_path = (
@@ -129,6 +147,13 @@ class Disentanglement:
         return self.final_dataset_path.exists()
 
     def generate_dataset(self) -> None:
+        """Generate the dataset.
+
+        If the dataset is not existent, first calls the generate all latents
+        for image to create the obj_dataset and att_dataset.
+        Then calls generate_final_dataset which combines those two datasets
+        into the final dataset.
+        """
         boolean = self.check_if_pd_dataset_existent()
         if boolean:
             logging.info("Loading existing dataset")
@@ -173,6 +198,7 @@ class Disentanglement:
         )
 
     def generate_all_latents_for_image(self, image_path: Path) -> None:
+        """Generate obj_dataset and att_dataset for a given image."""
         data_to_append = []
         str_img_path = str(image_path)
         for attribute in list(self.data_attributes.keys()):
@@ -227,6 +253,10 @@ class Disentanglement:
         attribute: str,
         image_path: str,
     ) -> list:
+        """Generate the reference attribute latents for a given image.
+
+        This is essentially the latents for the prompts "green", "steel", etc.
+        """
         data = []
         for a in self.data_attributes[attribute]:
             z = self.model.get_latent(prompt=a, image_path=image_path)
@@ -313,6 +343,11 @@ class Disentanglement:
         self.dataset.to_pickle(self.final_dataset_path)
 
     def intra_sample_evaluation(self) -> tuple[dict[str, float], float]:
+        """Compute the intra sample evaluation.
+
+        For every row of self.dataset computes
+        || z_end - (z_start + z_positive_attribute - z_negative_attribute) ||.
+        """
         norms_per_attribute_type, all_norms = utils.compute_norms(
             self.dataset,
             self.data_attributes,
@@ -327,6 +362,13 @@ class Disentanglement:
         return avg_norms_per_attribute_type, overall_avg_norm
 
     def inter_sample_and_intra_attribute(self) -> dict:
+        """Compute the inter sample and intra attribute evaluation.
+
+        For every pair of attributes (of the same attribute type) computes the
+        direction vectors of the different objects with those edits and
+        then computes the average cosine similarity and average angle between
+        those direction vectors.
+        """
         results: dict = {}
 
         # Iterate over each attribute type
@@ -354,6 +396,7 @@ class Disentanglement:
         return results
 
     def inter_attribute(self) -> float:
+        """Compute the inter attribute evaluation."""
         classifier = Classifier(self.dataset, self.final_dataset_path.parent)
         classifier.prepare_data()
         classifier.train_classifier(num_epochs=50)
