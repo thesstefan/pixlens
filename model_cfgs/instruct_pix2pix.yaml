@@ -1,6 +1,7 @@
-class: Pix2pix 
+class: InstructPix2Pix
 params:
-    pix2pix_type: timbrooks/instruct-pix2pix
+    instruct_pix2pix_type: timbrooks/instruct-pix2pix
     num_inference_steps: 100
     image_guidance_scale: 1.0
     text_guidance_scale: 7.5
+    device: cuda

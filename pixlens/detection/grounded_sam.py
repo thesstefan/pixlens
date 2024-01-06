@@ -5,13 +5,9 @@ import torch
 from pixlens.detection import grounding_dino as eval_grounding_dino
 from pixlens.detection import interfaces
 from pixlens.detection import sam as eval_sam
-from pixlens.utils.yaml_constructible import YamlConstructible
 
 
-class GroundedSAM(
-    interfaces.PromptDetectAndBBoxSegmentModel,
-    YamlConstructible,
-):
+class GroundedSAM(interfaces.PromptDetectAndBBoxSegmentModel):
     def __init__(
         self,
         grounding_dino_type: eval_grounding_dino.GroundingDINOType = (

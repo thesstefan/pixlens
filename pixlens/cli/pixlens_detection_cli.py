@@ -1,21 +1,13 @@
 import argparse
-import logging
 
 import numpy as np
-import torch
 from PIL import Image
 
-from pixlens.detection import grounded_sam, owl_vit_sam
+from pixlens.detection import load_detect_segment_model_from_yaml
 from pixlens.visualization import annotation
 
 parser = argparse.ArgumentParser(
     description="PixLens - Evaluate & understand image editing models",
-)
-parser.add_argument(
-    "--model",
-    type=str,
-    default="GroundedSAM",
-    help=("Detect+Segment model, GroundedSAM or OwlViTSAM"),
 )
 parser.add_argument(
     "--out_image",
@@ -33,26 +25,17 @@ parser.add_argument("--prompt", type=str, help=("Prompt to guide detection"))
 parser.add_argument(
     "--model_params_yaml",
     type=str,
-    help=("Path to YAML containing model params"),
+    help=("Path to YAML containing the model configuration"),
     required=True,
 )
-
-NAME_TO_MODEL: dict[
-    str,
-    type[grounded_sam.GroundedSAM] | type[owl_vit_sam.OwlViTSAM],
-] = {
-    "GroundedSAM": grounded_sam.GroundedSAM,
-    "OwlViTSAM": owl_vit_sam.OwlViTSAM,
-}
 
 
 def main() -> None:
     args = parser.parse_args()
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logging.info(f"Using device: {device}")  # noqa: G004
     image = Image.open(args.image).convert("RGB")
-    model = NAME_TO_MODEL[args.model].from_yaml(args.model_params_yaml)
+    model = load_detect_segment_model_from_yaml(args.model_params_yaml)
+
     segmentation_output, detection_output = model.detect_and_segment(
         args.prompt,
         image,
@@ -69,7 +52,7 @@ def main() -> None:
         segmentation_output.masks,
         annotated_image,
     )
-    masked_annotated_image.save(args.out)
+    masked_annotated_image.save(args.out_image)
 
 
 if __name__ == "__main__":

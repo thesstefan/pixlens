@@ -135,7 +135,7 @@ class GroundingDINO(interfaces.PromptableDetectionModel):
             grounding_dino_type,
             device,
         )
-        self.device = device
+        self.device = device if device else torch.device("cpu")
 
         self.box_threshold = box_threshold
         self.text_threshold = text_threshold
