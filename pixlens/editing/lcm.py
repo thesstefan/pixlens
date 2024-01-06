@@ -42,7 +42,7 @@ class LCM(interfaces.PromptableImageEditingModel):
         self,
         lcm_type: LCMType = LCMType.BASE,
         device: torch.device | None = None,
-        num_inference_steps: int = 4,
+        num_inference_steps: int = 10,
         image_guidance_scale: float = 1.0,
         text_guidance_scale: float = 7.5,
     ) -> None:
