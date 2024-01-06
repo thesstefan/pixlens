@@ -2,7 +2,7 @@ from pixlens.evaluation import interfaces as evaluation_interfaces
 from pixlens.evaluation.operations import image_similarity
 
 
-class ObjectRemoval(evaluation_interfaces.GeneralEvaluation):
+class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
     def evaluate_edit(
         self,
         evaluation_input: evaluation_interfaces.EvaluationInput,
