@@ -10,22 +10,12 @@ from pixlens.evaluation.interfaces import (
     EvaluationOutput,
     OperationEvaluation,
 )
-from pixlens.evaluation.utils import center_of_mass
+from pixlens.evaluation.utils import (
+    angle_between,
+    center_of_mass,
+    radians_to_degrees,
+)
 from pixlens.visualization.annotation import draw_center_of_masses
-
-
-def unit_vector(vector: np.ndarray) -> np.ndarray:
-    return vector / np.linalg.norm(vector)
-
-
-def angle_between(v1: np.ndarray, v2: np.ndarray) -> float:
-    v1_u = unit_vector(v1)
-    v2_u = unit_vector(v2)
-    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
-
-
-def radians_to_degrees(radians: float) -> float:
-    return radians * 180 / np.pi
 
 
 class PositionalAddition(OperationEvaluation):
@@ -53,7 +43,8 @@ class PositionalAddition(OperationEvaluation):
             )
         if len(category_in_input.detection_output.phrases) > 1:
             logging.warning(
-                "More than one object of the same category in the input image.",
+                "More than one object of the same category in the input image."
+                " When evaluating a positional addition operation.",
             )
 
         tos_in_edited = self.get_tos_in_edited(

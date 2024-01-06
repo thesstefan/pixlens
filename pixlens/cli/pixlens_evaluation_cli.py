@@ -20,6 +20,9 @@ from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.object_removal import ObjectRemoval
 from pixlens.evaluation.operations.object_replacement import ObjectReplacement
+from pixlens.evaluation.operations.position_replacement import (
+    PositionReplacement,
+)
 from pixlens.evaluation.operations.positional_addition import PositionalAddition
 from pixlens.evaluation.operations.size import SizeEdit
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
@@ -204,18 +207,20 @@ def evaluate_edit(
     edit: Edit,
     evaluation_input: EvaluationInput,
 ) -> EvaluationOutput:
-    if edit.edit_type == EditType.OBJECT_ADDITION:
-        return ObjectAddition().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.COLOR:
-        return ColorEdit().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.SIZE:
-        return SizeEdit().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.OBJECT_REMOVAL:
-        return ObjectRemoval().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.OBJECT_REPLACEMENT:
-        return ObjectReplacement().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.POSITIONAL_ADDITION:
-        return PositionalAddition().evaluate_edit(evaluation_input)
+    evaluation_classes = {
+        EditType.OBJECT_ADDITION: ObjectAddition(),
+        EditType.COLOR: ColorEdit(),
+        EditType.SIZE: SizeEdit(),
+        EditType.OBJECT_REMOVAL: ObjectRemoval(),
+        EditType.OBJECT_REPLACEMENT: ObjectReplacement(),
+        EditType.POSITIONAL_ADDITION: PositionalAddition(),
+        EditType.POSITION_REPLACEMENT: PositionReplacement(),
+    }
+
+    if edit.edit_type in evaluation_classes:
+        evaluation_class = evaluation_classes[edit.edit_type]
+        return evaluation_class.evaluate_edit(evaluation_input)
+
     error_msg = f"Invalid edit type: {edit.edit_type}"
     raise ValueError(error_msg)
 
