@@ -42,7 +42,7 @@ class SizeEdit(evaluation_interfaces.OperationEvaluation):
         edit_segmentation = evaluation_input.edited_detection_segmentation_result.segmentation_output
         if not input_segmentation.masks.any():
             return evaluation_interfaces.EvaluationOutput(
-                score=-1.0,
+                edit_specific_score=-1.0,
                 success=False,
             )  # Object wasn't even present at input
         if edit_segmentation.masks.any():
@@ -59,7 +59,7 @@ class SizeEdit(evaluation_interfaces.OperationEvaluation):
                 mask_edited,
             ):
                 return evaluation_interfaces.EvaluationOutput(
-                    score=float(
+                    edit_specific_score=float(
                         is_small_area_within_big_area(
                             input_mask=mask_input,
                             edited_mask=mask_edited,
@@ -68,6 +68,6 @@ class SizeEdit(evaluation_interfaces.OperationEvaluation):
                     success=True,
                 )
         return evaluation_interfaces.EvaluationOutput(
-            score=0.0,
+            edit_specific_score=0.0,
             success=True,
         )  # Object wasn't present at output or area was indeed bigger / smaller
