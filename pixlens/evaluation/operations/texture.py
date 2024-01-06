@@ -65,10 +65,14 @@ class TextureEdit(evaluation_interfaces.OperationEvaluation):
         question = "Is the texture of the" + category + to_attribute + "?"
         answer = myblip.ask_blip(Image, question)
         if answer == "yes":
-            texture_change_to_attribute = True
+            texture_change_of_catgory = True
+        if not texture_change_of_category:
+            return evaluation_interfaces.EvaluationOutput(
+                edit_specific_score=0,
+                success=True,
+            )
 
         ### Step 3: Check that hte texture of the reamining objects has not been changed too
-        texture_change_of_other_objects = False
         question = "How many objects have the texture" + to_attribute + "?"
         editedImage = evaluation_input.edited_image
         originalImage = evaluation_input.input_image

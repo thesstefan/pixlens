@@ -78,7 +78,7 @@ def check_args(args: argparse.Namespace) -> None:
 def main() -> None:
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # device = torch.device("cpu") #TODO: remove this line
+    #device = torch.device("cpu") #TODO: remove this line
 
     check_args(args)
 
