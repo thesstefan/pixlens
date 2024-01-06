@@ -45,7 +45,7 @@ def apply_segmentation_mask(
     mask = mask.cpu().numpy().astype(bool)
 
     # Check if dimensions of the mask and the image match
-    if img_array.shape[:2] != mask.shape[-2:]:
+    if img_array.shape[:2] != mask.shape:
         raise ValueError(
             "The dimensions of the image and the mask do not match."
         )
@@ -61,7 +61,12 @@ def compute_union_segmentation_masks(
     mask1: torch.Tensor,
     mask2: torch.Tensor,
 ) -> torch.Tensor:
-    raise NotImplementedError
+    if mask1.shape != mask2.shape:
+        resized_mask2 = torch.zeros_like(mask1, dtype=torch.bool)
+        resized_mask2[: mask2.shape[0], : mask2.shape[1]] = mask2
+    else:
+        resized_mask2 = mask2
+    return mask1 | resized_mask2
 
 
 def masked_image_similarity(
@@ -74,4 +79,3 @@ def masked_image_similarity(
     masked_image1 = apply_segmentation_mask(image1, new_mask)
     masked_image2 = apply_segmentation_mask(image2, new_mask)
     return image_similarity(masked_image1, masked_image2)
-
