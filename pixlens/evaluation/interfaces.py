@@ -69,3 +69,11 @@ class OperationEvaluation(Protocol):
         evaluation_input: EvaluationInput,
     ) -> EvaluationOutput:
         ...
+
+
+class GeneralEvaluation(Protocol):
+    def evaluate_edit(
+        self,
+        evaluation_input: EvaluationInput,
+    ) -> float:
+        ...
