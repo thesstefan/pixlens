@@ -52,6 +52,6 @@ def get_separator(model: interfaces.PromptDetectAndBBoxSegmentModel) -> str:
     if isinstance(model, GroundedSAM):
         return ". "
     if isinstance(model, OwlViTSAM):
-        return ", "
+        return ","
     error_msg = "Invalid model type"
     raise ValueError(error_msg)

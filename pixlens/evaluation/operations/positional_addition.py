@@ -1,7 +1,6 @@
 import logging
 
 import numpy as np
-from PIL import Image, ImageDraw
 
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
 from pixlens.evaluation.interfaces import (
@@ -11,6 +10,7 @@ from pixlens.evaluation.interfaces import (
     OperationEvaluation,
 )
 from pixlens.evaluation.utils import center_of_mass
+from pixlens.visualization.annotation import draw_center_of_masses
 
 
 def unit_vector(vector: np.ndarray) -> np.ndarray:
@@ -82,12 +82,13 @@ class PositionalAddition(OperationEvaluation):
             tos_in_edited.segmentation_output.masks[0],
         )
 
-        self.draw_center_of_masses(
+        draw_center_of_masses(
             evaluation_input.annotated_input_image,
             category_center_of_mass,
             to_center_of_mass,
         )
-        self.draw_center_of_masses(
+
+        draw_center_of_masses(
             evaluation_input.annotated_edited_image,
             category_center_of_mass,
             to_center_of_mass,
@@ -214,42 +215,3 @@ class PositionalAddition(OperationEvaluation):
             edit_specific_score=score,
             success=True,
         )
-
-    def draw_center_of_masses(
-        self,
-        annotated_image: Image.Image,
-        ini_center_of_mass: tuple[float, float],
-        end_center_of_mass: tuple[float, float],
-    ) -> Image.Image:
-        draw = ImageDraw.Draw(annotated_image)
-        draw.ellipse(
-            [
-                ini_center_of_mass[1] - 5,
-                ini_center_of_mass[0] - 5,
-                ini_center_of_mass[1] + 5,
-                ini_center_of_mass[0] + 5,
-            ],
-            fill="red",
-        )
-        draw.ellipse(
-            [
-                end_center_of_mass[1] - 5,
-                end_center_of_mass[0] - 5,
-                end_center_of_mass[1] + 5,
-                end_center_of_mass[0] + 5,
-            ],
-            fill="blue",
-        )
-
-        # draw arrow in direction "ini" -> "end" with the tip at "end"
-        draw.line(
-            [
-                ini_center_of_mass[1],
-                ini_center_of_mass[0],
-                end_center_of_mass[1],
-                end_center_of_mass[0],
-            ],
-            fill="black",
-            width=2,
-        )
-        return annotated_image
