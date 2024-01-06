@@ -1,0 +1,5 @@
+class: NullTextInversion
+params:
+    seed: 0
+    sd_type: "CompVis/stable-diffusion-v1-4"
+    device: "cuda"
