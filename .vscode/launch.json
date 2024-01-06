@@ -143,7 +143,7 @@
                 "--edit-id",
                 "0", // Replace with the desired edit ID
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "lcm", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam" // Replace with the desired detection model name
             ],
