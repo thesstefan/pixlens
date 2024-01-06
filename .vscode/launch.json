@@ -61,7 +61,7 @@
             ]
         },
         {
-            "name": "Pixlens Edit CLI - Pix2pix",
+            "name": "Pixlens Edit CLI - InstructPix2Pix",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_editing_cli.py",
@@ -88,6 +88,8 @@
                 "--model_params_yaml",
                 "model_cfgs/null_text_inversion.yaml",
             ],
+        },
+        {
             "name": "Pixlens Edit CLI - DiffEdit",
             "type": "python",
             "request": "launch",
@@ -143,7 +145,7 @@
                 "--edit-id",
                 "0", // Replace with the desired edit ID
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam" // Replace with the desired detection model name
             ],
@@ -161,7 +163,7 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam", // Replace with the desired detection model name
                 "--edit-type",
@@ -181,7 +183,7 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam", // Replace with the desired detection model name
                 "--edit-type",
@@ -201,7 +203,7 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam", // Replace with the desired detection model name
                 "--edit-type",
@@ -222,7 +224,7 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam", // Replace with the desired detection model name
                 "--edit-type",
@@ -243,7 +245,7 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam", // Replace with the desired detection model name
                 "--edit-type",
