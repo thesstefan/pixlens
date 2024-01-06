@@ -16,6 +16,14 @@ REQUEST_TIMEOUT = 10
 T = typing.TypeVar("T")
 
 
+# TODO(thesstefan): I don't like this. Get rid of it sometime.
+class GotNoneError(ValueError):
+    """Use when required optional doesn't have a value."""
+
+    def __init__(self, msg: str) -> None:
+        super().__init__(f"{msg}. Got None.")
+
+
 def _request_file(url: str) -> requests.Response:
     response = requests.get(
         url,

@@ -7,8 +7,6 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_detection_cli.py",
             "args": [
-                "--model",
-                "GroundedSAM",
                 "--image",
                 "editval_instances/backpack/000000163866.jpg",
                 "--prompt",
@@ -31,8 +29,6 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_detection_cli.py",
             "args": [
-                "--model",
-                "OwlViTSAM",
                 "--image",
                 "editval_instances/backpack/000000163866.jpg",
                 "--prompt",
@@ -80,6 +76,18 @@
             ]
         },
         {
+            "name": "Debug Edit CLI Null-Text-Inversion",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_editing_cli.py",
+            "args": [
+                "--model",
+                "NullTextInversion",
+                "--output",
+                "${workspaceFolder}/results/edit_output_null_text_inversion.png",
+                "--model_params_yaml",
+                "model_cfgs/null_text_inversion.yaml",
+            ],
             "name": "Pixlens Edit CLI - DiffEdit",
             "type": "python",
             "request": "launch",

@@ -1,4 +1,3 @@
-import abc
 import dataclasses
 import logging
 from typing import Protocol
@@ -6,6 +5,8 @@ from typing import Protocol
 import torch
 from PIL import Image
 from torchvision.ops import nms
+
+from pixlens.base_model import BaseModel
 
 
 @dataclasses.dataclass
@@ -50,7 +51,7 @@ class PromptableSegmentationModel(Protocol):
         ...
 
 
-class PromptDetectAndBBoxSegmentModel(abc.ABC, PromptableSegmentationModel):
+class PromptDetectAndBBoxSegmentModel(BaseModel, PromptableSegmentationModel):
     def __init__(
         self,
         promptable_detection_model: PromptableDetectionModel,
