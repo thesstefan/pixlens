@@ -135,10 +135,10 @@ class PreprocessingPipeline:
             logging.info("Running model: %s", model.get_model_name())
             for idx in self.edit_dataset.index:
                 edit = self.get_edit(idx, self.edit_dataset)
-                # if (
-                #     edit.edit_type != EditType.ACTION
-                # ):  # TODO: remove this line  # noqa: FIX002, TD003, TD002
-                #     continue
+                if (
+                    edit.edit_type != EditType.ALTER_PARTS
+                ):  # TODO: remove this line  # noqa: FIX002, TD003, TD002
+                    continue
                 prompt = model.generate_prompt(edit)
                 logging.info("prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)

@@ -89,10 +89,13 @@ class EvaluationPipeline:
         from_attribute = (
             None if pd.isna(edit.from_attribute) else edit.from_attribute
         )
-        edit.to_attribute = "".join(
-            char if char.isalpha() or char.isspace() else " "
-            for char in edit.to_attribute
-        )
+
+        if not pd.isna(edit.to_attribute):
+            edit.to_attribute = "".join(
+                char if char.isalpha() or char.isspace() else " "
+                for char in edit.to_attribute
+            )
+
         filtered_to_attribute = get_clean_to_attribute_for_detection(edit)
         category = "".join(
             char if char.isalpha() or char.isspace() else " "
