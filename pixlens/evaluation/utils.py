@@ -256,15 +256,15 @@ def center_of_mass(segmentation_mask: torch.Tensor) -> tuple[float, float]:
     return center_of_mass_y.item(), center_of_mass_x.item()
 
 
-def compute_mask_iou(
-    segmentation_mask1: torch.Tensor,
-    segmentation_mask2: torch.Tensor,
+def compute_mask_intersection(
+    whole: torch.Tensor,
+    part: torch.Tensor,
 ) -> float:
     intersection = torch.logical_and(
-        segmentation_mask1,
-        segmentation_mask2,
+        whole,
+        part,
     ).sum()
-    union = torch.logical_or(segmentation_mask1, segmentation_mask2).sum()
-    if union < tol:
+    part_sum = part.sum()
+    if part_sum < tol:
         raise ValueError(DIVDING_BY_ZERO_MSG)
-    return intersection.item() / union.item()
+    return intersection.item() / part_sum.item()

@@ -9,7 +9,7 @@ from pixlens.evaluation.interfaces import (
     EvaluationOutput,
     OperationEvaluation,
 )
-from pixlens.evaluation.utils import compute_mask_iou
+from pixlens.evaluation.utils import compute_mask_intersection
 
 
 class AlterParts(OperationEvaluation):
@@ -45,20 +45,20 @@ class AlterParts(OperationEvaluation):
         if len(tos_in_edited.detection_output.phrases) == 0:
             return self.handle_no_to_attribute_in_edited(to_attribute)
 
-        ious = []
+        intersection_ratios = []
         for to_mask in tos_in_edited.segmentation_output.masks:
-            iou = compute_mask_iou(
-                category_in_input.segmentation_output.masks[0],
+            intersection_ratio = compute_mask_intersection(
+                whole=category_in_input.segmentation_output.masks[0],
                 # we are assuming that there is only one object for
                 # {category} in the input image
-                to_mask,
+                part=to_mask,
             )
-            ious.append(iou)
+            intersection_ratios.append(intersection_ratio)
 
-        average_iou = float(np.mean(ious))
+        average_intersection_ratio = float(np.mean(intersection_ratios))
 
         return EvaluationOutput(
-            edit_specific_score=average_iou,
+            edit_specific_score=average_intersection_ratio,
             success=True,
         )
 
