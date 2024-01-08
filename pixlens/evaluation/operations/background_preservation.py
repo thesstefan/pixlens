@@ -43,6 +43,7 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
             edit_type_class.POSITION_REPLACEMENT,
             edit_type_class.VIEWPOINT,
         ]
+        masks = []
         if edit_type in add_type:
             indices = image_utils.find_word_indices(
                 evaluation_input.edited_detection_segmentation_result.detection_output.phrases,
@@ -83,7 +84,8 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
                 ][0]
                 for i in range(m)
             ]
-
+        if len(masks) == 0:
+            masks = [torch.zeros(evaluation_input.input_image.size)]
         return masks
 
     def mask_into_np(self, mask: torch.Tensor) -> NDArray:
