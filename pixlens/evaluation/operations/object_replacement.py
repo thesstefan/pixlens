@@ -106,8 +106,8 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
 
         precision = true_positives / (true_positives + false_positives)
         recall = true_positives / (true_positives + false_negatives)
-
-        if precision + recall < 1e-06:
+        tol = 1e-06
+        if precision + recall < tol:
             f1_score = 0.0
         else:
             f1_score = 2 * (precision * recall) / (precision + recall)
