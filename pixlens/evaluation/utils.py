@@ -215,3 +215,15 @@ def compute_ssim(
         edited_image_np = np.array(edited_image_resized)
 
     return float(ssim(input_image_np, edited_image_np, channel_axis=2))
+
+
+def compute_union_segmentation_masks(
+    mask1: NDArray,
+    mask2: NDArray,
+) -> NDArray:
+    if mask1.shape != mask2.shape:
+        resized_mask2 = np.zeros_like(mask1, dtype=bool)
+        resized_mask2[: mask2.shape[0], : mask2.shape[1]] = mask2
+    else:
+        resized_mask2 = mask2
+    return np.bitwise_or(mask1, resized_mask2)

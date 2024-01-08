@@ -59,16 +59,6 @@ def apply_segmentation_mask(
     return Image.fromarray(img_array)
 
 
-def compute_union_segmentation_masks(
-    mask1: torch.Tensor,
-    mask2: torch.Tensor,
-) -> torch.Tensor:
-    if mask1.shape != mask2.shape:
-        resized_mask2 = torch.zeros_like(mask1, dtype=torch.bool)
-        resized_mask2[: mask2.shape[0], : mask2.shape[1]] = mask2
-    else:
-        resized_mask2 = mask2
-    return mask1 | resized_mask2
 
 
 def masked_image_similarity(

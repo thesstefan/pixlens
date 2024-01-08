@@ -24,3 +24,5 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
         evaluation_input: evaluation_interfaces.EvaluationInput,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         raise NotImplementedError
+
+    # lOOK AT UTILS, WE HAVE FUNCTIONS THERE
