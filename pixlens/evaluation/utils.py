@@ -1,6 +1,5 @@
 from collections import Counter
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn.functional as F  # noqa: N812
