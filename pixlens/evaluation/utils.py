@@ -1,5 +1,6 @@
 from collections import Counter
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn.functional as F  # noqa: N812
@@ -177,7 +178,7 @@ def apply_mask(
         for i in range(
             np_image.shape[2],
         ):  # Assuming image has shape [Height, Width, Channels]
-            masked_image[:, :, i] = np.where(mask, 255, np_image[:, :, i])
+            masked_image[:, :, i] = np.where(~mask, 255, np_image[:, :, i])
     else:
         for i in range(
             np_image.shape[2],
@@ -204,7 +205,18 @@ def compute_ssim_over_mask(
             Image.Resampling.LANCZOS,
         )
         edited_image_array = np.array(edited_image_resized)
+    # plt.figure()
+    # plt.imshow(input_image_array)
+    # plt.title("Input Image")
+    # plt.axis("off")  # to turn off the axis labels
+    # plt.show()
 
+    # # Plotting the edited image
+    # plt.figure()
+    # plt.imshow(edited_image_array)
+    # plt.title("Edited Image")
+    # plt.axis("off")  # to turn off the axis labels
+    # plt.show()
     if mask2 is None:
         mask2 = mask1
     input_image_masked = apply_mask(input_image_array, mask1)
@@ -217,11 +229,33 @@ def compute_ssim_over_mask(
             ~mask2,
             opposite=True,
         )
-        return float(
-            ssim(input_image_masked, edited_image_masked, channel_axis=2),
-        ) + float(
-            ssim(input_image_masked, edited_malicious_masked, channel_axis=2),
-        )
+        # plt.figure()
+        # plt.imshow(input_image_masked)
+        # plt.title("Input Image masked")
+        # plt.axis("off")  # to turn off the axis labels
+        # plt.show()
+        # plt.figure()
+        # plt.imshow(edited_image_masked)
+        # plt.title("edit Image masked")
+        # plt.axis("off")  # to turn off the axis labels
+        # plt.show()
+        # plt.figure()
+        # plt.imshow(edited_malicious_masked)
+        # plt.title("edit Image masked malicious")
+        # plt.axis("off")  # to turn off the axis labels
+        # plt.show()
+        return (
+            float(
+                ssim(input_image_masked, edited_image_masked, channel_axis=2),
+            )
+            + float(
+                ssim(
+                    input_image_masked,
+                    edited_malicious_masked,
+                    channel_axis=2,
+                ),
+            )
+        ) / 2
     return float(ssim(input_image_masked, edited_image_masked, channel_axis=2))
 
 

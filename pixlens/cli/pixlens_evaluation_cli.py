@@ -213,10 +213,12 @@ def evaluate_edit(
         background_score,
     )
     plt.imshow(evaluation_input.annotated_input_image)
-    plt.savefig(f"results/{edit.edit_id}_{edit.edit_type}_input.png")
+    plt.savefig(
+        f"results/{str({background_score})}_{edit.edit_id}_{edit.edit_type}_input.png",
+    )
     plt.imshow(evaluation_input.annotated_edited_image)
     plt.savefig(
-        f"results/{edit.edit_id}_{edit.edit_type}_edit_score_{str(background_score)}.png"
+        f"results/{str({background_score})}_{edit.edit_id}_{edit.edit_type}_edit_score.png",
     )
 
     if edit.edit_type == EditType.OBJECT_ADDITION:

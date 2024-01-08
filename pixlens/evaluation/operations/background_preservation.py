@@ -4,6 +4,8 @@ from numpy.typing import NDArray
 from pixlens.evaluation import interfaces as evaluation_interfaces
 from pixlens.evaluation import utils as image_utils
 
+import matplotlib.pyplot as plt
+
 
 class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
     def evaluate_edit(
@@ -15,13 +17,18 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
         masks = self.get_masks(evaluation_input)
         masks = [self.mask_into_np(mask) for mask in masks]
         union_mask = image_utils.compute_union_segmentation_masks(masks)
+        # plt.figure()
+        # plt.imshow(union_mask, cmap="gray")
+        # plt.title("Union of All Masks")
+        # plt.colorbar()
+        # plt.show()
         return image_utils.compute_ssim_over_mask(
             input_image,
             edited_image,
             union_mask,
             union_mask,
             background=True,
-        ) * (1 - union_mask.sum() / union_mask.size)
+        )
 
     def get_masks(
         self,
