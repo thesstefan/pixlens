@@ -1,13 +1,13 @@
 import argparse
-from typing import TYPE_CHECKING
 
 import torch
 
-from pixlens.editing import controlnet, pix2pix
-from pixlens.evaluation.operations.disentanglement import Disentanglement
+from pixlens.editing import controlnet, instruct_pix2pix
+from pixlens.editing.interfaces import PromptableImageEditingModel
+from pixlens.evaluation.operations.disentanglement_operation.disentanglement import (
+    Disentanglement,
+)
 
-if TYPE_CHECKING:
-    from pixlens.editing.interfaces import PromptableImageEditingModel
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
 parser.add_argument(
     "--editing-model",
@@ -22,11 +22,14 @@ def main() -> None:
     device = torch.device("cuda")
     model: PromptableImageEditingModel
     disentangle = Disentanglement(
-        json_file_path="objects_textures_sizes_colors_styles_test.json",
+        json_file_path="disentanglement_json/objects_textures_sizes_colors_styles_test.json",
         image_data_path="editval_instances",
     )
     if args.editing_model == "InstructPix2Pix":
-        model = pix2pix.Pix2pix(pix2pix.Pix2pixType.BASE, device)
+        model = instruct_pix2pix.InstructPix2Pix(
+            instruct_pix2pix.InstructPix2PixType.BASE,
+            device,
+        )
     elif args.editing_model == "controlnet":
         model = controlnet.ControlNet(controlnet.ControlNetType.BASE, device)
     else:

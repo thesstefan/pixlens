@@ -17,7 +17,11 @@ from pixlens.utils.utils import get_cache_dir
 
 
 class Disentanglement:
-    def __init__(self, json_file_path: str, image_data_path: str) -> None:
+    def __init__(
+        self,
+        json_file_path: str = "disentanglement_json/objects_textures_sizes_colors_styles_extended.json",  # noqa: E501
+        image_data_path: str = "editval_instances",
+    ) -> None:
         """Initialize of datasets and variables.
 
         Obj_dataset represents the tensors of the form object with
