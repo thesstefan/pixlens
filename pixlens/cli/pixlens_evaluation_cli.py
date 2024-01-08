@@ -21,6 +21,7 @@ from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.object_removal import ObjectRemoval
 from pixlens.evaluation.operations.object_replacement import ObjectReplacement
+from pixlens.evaluation.operations.positional_addition import PositionalAddition
 from pixlens.evaluation.operations.size import SizeEdit
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 
@@ -111,13 +112,11 @@ def main() -> None:
 def get_editing_model(
     model_name: str,
     device: torch.device,
-) -> ControlNet | InstructPix2Pix | LCM:
+) -> ControlNet | InstructPix2Pix:
     if model_name.lower() == "controlnet":
         return ControlNet(device=device)
-    if model_name.lower() == "pix2pix":
+    if model_name.lower() == "instructpix2pix":
         return InstructPix2Pix(device=device)
-    if model_name.lower() == "lcm":
-        return LCM(device=device)
     error_msg = f"Invalid editing model name: {model_name.lower()}"
     raise ValueError(error_msg)
 
@@ -176,7 +175,7 @@ def evaluate_edits(
     overall_score = 0.0
     successful_edits = 0
     for edit in edits:
-        logging.info("Running edit: %s", edit.edit_id)
+        logging.info("Evaluating edit: %s", edit.edit_id)
         logging.info("Edit type: %s", edit.edit_type)
         logging.info("Image path: %s", edit.image_path)
         logging.info("Category: %s", edit.category)
@@ -191,13 +190,13 @@ def evaluate_edits(
         if evaluation_output.success:
             successful_edits += 1
             overall_score += evaluation_output.edit_specific_score
-            if evaluation_output.edit_specific_score > 0:
-                logging.info("Good sample!")
-                logging.info(evaluation_output.edit_specific_score)
-                logging.info(edit.image_path)
-            logging.info(evaluation_output.edit_specific_score)
+            logging.info("Evaluation was successful")
+            score_msg = f"Score: {evaluation_output.edit_specific_score}"
+            logging.info(score_msg)
         else:
             logging.info("Evaluation failed")
+
+        logging.info("")
 
     return overall_score, successful_edits
 
@@ -216,6 +215,8 @@ def evaluate_edit(
         return ObjectRemoval().evaluate_edit(evaluation_input)
     if edit.edit_type == EditType.OBJECT_REPLACEMENT:
         return ObjectReplacement().evaluate_edit(evaluation_input)
+    if edit.edit_type == EditType.POSITIONAL_ADDITION:
+        return PositionalAddition().evaluate_edit(evaluation_input)
     error_msg = f"Invalid edit type: {edit.edit_type}"
     raise ValueError(error_msg)
 

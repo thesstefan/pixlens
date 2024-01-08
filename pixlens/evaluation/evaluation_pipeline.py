@@ -10,7 +10,7 @@ from pixlens.detection import interfaces as detection_interfaces
 from pixlens.detection.utils import get_separator
 from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation import interfaces
-from pixlens.evaluation.utils import get_updated_to
+from pixlens.evaluation.utils import get_clean_to_attribute_for_detection
 from pixlens.utils.utils import get_cache_dir, get_image_extension
 from pixlens.visualization import annotation
 
@@ -89,14 +89,18 @@ class EvaluationPipeline:
         from_attribute = (
             None if pd.isna(edit.from_attribute) else edit.from_attribute
         )
-        to_attribute = get_updated_to(edit)
+        edit.to_attribute = "".join(
+            char if char.isalpha() or char.isspace() else " "
+            for char in edit.to_attribute
+        )
+        filtered_to_attribute = get_clean_to_attribute_for_detection(edit)
         category = "".join(
             char if char.isalpha() or char.isspace() else " "
             for char in edit.category
         )
         list_for_det_seg = [
             item
-            for item in [category, from_attribute, to_attribute]
+            for item in [category, from_attribute, filtered_to_attribute]
             if item is not None
         ]
 
@@ -166,7 +170,7 @@ class EvaluationPipeline:
             updated_strings=interfaces.UpdatedStrings(
                 category=category,
                 from_attribute=from_attribute,
-                to_attribute=to_attribute,
+                to_attribute=filtered_to_attribute,
             ),
         )
 
