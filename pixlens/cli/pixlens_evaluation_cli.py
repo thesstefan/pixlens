@@ -209,21 +209,11 @@ def evaluate_edit(
     edit: Edit,
     evaluation_input: EvaluationInput,
 ) -> EvaluationOutput:
-    os.makedirs(f"results/{edit.edit_type}", exist_ok=True)
     background_score = BackgroundPreservation().evaluate_edit(evaluation_input)
-    print(
-        "Background preservation: ",
+    logging.info(
+        "Background preservation: %f",
         background_score,
     )
-    plt.imshow(evaluation_input.annotated_input_image)
-    plt.savefig(
-        f"results/{edit.edit_type}/{str({background_score})}_{edit.edit_id}_input.png",
-    )
-    plt.imshow(evaluation_input.annotated_edited_image)
-    plt.savefig(
-        f"results/{edit.edit_type}/{str({background_score})}_{edit.edit_id}_edit_score.png",
-    )
-
     if edit.edit_type == EditType.OBJECT_ADDITION:
         return ObjectAddition().evaluate_edit(evaluation_input)
     if edit.edit_type == EditType.COLOR:
