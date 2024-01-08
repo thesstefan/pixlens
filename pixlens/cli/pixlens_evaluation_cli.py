@@ -2,7 +2,7 @@ import argparse
 import logging
 
 import torch
-
+import matplotlib.pyplot as plt
 from pixlens.detection.grounded_sam import GroundedSAM
 from pixlens.detection.owl_vit_sam import OwlViTSAM
 from pixlens.editing.controlnet import ControlNet
@@ -16,12 +16,16 @@ from pixlens.evaluation.interfaces import (
     EvaluationInput,
     EvaluationOutput,
 )
+from pixlens.evaluation.operations.background_preservation import (
+    BackgroundPreservation,
+)
 from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.object_removal import ObjectRemoval
 from pixlens.evaluation.operations.object_replacement import ObjectReplacement
 from pixlens.evaluation.operations.size import SizeEdit
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
+from pixlens.visualization import annotation
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
 parser.add_argument(
@@ -203,6 +207,18 @@ def evaluate_edit(
     edit: Edit,
     evaluation_input: EvaluationInput,
 ) -> EvaluationOutput:
+    background_score = BackgroundPreservation().evaluate_edit(evaluation_input)
+    print(
+        "Background preservation: ",
+        background_score,
+    )
+    plt.imshow(evaluation_input.annotated_input_image)
+    plt.savefig(f"results/{edit.edit_id}_{edit.edit_type}_input.png")
+    plt.imshow(evaluation_input.annotated_edited_image)
+    plt.savefig(
+        f"results/{edit.edit_id}_{edit.edit_type}_edit_score_{str(background_score)}.png"
+    )
+
     if edit.edit_type == EditType.OBJECT_ADDITION:
         return ObjectAddition().evaluate_edit(evaluation_input)
     if edit.edit_type == EditType.COLOR:

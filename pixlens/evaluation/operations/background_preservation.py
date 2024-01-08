@@ -13,14 +13,15 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
         input_image = evaluation_input.input_image
         edited_image = evaluation_input.edited_image
         masks = self.get_masks(evaluation_input)
+        masks = [self.mask_into_np(mask) for mask in masks]
         union_mask = image_utils.compute_union_segmentation_masks(masks)
         return image_utils.compute_ssim_over_mask(
             input_image,
             edited_image,
-            self.mask_into_np(union_mask),
-            self.mask_into_np(union_mask),
+            union_mask,
+            union_mask,
             background=True,
-        )
+        ) * (1 - union_mask.sum() / union_mask.size)
 
     def get_masks(
         self,
@@ -31,10 +32,8 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
         add_type = [
             edit_type_class.OBJECT_ADDITION,
             edit_type_class.POSITIONAL_ADDITION,
-            edit_type_class.OBJECT_REPLACEMENT,
         ]
         only_category_type = [
-            edit_type_class.OBJECT_REPLACEMENT,
             edit_type_class.TEXTURE,
             edit_type_class.COLOR,
             edit_type_class.SIZE,

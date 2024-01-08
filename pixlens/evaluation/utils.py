@@ -159,16 +159,30 @@ def color_change_applied_correctly(
     return target_color in [color[0] for color in closest_colors]
 
 
-def apply_mask(np_image: NDArray, mask: NDArray) -> NDArray:
+def apply_mask(
+    np_image: NDArray,
+    mask: NDArray,
+    *,
+    opposite: bool = False,
+) -> NDArray:
     # Ensure the mask is a boolean array
     mask = mask.astype(bool)
+    if mask.shape != np_image.shape[:2]:
+        mask = mask.T  # transpose mask
 
     # Apply the mask to each channel
     masked_image = np.zeros_like(np_image)
-    for i in range(
-        np_image.shape[2],
-    ):  # Assuming image has shape [Height, Width, Channels]
-        masked_image[:, :, i] = np_image[:, :, i] * mask
+    if opposite:
+        # Set masked areas to white
+        for i in range(
+            np_image.shape[2],
+        ):  # Assuming image has shape [Height, Width, Channels]
+            masked_image[:, :, i] = np.where(mask, 255, np_image[:, :, i])
+    else:
+        for i in range(
+            np_image.shape[2],
+        ):  # Assuming image has shape [Height, Width, Channels]
+            masked_image[:, :, i] = np_image[:, :, i] * mask
 
     return masked_image
 
@@ -198,7 +212,16 @@ def compute_ssim_over_mask(
     if background:
         input_image_masked = apply_mask(input_image_array, ~mask1)
         edited_image_masked = apply_mask(edited_image_array, ~mask2)
-
+        edited_malicious_masked = apply_mask(
+            edited_image_array,
+            ~mask2,
+            opposite=True,
+        )
+        return float(
+            ssim(input_image_masked, edited_image_masked, channel_axis=2),
+        ) + float(
+            ssim(input_image_masked, edited_malicious_masked, channel_axis=2),
+        )
     return float(ssim(input_image_masked, edited_image_masked, channel_axis=2))
 
 
