@@ -205,20 +205,8 @@ def compute_ssim_over_mask(
             Image.Resampling.LANCZOS,
         )
         edited_image_array = np.array(edited_image_resized)
-    # plt.figure()
-    # plt.imshow(input_image_array)
-    # plt.title("Input Image")
-    # plt.axis("off")  # to turn off the axis labels
-    # plt.show()
-
-    # # Plotting the edited image
-    # plt.figure()
-    # plt.imshow(edited_image_array)
-    # plt.title("Edited Image")
-    # plt.axis("off")  # to turn off the axis labels
-    # plt.show()
-    if mask2 is None:
-        mask2 = mask1
+        if mask2 is None:
+            mask2 = mask1
     input_image_masked = apply_mask(input_image_array, mask1)
     edited_image_masked = apply_mask(edited_image_array, mask2)
     if background:
@@ -229,21 +217,6 @@ def compute_ssim_over_mask(
             ~mask2,
             opposite=True,
         )
-        plt.figure()
-        plt.imshow(input_image_masked)
-        plt.title("Input Image masked")
-        plt.axis("off")  # to turn off the axis labels
-        plt.show()
-        plt.figure()
-        plt.imshow(edited_image_masked)
-        plt.title("edit Image masked")
-        plt.axis("off")  # to turn off the axis labels
-        plt.show()
-        plt.figure()
-        plt.imshow(edited_malicious_masked)
-        plt.title("edit Image masked malicious")
-        plt.axis("off")  # to turn off the axis labels
-        plt.show()
         return (
             float(
                 ssim(input_image_masked, edited_image_masked, channel_axis=2),
@@ -278,19 +251,14 @@ def compute_union_segmentation_masks(masks: list[NDArray]) -> NDArray:
     if not masks:
         raise ValueError("The list of masks cannot be empty")
 
-    # Initialize the union mask with the first mask in the list
-    union_mask = masks[0]
-
-    # Iterate over the rest of the masks in the list
+    union_mask = masks[0]  # First type must be from image 1.
     for mask in masks[1:]:
         if mask.shape != union_mask.shape:
-            # Resize mask if shapes are different
             resized_mask = np.zeros_like(union_mask, dtype=bool)
             resized_mask[: mask.shape[0], : mask.shape[1]] = mask
         else:
             resized_mask = mask
 
-        # Update the union mask
         union_mask = np.bitwise_or(union_mask, resized_mask)
 
     return union_mask

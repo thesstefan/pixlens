@@ -28,7 +28,8 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
             union_mask,
             union_mask,
             background=True,
-        )
+        )  # TODO: It is also a good idea to regularize using
+        # (1 - union_mask.sum() / union_mask.size), up to discussion
 
     def get_masks(
         self,
@@ -73,10 +74,10 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
                 for index in indices
             ]
         else:
-            n = evaluation_input.input_detection_segmentation_result.segmentation_output.masks.size()[
+            n = evaluation_input.input_detection_segmentation_result.segmentation_output.masks.size()[  # noqa: E501
                 0
             ]
-            m = evaluation_input.edited_detection_segmentation_result.segmentation_output.masks.size()[
+            m = evaluation_input.edited_detection_segmentation_result.segmentation_output.masks.size()[  # noqa: E501
                 0
             ]
             masks = [
