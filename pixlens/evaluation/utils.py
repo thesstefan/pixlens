@@ -217,13 +217,32 @@ def compute_ssim(
     return float(ssim(input_image_np, edited_image_np, channel_axis=2))
 
 
-def compute_union_segmentation_masks(
-    mask1: NDArray,
-    mask2: NDArray,
-) -> NDArray:
-    if mask1.shape != mask2.shape:
-        resized_mask2 = np.zeros_like(mask1, dtype=bool)
-        resized_mask2[: mask2.shape[0], : mask2.shape[1]] = mask2
-    else:
-        resized_mask2 = mask2
-    return np.bitwise_or(mask1, resized_mask2)
+def compute_union_segmentation_masks(masks: list[NDArray]) -> NDArray:
+    if not masks:
+        raise ValueError("The list of masks cannot be empty")
+
+    # Initialize the union mask with the first mask in the list
+    union_mask = masks[0]
+
+    # Iterate over the rest of the masks in the list
+    for mask in masks[1:]:
+        if mask.shape != union_mask.shape:
+            # Resize mask if shapes are different
+            resized_mask = np.zeros_like(union_mask, dtype=bool)
+            resized_mask[: mask.shape[0], : mask.shape[1]] = mask
+        else:
+            resized_mask = mask
+
+        # Update the union mask
+        union_mask = np.bitwise_or(union_mask, resized_mask)
+
+    return union_mask
+
+
+def find_word_indices(
+    word_list: list[str],
+    target_word: str,
+) -> list[int | None]:
+    return [
+        index for index, word in enumerate(word_list) if word == target_word
+    ]
