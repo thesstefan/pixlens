@@ -61,7 +61,7 @@
             ]
         },
         {
-            "name": "Pixlens Edit CLI - Pix2pix",
+            "name": "Pixlens Edit CLI - InstructPix2Pix",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_editing_cli.py",
@@ -88,6 +88,8 @@
                 "--model_params_yaml",
                 "model_cfgs/null_text_inversion.yaml",
             ],
+        },
+        {
             "name": "Pixlens Edit CLI - DiffEdit",
             "type": "python",
             "request": "launch",
@@ -143,7 +145,7 @@
                 "--edit-type",
                 "size", // Replace with the desired edit ID / edit type
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam" // Replace with the desired detection model name
                 "--do-all-edits", // Optional: If you want to run all edits for the given edit type 
@@ -162,7 +164,7 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam", // Replace with the desired detection model name
                 "--edit-type",
@@ -182,11 +184,12 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam", // Replace with the desired detection model name
                 "--edit-type",
-                "size"
+                "size",
+                "--do-all-edits",
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
@@ -202,7 +205,7 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam", // Replace with the desired detection model name
                 "--edit-type",
@@ -223,7 +226,7 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam", // Replace with the desired detection model name
                 "--edit-type",
@@ -237,5 +240,26 @@
             "jinja": false,
             "justMyCode": true
         },
+        {
+            "name": "Debug PixLens Evaluation Pipeline - Positional Addition",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
+            "args": [
+                "--editing-model",
+                "instructpix2pix", // Replace with the desired editing model name
+                "--detection-model",
+                "groundedsam", // Replace with the desired detection model name
+                "--edit-type",
+                "positional_addition",
+                "--do-all-edits",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        }
     ]
 }

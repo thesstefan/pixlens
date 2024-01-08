@@ -2,7 +2,6 @@ import json
 import logging
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pandera as pa
 from pandera import Column
@@ -67,34 +66,27 @@ class PreprocessingPipeline:
                     from_values = values.get("from", [""])
                     to_values = values.get("to", [])
 
-                    # Handle case when there is no "from" value
-                    if not from_values:
-                        from_values = [""] * len(to_values)
-
                     # Iterate through "to" values
-                    for from_val, to_val in zip(
-                        from_values,
-                        to_values,
-                        strict=False,
-                    ):
-                        records.append(
-                            {
-                                "edit_id": len(records),
-                                "image_id": image_id,
-                                "class": obj_class,
-                                "edit_type": edit_type,
-                                "from_attribute": from_val,
-                                "to_attribute": to_val,
-                                "input_image_path": "./"
-                                + self.dataset_path
-                                + "/"
-                                + obj_class
-                                + "/"
-                                + "0" * (12 - len(str(image_id)))
-                                + str(image_id)
-                                + ".jpg",
-                            },
-                        )
+                    for from_val in from_values:
+                        for to_val in to_values:
+                            records.append(
+                                {
+                                    "edit_id": len(records),
+                                    "image_id": image_id,
+                                    "class": obj_class,
+                                    "edit_type": edit_type,
+                                    "from_attribute": from_val,
+                                    "to_attribute": to_val,
+                                    "input_image_path": "./"
+                                    + self.dataset_path
+                                    + "/"
+                                    + obj_class
+                                    + "/"
+                                    + "0" * (12 - len(str(image_id)))
+                                    + str(image_id)
+                                    + ".jpg",
+                                },
+                            )
 
         # Create a pandas DataFrame from the records
         records = self.add_object_removal(records)
@@ -136,7 +128,7 @@ class PreprocessingPipeline:
             for idx in self.edit_dataset.index:
                 edit = self.get_edit(idx, self.edit_dataset)
                 # if (
-                #     edit.edit_type != EditType.ACTION
+                #     edit.edit_type != EditType.ALTER_PARTS
                 # ):  # TODO: remove this line  # noqa: FIX002, TD003, TD002
                 #     continue
                 prompt = model.generate_prompt(edit)

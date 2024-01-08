@@ -12,7 +12,15 @@ from skimage.metrics import structural_similarity as ssim
 
 from pixlens.evaluation.interfaces import Edit, EditType, EvaluationInput
 
-directions_and_instructions = ["add", "to", "right", "left", "below"]
+directions_and_instructions = [
+    "add",
+    "to",
+    "on",
+    "top",
+    "right",
+    "left",
+    "below",
+]
 edits = list(EditType)
 new_object = ["object_addition", "object_replacement", "background", "texture"]
 new_object_with_indication = ["alter_parts", "positional_addition"]
@@ -41,7 +49,7 @@ def remove_words_from_string(
     return " ".join(filtered_words)
 
 
-def get_updated_to(edit: Edit) -> str | None:
+def get_clean_to_attribute_for_detection(edit: Edit) -> str | None:
     if edit.to_attribute is np.nan:
         return None
     to_attribute = "".join(
@@ -50,7 +58,7 @@ def get_updated_to(edit: Edit) -> str | None:
     )
     if edit.edit_type in new_object:
         return to_attribute
-    if edit.edit_id in new_object_with_indication:
+    if edit.edit_type in new_object_with_indication:
         return remove_words_from_string(
             to_attribute,
             directions_and_instructions,
@@ -245,7 +253,6 @@ def compute_ssim(
 
     return float(ssim(input_image_np, edited_image_np, channel_axis=2))
 
-
 def compute_union_segmentation_masks(masks: list[NDArray]) -> NDArray:
     if not masks:
         raise ValueError("The list of masks cannot be empty")
@@ -270,3 +277,32 @@ def find_word_indices(
     return [
         index for index, word in enumerate(word_list) if word == target_word
     ]
+def center_of_mass(segmentation_mask: torch.Tensor) -> tuple[float, float]:
+    # Create coordinate grids
+    y, x = torch.meshgrid(
+        torch.arange(segmentation_mask.size(1)),
+        torch.arange(segmentation_mask.size(2)),
+    )
+
+    # Convert the coordinates to float and move them to the device
+    # of the segmentation mask
+    y = y.float().to(segmentation_mask.device)
+    x = x.float().to(segmentation_mask.device)
+
+    # Multiply coordinates with the segmentation mask
+    # to get weighted coordinates
+    weighted_y = y * segmentation_mask
+    weighted_x = x * segmentation_mask
+
+    # Sum the weighted coordinates along each axis
+    sum_y = torch.sum(weighted_y)
+    sum_x = torch.sum(weighted_x)
+
+    # Count the total number of True values in the segmentation mask
+    total_true_values = torch.sum(segmentation_mask.float())
+
+    # Compute the center of mass
+    center_of_mass_y = sum_y / total_true_values
+    center_of_mass_x = sum_x / total_true_values
+
+    return center_of_mass_y.item(), center_of_mass_x.item()

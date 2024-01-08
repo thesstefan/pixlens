@@ -4,7 +4,7 @@ import numpy as np
 import numpy.typing as npt
 import torch
 from groundingdino.util import box_ops, inference
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from pixlens.detection import interfaces
 
@@ -54,3 +54,42 @@ def annotate_mask(
     ).convert("RGBA")
 
     return Image.alpha_composite(image.convert("RGBA"), mask_image_pil)
+
+
+def draw_center_of_masses(
+    annotated_image: Image.Image,
+    ini_center_of_mass: tuple[float, float],
+    end_center_of_mass: tuple[float, float],
+) -> Image.Image:
+    draw = ImageDraw.Draw(annotated_image)
+    draw.ellipse(
+        [
+            ini_center_of_mass[1] - 5,
+            ini_center_of_mass[0] - 5,
+            ini_center_of_mass[1] + 5,
+            ini_center_of_mass[0] + 5,
+        ],
+        fill="red",
+    )
+    draw.ellipse(
+        [
+            end_center_of_mass[1] - 5,
+            end_center_of_mass[0] - 5,
+            end_center_of_mass[1] + 5,
+            end_center_of_mass[0] + 5,
+        ],
+        fill="blue",
+    )
+
+    # draw arrow in direction "ini" -> "end" with the tip at "end"
+    draw.line(
+        [
+            ini_center_of_mass[1],
+            ini_center_of_mass[0],
+            end_center_of_mass[1],
+            end_center_of_mass[0],
+        ],
+        fill="black",
+        width=2,
+    )
+    return annotated_image
