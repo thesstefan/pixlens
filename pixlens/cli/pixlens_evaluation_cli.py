@@ -1,8 +1,10 @@
 import argparse
 import logging
+import os
 
-import torch
 import matplotlib.pyplot as plt
+import torch
+
 from pixlens.detection.grounded_sam import GroundedSAM
 from pixlens.detection.owl_vit_sam import OwlViTSAM
 from pixlens.editing.controlnet import ControlNet
@@ -207,6 +209,7 @@ def evaluate_edit(
     edit: Edit,
     evaluation_input: EvaluationInput,
 ) -> EvaluationOutput:
+    os.makedirs(f"results/{edit.edit_type}", exist_ok=True)
     background_score = BackgroundPreservation().evaluate_edit(evaluation_input)
     print(
         "Background preservation: ",
@@ -214,11 +217,11 @@ def evaluate_edit(
     )
     plt.imshow(evaluation_input.annotated_input_image)
     plt.savefig(
-        f"results/{str({background_score})}_{edit.edit_id}_{edit.edit_type}_input.png",
+        f"results/{edit.edit_type}/{str({background_score})}_{edit.edit_id}_input.png",
     )
     plt.imshow(evaluation_input.annotated_edited_image)
     plt.savefig(
-        f"results/{str({background_score})}_{edit.edit_id}_{edit.edit_type}_edit_score.png",
+        f"results/{edit.edit_type}/{str({background_score})}_{edit.edit_id}_edit_score.png",
     )
 
     if edit.edit_type == EditType.OBJECT_ADDITION:

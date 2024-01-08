@@ -140,12 +140,13 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--edit-id",
-                "0", // Replace with the desired edit ID
+                "--edit-type",
+                "size", // Replace with the desired edit ID / edit type
                 "--editing-model",
                 "pix2pix", // Replace with the desired editing model name
                 "--detection-model",
                 "groundedsam" // Replace with the desired detection model name
+                "--do-all-edits", // Optional: If you want to run all edits for the given edit type 
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",

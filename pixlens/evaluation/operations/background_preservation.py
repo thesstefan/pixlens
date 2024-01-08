@@ -17,11 +17,11 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
         masks = self.get_masks(evaluation_input)
         masks = [self.mask_into_np(mask) for mask in masks]
         union_mask = image_utils.compute_union_segmentation_masks(masks)
-        # plt.figure()
-        # plt.imshow(union_mask, cmap="gray")
-        # plt.title("Union of All Masks")
-        # plt.colorbar()
-        # plt.show()
+        plt.figure()
+        plt.imshow(union_mask, cmap="gray")
+        plt.title("Union of All Masks")
+        plt.colorbar()
+        plt.show()
         return image_utils.compute_ssim_over_mask(
             input_image,
             edited_image,

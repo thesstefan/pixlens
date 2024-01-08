@@ -229,21 +229,21 @@ def compute_ssim_over_mask(
             ~mask2,
             opposite=True,
         )
-        # plt.figure()
-        # plt.imshow(input_image_masked)
-        # plt.title("Input Image masked")
-        # plt.axis("off")  # to turn off the axis labels
-        # plt.show()
-        # plt.figure()
-        # plt.imshow(edited_image_masked)
-        # plt.title("edit Image masked")
-        # plt.axis("off")  # to turn off the axis labels
-        # plt.show()
-        # plt.figure()
-        # plt.imshow(edited_malicious_masked)
-        # plt.title("edit Image masked malicious")
-        # plt.axis("off")  # to turn off the axis labels
-        # plt.show()
+        plt.figure()
+        plt.imshow(input_image_masked)
+        plt.title("Input Image masked")
+        plt.axis("off")  # to turn off the axis labels
+        plt.show()
+        plt.figure()
+        plt.imshow(edited_image_masked)
+        plt.title("edit Image masked")
+        plt.axis("off")  # to turn off the axis labels
+        plt.show()
+        plt.figure()
+        plt.imshow(edited_malicious_masked)
+        plt.title("edit Image masked malicious")
+        plt.axis("off")  # to turn off the axis labels
+        plt.show()
         return (
             float(
                 ssim(input_image_masked, edited_image_masked, channel_axis=2),
