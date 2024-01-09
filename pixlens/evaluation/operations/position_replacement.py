@@ -55,7 +55,7 @@ class PositionReplacement(OperationEvaluation):
         if len(category_in_edited.detection_output.phrases) == 0:
             return self.handle_no_category_in_edited()
 
-        category_pos_ini = center_of_mass(
+        category_pos_initial = center_of_mass(
             category_in_input.segmentation_output.masks[0],
         )
 
@@ -77,18 +77,18 @@ class PositionReplacement(OperationEvaluation):
 
         draw_center_of_masses(
             evaluation_input.annotated_input_image,
-            category_pos_ini,
+            category_pos_initial,
             category_pos_end,
         )
 
         draw_center_of_masses(
             evaluation_input.annotated_edited_image,
-            category_pos_ini,
+            category_pos_initial,
             category_pos_end,
         )
 
         direction_of_movement = self.compute_direction_of_movement(
-            category_pos_ini,
+            category_pos_initial,
             category_pos_end,
         )
 
@@ -102,7 +102,7 @@ class PositionReplacement(OperationEvaluation):
             absolute_position_change_score = self.compute_absolute_score(
                 initial_position,
                 intended_position,
-                category_pos_ini,
+                category_pos_initial,
                 category_pos_end,
                 image_width=evaluation_input.edited_image.shape[1],
             )
