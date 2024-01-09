@@ -132,7 +132,7 @@ class PreprocessingPipeline:
             / prompt
         ).with_suffix(".png")
 
-    def get_and_cache_edited_image(
+    def save_edited_image(
         self,
         edit: Edit,
         prompt: str,
@@ -146,14 +146,16 @@ class PreprocessingPipeline:
 
         if edited_image_path.exists():
             logging.info(
-                "Image already exists, loading it from %s...",
+                "Image already exists at %s...",
                 edited_image_path,
             )
 
+            return
+
         logging.info("Editing image...")
 
+        edited_image_path.parent.mkdir(parents=True, exist_ok=True)
         edited_image = editing_model.edit_image(prompt, edit.image_path, edit)
-
         edited_image.save(edited_image_path)
 
         logging.info("Image saved to %s", edited_image_path)
@@ -179,7 +181,9 @@ class PreprocessingPipeline:
                 logging.info("prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)
 
-                self.get_and_cache_edited_image(edit, prompt, model)
+                self.save_edited_image(edit, prompt, model)
+
+                logging.info("")
 
     def add_object_removal(self, records: list[dict]) -> list[dict]:
         for category_path in Path(self.dataset_path).iterdir():
