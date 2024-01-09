@@ -1,23 +1,20 @@
 import argparse
 import logging
+from pathlib import Path
 
 import torch
 
-from pixlens.detection.grounded_sam import GroundedSAM
-from pixlens.detection.owl_vit_sam import OwlViTSAM
-from pixlens.editing.controlnet import ControlNet
-from pixlens.editing.instruct_pix2pix import InstructPix2Pix
-from pixlens.editing.lcm import LCM
+from pixlens.detection import load_detect_segment_model_from_yaml
+from pixlens.editing import load_editing_model_from_yaml
+from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation.evaluation_pipeline import (
     EvaluationPipeline,
 )
 from pixlens.evaluation.interfaces import (
     Edit,
     EditType,
-    EvaluationInput,
-    EvaluationOutput,
+    OperationEvaluation,
 )
-from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.object_removal import ObjectRemoval
 from pixlens.evaluation.operations.object_replacement import ObjectReplacement
@@ -26,7 +23,11 @@ from pixlens.evaluation.operations.position_replacement import (
 )
 from pixlens.evaluation.operations.positional_addition import PositionalAddition
 from pixlens.evaluation.operations.size import SizeEdit
+from pixlens.evaluation.operations.subject_preservation import (
+    SubjectPreservation,
+)
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
+from pixlens.utils.utils import get_cache_dir
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
 parser.add_argument(
@@ -36,16 +37,16 @@ parser.add_argument(
     help="ID of the edit to be evaluated",
 )
 parser.add_argument(
-    "--editing-model",
+    "--editing-model-yaml",
     type=str,
     required=True,
-    help="Name of the editing model to use",
+    help="YAML configuration of the editing model to use",
 )
 parser.add_argument(
-    "--detection-model",
+    "--detection-model-yaml",
     type=str,
     required=True,
-    help="Name of the detection model to use",
+    help="YAML configuration of the detection model to use",
 )
 # add edit type argument as a string
 parser.add_argument(
@@ -77,63 +78,6 @@ def check_args(args: argparse.Namespace) -> None:
         except ValueError as err:
             error_msg = "Invalid edit type provided"
             raise ValueError(error_msg) from err
-
-
-def main() -> None:
-    args = parser.parse_args()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    check_args(args)
-
-    preprocessing_pipe = PreprocessingPipeline(
-        "./pixlens/editval/object.json",
-        "./editval_instances/",
-    )
-    editing_model = get_editing_model(args.editing_model, device)
-    preprocessing_pipe.execute_pipeline(models=[editing_model])
-
-    evaluation_pipeline = EvaluationPipeline(device=device)
-    detection_model = get_detection_model(args.detection_model, device)
-    evaluation_pipeline.init_editing_model(editing_model)
-    evaluation_pipeline.init_detection_model(detection_model)
-
-    edits = get_edits(args, preprocessing_pipe, evaluation_pipeline)
-
-    overall_score, successful_edits = evaluate_edits(
-        edits,
-        editing_model,
-        evaluation_pipeline,
-    )
-
-    logging.info("Overall score: %s", overall_score / successful_edits)
-    logging.info(
-        "Percentage of successfuly evaluated edits: %s",
-        successful_edits / len(edits),
-    )
-
-
-def get_editing_model(
-    model_name: str,
-    device: torch.device,
-) -> ControlNet | InstructPix2Pix:
-    if model_name.lower() == "controlnet":
-        return ControlNet(device=device)
-    if model_name.lower() == "instructpix2pix":
-        return InstructPix2Pix(device=device)
-    error_msg = f"Invalid editing model name: {model_name.lower()}"
-    raise ValueError(error_msg)
-
-
-def get_detection_model(
-    model_name: str,
-    device: torch.device,
-) -> GroundedSAM | OwlViTSAM:
-    if model_name.lower() == "groundedsam":
-        return GroundedSAM(device=device, detection_confidence_threshold=0.5)
-    if model_name.lower() == "owlvitsam":
-        return OwlViTSAM(device=device)
-    error_msg = "Invalid detection model name"
-    raise ValueError(error_msg)
 
 
 def get_edits(
@@ -172,12 +116,18 @@ def get_edits(
 
 def evaluate_edits(
     edits: list[Edit],
-    editing_model: ControlNet | InstructPix2Pix | LCM,
+    editing_model: PromptableImageEditingModel,
+    operation_evaluators: dict[EditType, list[OperationEvaluation]],
     evaluation_pipeline: EvaluationPipeline,
 ) -> tuple[float, int]:
     overall_score = 0.0
     successful_edits = 0
+    model_evaluation_dir = (
+        get_cache_dir() / editing_model.model_id / "evaluation"
+    )
     for edit in edits:
+        edit_dir = model_evaluation_dir / str(edit.edit_id)
+
         logging.info("Evaluating edit: %s", edit.edit_id)
         logging.info("Edit type: %s", edit.edit_type)
         logging.info("Image path: %s", edit.image_path)
@@ -187,15 +137,36 @@ def evaluate_edits(
         logging.info("Prompt: %s", editing_model.generate_prompt(edit))
 
         evaluation_input = evaluation_pipeline.get_all_inputs_for_edit(edit)
+        evaluation_outputs = [
+            evaluator.evaluate_edit(evaluation_input)
+            for evaluator in operation_evaluators[edit.edit_type]
+        ]
 
-        evaluation_output = evaluate_edit(edit, evaluation_input)
+        for output in evaluation_outputs:
+            output.persist(edit_dir)
 
-        if evaluation_output.success:
+        # TODO: Remove these. It's just for convenience so that we
+        # can see all items in one place.
+        evaluation_input.input_image.save(edit_dir / Path(edit.image_path).name)
+        evaluation_input.edited_image.save(
+            (edit_dir / evaluation_input.prompt).with_suffix(".png"),
+        )
+        evaluation_input.annotated_input_image.save(
+            Path(
+                (
+                    edit_dir / ("ANNOTATED_" + Path(edit.image_path).name)
+                ).with_suffix(""),
+            ).with_suffix(".png"),
+        )
+        evaluation_input.edited_image.save(
+            (edit_dir / ("ANNOTATED_" + evaluation_input.prompt)).with_suffix(
+                ".png",
+            ),
+        )
+
+        if all(output.success for output in evaluation_outputs):
             successful_edits += 1
-            overall_score += evaluation_output.edit_specific_score
             logging.info("Evaluation was successful")
-            score_msg = f"Score: {evaluation_output.edit_specific_score}"
-            logging.info(score_msg)
         else:
             logging.info("Evaluation failed")
 
@@ -204,26 +175,57 @@ def evaluate_edits(
     return overall_score, successful_edits
 
 
-def evaluate_edit(
-    edit: Edit,
-    evaluation_input: EvaluationInput,
-) -> EvaluationOutput:
-    evaluation_classes = {
-        EditType.OBJECT_ADDITION: ObjectAddition(),
-        EditType.COLOR: ColorEdit(),
-        EditType.SIZE: SizeEdit(),
-        EditType.OBJECT_REMOVAL: ObjectRemoval(),
-        EditType.OBJECT_REPLACEMENT: ObjectReplacement(),
-        EditType.POSITIONAL_ADDITION: PositionalAddition(),
-        EditType.POSITION_REPLACEMENT: PositionReplacement(),
+def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
+    subject_preservation = SubjectPreservation(sift_min_matches=5)
+
+    return {
+        EditType.COLOR: [subject_preservation],
+        EditType.SIZE: [SizeEdit(), subject_preservation],
+        EditType.POSITION_REPLACEMENT: [
+            PositionReplacement(),
+            subject_preservation,
+        ],
+        EditType.POSITIONAL_ADDITION: [PositionalAddition()],
+        EditType.OBJECT_ADDITION: [ObjectAddition()],
+        EditType.OBJECT_REMOVAL: [ObjectRemoval()],
+        EditType.OBJECT_REPLACEMENT: [ObjectReplacement()],
     }
 
-    if edit.edit_type in evaluation_classes:
-        evaluation_class = evaluation_classes[edit.edit_type]
-        return evaluation_class.evaluate_edit(evaluation_input)
 
-    error_msg = f"Invalid edit type: {edit.edit_type}"
-    raise ValueError(error_msg)
+def main() -> None:
+    args = parser.parse_args()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    check_args(args)
+
+    preprocessing_pipe = PreprocessingPipeline(
+        "./pixlens/editval/object.json",
+        "./editval_instances/",
+    )
+    editing_model = load_editing_model_from_yaml(args.editing_model_yaml)
+    preprocessing_pipe.execute_pipeline(models=[editing_model])
+
+    evaluation_pipeline = EvaluationPipeline(device=device)
+    detection_model = load_detect_segment_model_from_yaml(
+        args.detection_model_yaml,
+    )
+    evaluation_pipeline.init_editing_model(editing_model)
+    evaluation_pipeline.init_detection_model(detection_model)
+
+    edits = get_edits(args, preprocessing_pipe, evaluation_pipeline)
+    operation_evaluations = init_operation_evaluations()
+
+    overall_score, successful_edits = evaluate_edits(
+        edits,
+        editing_model,
+        operation_evaluations,
+        evaluation_pipeline,
+    )
+
+    logging.info(
+        "Percentage of successful edits: %s",
+        successful_edits / len(edits),
+    )
 
 
 if __name__ == "__main__":
