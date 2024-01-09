@@ -29,9 +29,9 @@ class PositionReplacement(OperationEvaluation):
         intended_position = to_attribute
 
         if to_attribute is None:
-            return self.handle_no_to_attribute()
+            return self.handle_missing_to_attribute()
         if from_attribute is None:
-            return self.handle_no_from_attribute()
+            return self.handle_missing_from_attribute()
 
         category_in_input = self.get_category_in_input(
             evaluation_input.updated_strings.category,
@@ -138,7 +138,7 @@ class PositionReplacement(OperationEvaluation):
                 return direction
         return None
 
-    def handle_no_to_attribute(self) -> EvaluationOutput:
+    def handle_missing_to_attribute(self) -> EvaluationOutput:
         logging.warning(
             "No {to} attribute provided in a position replacement operation.",
         )
@@ -147,7 +147,7 @@ class PositionReplacement(OperationEvaluation):
             success=False,
         )
 
-    def handle_no_from_attribute(self) -> EvaluationOutput:
+    def handle_missing_from_attribute(self) -> EvaluationOutput:
         logging.warning(
             "No {from} attribute provided in a position replacement operation.",
         )

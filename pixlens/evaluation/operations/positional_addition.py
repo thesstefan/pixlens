@@ -13,7 +13,6 @@ from pixlens.evaluation.interfaces import (
 from pixlens.evaluation.utils import (
     angle_between,
     center_of_mass,
-    radians_to_degrees,
 )
 from pixlens.visualization.annotation import draw_center_of_masses
 
@@ -194,7 +193,7 @@ class PositionalAddition(OperationEvaluation):
             direction_vectors[intended_relative_position],
         )
 
-        angle_in_degrees = radians_to_degrees(angle)
+        angle_in_degrees = float(np.rad2deg(angle))
 
         # score of edit is a linear interpolation between 0 (perfect angle)
         # and 90 (worst angle), if angle is higher than 90, the score is 0
