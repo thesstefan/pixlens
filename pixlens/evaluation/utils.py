@@ -253,6 +253,7 @@ def compute_ssim(
 
     return float(ssim(input_image_np, edited_image_np, channel_axis=2))
 
+
 def compute_union_segmentation_masks(masks: list[NDArray]) -> NDArray:
     if not masks:
         raise ValueError("The list of masks cannot be empty")
@@ -277,6 +278,8 @@ def find_word_indices(
     return [
         index for index, word in enumerate(word_list) if word == target_word
     ]
+
+
 def center_of_mass(segmentation_mask: torch.Tensor) -> tuple[float, float]:
     # Create coordinate grids
     y, x = torch.meshgrid(
@@ -306,3 +309,42 @@ def center_of_mass(segmentation_mask: torch.Tensor) -> tuple[float, float]:
     center_of_mass_x = sum_x / total_true_values
 
     return center_of_mass_y.item(), center_of_mass_x.item()
+
+
+def flatten_and_select(np_image: NDArray, mask: NDArray) -> NDArray:
+    mask = mask.astype(bool)
+    # Flatten both image and mask
+    flat_image: NDArray = np_image.reshape(-1, np_image.shape[-1])
+    flat_mask = mask.flatten()
+    return flat_image[flat_mask]
+
+
+def compute_mse_over_mask(
+    input_image: Image.Image,
+    edited_image: Image.Image,
+    mask1: NDArray,
+    mask2: NDArray | None = None,
+    *,
+    background: bool = False,
+) -> float:
+    input_image_array = np.array(input_image)
+    edited_image_array = np.array(edited_image)
+
+    if edited_image_array.shape != input_image_array.shape:
+        edited_image_resized = edited_image.resize(
+            input_image.size,
+            Image.Resampling.LANCZOS,
+        )
+        edited_image_array = np.array(edited_image_resized)
+    if mask2 is None:
+        mask2 = mask1
+    input_image_masked = (
+        flatten_and_select(input_image_array, mask1) / 255
+    )  # normalize
+    edited_image_masked = flatten_and_select(edited_image_array, mask2) / 255
+    if background:
+        input_image_masked = flatten_and_select(input_image_array, ~mask1) / 255
+        edited_image_masked = (
+            flatten_and_select(edited_image_array, ~mask2) / 255
+        )
+    return float(np.mean((input_image_masked - edited_image_masked) ** 2))

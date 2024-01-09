@@ -28,8 +28,13 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
             union_mask,
             union_mask,
             background=True,
-        )  # TODO: It is also a good idea to regularize using
-        # (1 - union_mask.sum() / union_mask.size), up to discussion
+        )*(1 - union_mask.sum() / union_mask.size) + image_utils.compute_mse_over_mask(
+            input_image,
+            edited_image,
+            union_mask,
+            union_mask,
+            background=True,
+        )
 
     def get_masks(
         self,
