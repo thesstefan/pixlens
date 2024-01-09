@@ -357,7 +357,7 @@ def compute_mse_over_mask(
 
 
 def extract_decimal_part(number: float) -> float:
-    if number < 0.9:
+    if number < 0.9:  # noqa: PLR2004
         return 0.0
     # Convert the number to a string to work with its decimal part
     str_number = str(number)
