@@ -7,6 +7,7 @@ from pixlens.detection.grounded_sam import GroundedSAM
 from pixlens.detection.owl_vit_sam import OwlViTSAM
 from pixlens.editing.controlnet import ControlNet
 from pixlens.editing.instruct_pix2pix import InstructPix2Pix
+from pixlens.editing.lcm import LCM
 from pixlens.evaluation.evaluation_pipeline import (
     EvaluationPipeline,
 )
@@ -16,14 +17,17 @@ from pixlens.evaluation.interfaces import (
     EvaluationInput,
     EvaluationOutput,
 )
+from pixlens.evaluation.operations.alter_parts import AlterParts
 from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.object_removal import ObjectRemoval
 from pixlens.evaluation.operations.object_replacement import ObjectReplacement
+from pixlens.evaluation.operations.position_replacement import (
+    PositionReplacement,
+)
 from pixlens.evaluation.operations.positional_addition import PositionalAddition
 from pixlens.evaluation.operations.size import SizeEdit
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
-from pixlens.evaluation.operations.alter_parts import AlterParts
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
 parser.add_argument(
@@ -104,7 +108,7 @@ def main() -> None:
 
     logging.info("Overall score: %s", overall_score / successful_edits)
     logging.info(
-        "Percentage of successful edits: %s",
+        "Percentage of successfuly evaluated edits: %s",
         successful_edits / len(edits),
     )
 
@@ -169,7 +173,7 @@ def get_edits(
 
 def evaluate_edits(
     edits: list[Edit],
-    editing_model: ControlNet | InstructPix2Pix,
+    editing_model: ControlNet | InstructPix2Pix | LCM,
     evaluation_pipeline: EvaluationPipeline,
 ) -> tuple[float, int]:
     overall_score = 0.0
@@ -205,20 +209,20 @@ def evaluate_edit(
     edit: Edit,
     evaluation_input: EvaluationInput,
 ) -> EvaluationOutput:
-    if edit.edit_type == EditType.OBJECT_ADDITION:
-        return ObjectAddition().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.COLOR:
-        return ColorEdit().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.SIZE:
-        return SizeEdit().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.OBJECT_REMOVAL:
-        return ObjectRemoval().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.OBJECT_REPLACEMENT:
-        return ObjectReplacement().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.POSITIONAL_ADDITION:
-        return PositionalAddition().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.ALTER_PARTS:
-        return AlterParts().evaluate_edit(evaluation_input)
+    evaluation_classes = {
+        EditType.OBJECT_ADDITION: ObjectAddition(),
+        EditType.COLOR: ColorEdit(),
+        EditType.SIZE: SizeEdit(),
+        EditType.OBJECT_REMOVAL: ObjectRemoval(),
+        EditType.OBJECT_REPLACEMENT: ObjectReplacement(),
+        EditType.POSITIONAL_ADDITION: PositionalAddition(),
+        EditType.POSITION_REPLACEMENT: PositionReplacement(),
+        EditType.ALTER_PARTS: AlterParts(),
+    }
+
+    if edit.edit_type in evaluation_classes:
+        evaluation_class = evaluation_classes[edit.edit_type]
+        return evaluation_class.evaluate_edit(evaluation_input)
 
     error_msg = f"Invalid edit type: {edit.edit_type}"
     raise ValueError(error_msg)

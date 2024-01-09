@@ -292,3 +292,13 @@ def compute_bbox_intersection(
     if part_bbox_area < tol:
         raise ValueError(DIVIDING_BY_ZERO_MSG)
     return intersection.item() / part_bbox_area.item()
+
+
+def unit_vector(vector: np.ndarray) -> np.ndarray:
+    return vector / np.linalg.norm(vector)
+
+
+def angle_between(v1: np.ndarray, v2: np.ndarray) -> float:
+    v1_u = unit_vector(v1)
+    v2_u = unit_vector(v2)
+    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
