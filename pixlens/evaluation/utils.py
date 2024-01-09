@@ -1,7 +1,9 @@
 from collections import Counter
+import cv2
 
 import numpy as np
 import torch
+import numpy.typing as npt
 import torch.nn.functional as F  # noqa: N812
 from numpy.typing import NDArray
 from PIL import Image, ImageColor
@@ -264,3 +266,41 @@ def angle_between(v1: np.ndarray, v2: np.ndarray) -> float:
     v1_u = unit_vector(v1)
     v2_u = unit_vector(v2)
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
+
+def cosine_similarity(a: npt.ArrayLike, b: npt.ArrayLike) -> float:
+    return (np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))).item()  # type: ignore[no-any-return]
+
+
+def compute_color_hist_vector(
+    image: Image.Image,
+    mask: npt.NDArray[np.uint8] | None = None,
+    bins: int = 32,
+) -> npt.NDArray[np.uint]:
+    cv_bgr_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+
+    bgr_hist: npt.NDArray[np.uint] = np.concatenate(
+        [
+            cv2.calcHist(
+                [cv_bgr_image],
+                [color],
+                mask if mask is not None else None,
+                [bins],
+                [0, 256],
+            )
+            for color in range(3)  # BLUE = 0, GREEN = 1, RED = 2
+        ],
+        axis=0,
+    )
+
+    return bgr_hist.reshape(-1)
+
+
+def mask_iou(mask_1: torch.Tensor, mask_2: torch.Tensor) -> float:
+    intersection = (mask_1 * mask_2).sum()
+
+    if intersection == 0:
+        return 0.0
+    union = torch.logical_or(mask_1, mask_2).to(torch.int).sum()
+
+    return (intersection / union).item()
