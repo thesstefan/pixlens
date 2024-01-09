@@ -1,9 +1,9 @@
 import functools
+import hashlib
 import logging
 import pathlib
 import shutil
 import typing
-import hashlib
 
 import PIL
 import platformdirs
