@@ -3,19 +3,22 @@ import logging
 import torch
 
 from pixlens.detection import interfaces
-from pixlens.detection import owl_vit as eval_owl_vit
-from pixlens.detection import sam as eval_sam
-from pixlens.utils.yaml_constructible import YamlConstructible
+from pixlens.detection.owl_vit import OwlViT, OwlViTType
+from pixlens.detection.sam import BBoxSamPredictor, SAMType
 
 
-class OwlViTSAM(
-    interfaces.PromptDetectAndBBoxSegmentModel,
-    YamlConstructible,
-):
+class OwlViTSAM(interfaces.PromptDetectAndBBoxSegmentModel):
+    device: torch.device | None
+
+    sam_type: SAMType
+    owlvit_type: OwlViTType
+
+    detection_confidence_threshold: float
+
     def __init__(
         self,
-        owlvit_type: eval_owl_vit.OwlViTType = eval_owl_vit.OwlViTType.LARGE,
-        sam_type: eval_sam.SAMType = eval_sam.SAMType.VIT_H,
+        owlvit_type: OwlViTType = OwlViTType.LARGE,
+        sam_type: SAMType = SAMType.VIT_H,
         detection_confidence_threshold: float = 0.3,
         device: torch.device | None = None,
     ) -> None:
@@ -25,8 +28,12 @@ class OwlViTSAM(
             sam_type,
         )
         self.device = device
-        sam_predictor = eval_sam.BBoxSamPredictor(sam_type, device=device)
-        owlvit = eval_owl_vit.OwlViT(
+        self.sam_type = sam_type
+        self.owlvit_type = owlvit_type
+        self.detection_confidence_threshold = detection_confidence_threshold
+
+        sam_predictor = BBoxSamPredictor(sam_type, device=device)
+        owlvit = OwlViT(
             owlvit_type,
             device=device,
             detection_confidence_threshold=detection_confidence_threshold,
@@ -37,3 +44,14 @@ class OwlViTSAM(
             sam_predictor,
             detection_confidence_threshold,
         )
+
+    @property
+    def params_dict(self) -> dict[str, str | bool | int | float]:
+        return {
+            "device": str(self.device),
+            "owlvit_type": str(self.owlvit_type),
+            "sam_type": str(self.sam_type),
+            "detection_confidence_threshold": (
+                self.detection_confidence_threshold
+            ),
+        }

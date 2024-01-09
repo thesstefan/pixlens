@@ -36,7 +36,12 @@ def load_lcm(
 
 
 class LCM(interfaces.PromptableImageEditingModel):
+    model: AutoPipelineForImage2Image
+    lcm_type: LCMType
     device: torch.device | None
+    num_inference_steps: int
+    image_guidance_scale: float
+    text_guidance_scale: float
 
     def __init__(  # noqa: PLR0913
         self,
@@ -51,6 +56,16 @@ class LCM(interfaces.PromptableImageEditingModel):
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
         self.text_guidance_scale = text_guidance_scale
+
+    @property
+    def params_dict(self) -> dict[str, str | bool | int | float]:
+        return {
+            "device": str(self.device),
+            "lcm_type": str(self.lcm_type),
+            "num_inference_steps": self.num_inference_steps,
+            "image_guidance_scale": self.image_guidance_scale,
+            "text_guidance_scale": self.text_guidance_scale,
+        }
 
     def edit_image(
         self,

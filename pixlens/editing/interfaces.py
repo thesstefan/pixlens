@@ -1,6 +1,6 @@
 import enum
 import logging
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from pathlib import Path
 
 from PIL import Image
@@ -15,7 +15,7 @@ class ImageEditingPromptType(enum.Enum):
     DESCRIPTION = 2
 
 
-class PromptableImageEditingModel(ABC, BaseModel):
+class PromptableImageEditingModel(BaseModel):
     @property
     @abstractmethod
     def prompt_type(self) -> ImageEditingPromptType:

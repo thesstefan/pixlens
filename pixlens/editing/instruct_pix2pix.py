@@ -42,7 +42,12 @@ def load_instruct_pix2pix(
 
 
 class InstructPix2Pix(interfaces.PromptableImageEditingModel):
+    instruct_pix2pix_type: InstructPix2PixType
     device: torch.device | None
+    model: StableDiffusionInstructPix2PixPipeline
+    num_inference_steps: int
+    image_guidance_scale: float
+    text_guidance_scale: float
 
     def __init__(  # noqa: PLR0913
         self,
@@ -52,11 +57,22 @@ class InstructPix2Pix(interfaces.PromptableImageEditingModel):
         image_guidance_scale: float = 1.0,
         text_guidance_scale: float = 7.5,
     ) -> None:
-        self.device = device
         self.model = load_instruct_pix2pix(instruct_pix2pix_type, device)
+        self.instruct_pix2pix_type = instruct_pix2pix_type
+        self.device = device
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
         self.text_guidance_scale = text_guidance_scale
+
+    @property
+    def params_dict(self) -> dict[str, str | bool | int | float]:
+        return {
+            "device": str(self.device),
+            "instruct_pix2pix_type": str(self.instruct_pix2pix_type),
+            "num_inference_steps": self.num_inference_steps,
+            "image_guidance_scale": self.image_guidance_scale,
+            "text_guidance_scale": self.text_guidance_scale,
+        }
 
     def edit_image(
         self,

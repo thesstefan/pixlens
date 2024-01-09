@@ -28,6 +28,20 @@ def load_stable_diffusion(  # type: ignore[no-any-unimported]
 
 
 class NullTextInversion(interfaces.PromptableImageEditingModel):
+    null_inversion: null_inversion.NullInversion
+    ldm_stable: StableDiffusionPipeline
+
+    device: torch.device | None
+    generator: torch.Generator
+
+    sd_type: StableDiffusionType
+    seed: int
+    num_ddim_steps: int
+    guidance_scale: float
+    cross_replace_steps: float
+    self_replace_steps: float
+    subject_amplification: float
+
     def __init__(  # noqa: PLR0913
         self,
         seed: int,
@@ -39,10 +53,13 @@ class NullTextInversion(interfaces.PromptableImageEditingModel):
         subject_amplification: float = 2.0,
         device: torch.device | None = None,
     ) -> None:
+        self.device = device
+
+        self.seed = seed
         self.generator = torch.Generator().manual_seed(seed)
+
         self.num_ddim_steps = num_ddim_steps
         self.guidance_scale = guidance_scale
-        self.device = device
 
         self.cross_replace_steps = cross_replace_steps
         self.self_replace_steps = self_replace_steps
@@ -56,6 +73,19 @@ class NullTextInversion(interfaces.PromptableImageEditingModel):
             self.guidance_scale,
             self.device,
         )
+
+    @property
+    def params_dict(self) -> dict[str, str | bool | int | float]:
+        return {
+            "device": str(self.device),
+            "sd_type": str(self.sd_type),
+            "seed": self.seed,
+            "num_ddim_steps": self.num_ddim_steps,
+            "guidance_scale": self.guidance_scale,
+            "cross_replace_steps": self.cross_replace_steps,
+            "self_replace_steps": self.self_replace_steps,
+            "subject_amplification": self.subject_amplification,
+        }
 
     def get_inversion_latent(
         self,
