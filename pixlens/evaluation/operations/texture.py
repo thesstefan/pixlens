@@ -32,7 +32,7 @@ class TextureEdit(evaluation_interfaces.OperationEvaluation):
             )  # Object wasn't even present at input
         if not category in edit_detection.phrases:
             logging.warning(
-                "Texture edit could not be evaluated, because no object was "
+                "No object was "
                 "present at output",
             )
             return evaluation_interfaces.EvaluationOutput(
@@ -72,51 +72,51 @@ class TextureEdit(evaluation_interfaces.OperationEvaluation):
                 success=True,
             )
 
-        ### Step 3: Check that hte texture of the reamining objects has not been changed too
-        question = "How many objects have the texture" + to_attribute + "?"
-        editedImage = evaluation_input.edited_image
-        originalImage = evaluation_input.input_image
-        answer_edited = myblip.ask_blip(editedImage, question)
-        answer_original = myblip.ask_blip(originalImage, question)
-        str_to_int = {
-            "zero": 0,
-            "one": 1,
-            "two": 2,
-            "three": 3,
-            "four": 4,
-            "five": 5,
-            "six": 6,
-            "seven": 7,
-            "eight": 8,
-            "nine": 9,
-            # Add more if needed
-        }
+        # ### Step 3: Check that hte texture of the reamining objects has not been changed too
+        # question = "How many objects have the texture" + to_attribute + "?"
+        # editedImage = evaluation_input.edited_image
+        # originalImage = evaluation_input.input_image
+        # answer_edited = myblip.ask_blip(editedImage, question)
+        # answer_original = myblip.ask_blip(originalImage, question)
+        # str_to_int = {
+        #     "zero": 0,
+        #     "one": 1,
+        #     "two": 2,
+        #     "three": 3,
+        #     "four": 4,
+        #     "five": 5,
+        #     "six": 6,
+        #     "seven": 7,
+        #     "eight": 8,
+        #     "nine": 9,
+        #     # Add more if needed
+        # }
 
-        if isinstance(answer_edited, int):
-            # It's an integer, do nothing
-            pass
-        else:
-            # It's a string, convert it to an integer
-            answer_edited = str_to_int.get(answer_edited, answer_edited)
+        # if isinstance(answer_edited, int):
+        #     # It's an integer, do nothing
+        #     pass
+        # else:
+        #     # It's a string, convert it to an integer
+        #     answer_edited = str_to_int.get(answer_edited, answer_edited)
 
-        # Do the same for answer_original
-        if isinstance(answer_original, int):
-            pass
-        else:
-            answer_original = str_to_int.get(answer_original, answer_original)
-        if answer_edited == "many":
-            answer_edited = 4
-        # Now you can subtract them
-        if not isinstance(answer_edited, int) and not isinstance(
-            answer_original, int
-        ):
-            print("blip didn't output a number")
-            return evaluation_interfaces.EvaluationOutput(
-                edit_specific_score=score,
-                success=False,
-            )
+        # # Do the same for answer_original
+        # if isinstance(answer_original, int):
+        #     pass
+        # else:
+        #     answer_original = str_to_int.get(answer_original, answer_original)
+        # if answer_edited == "many":
+        #     answer_edited = 4
+        # # Now you can subtract them
+        # if not isinstance(answer_edited, int) and not isinstance(
+        #     answer_original, int
+        # ):
+        #     print("blip didn't output a number")
+        #     return evaluation_interfaces.EvaluationOutput(
+        #         edit_specific_score=score,
+        #         success=False,
+        #     )
 
-        score -= abs(int(answer_edited) - int(answer_original)) * 0.1
+        # score -= abs(int(answer_edited) - int(answer_original)) * 0.1
 
         return evaluation_interfaces.EvaluationOutput(
             edit_specific_score=max(score, 0),  # sometimes score even below 0
