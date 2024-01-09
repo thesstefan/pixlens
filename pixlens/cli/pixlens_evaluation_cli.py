@@ -7,6 +7,7 @@ from pixlens.detection.grounded_sam import GroundedSAM
 from pixlens.detection.owl_vit_sam import OwlViTSAM
 from pixlens.editing.controlnet import ControlNet
 from pixlens.editing.instruct_pix2pix import InstructPix2Pix
+from pixlens.editing.lcm import LCM
 from pixlens.evaluation.evaluation_pipeline import (
     EvaluationPipeline,
 )
@@ -171,7 +172,7 @@ def get_edits(
 
 def evaluate_edits(
     edits: list[Edit],
-    editing_model: ControlNet | InstructPix2Pix,
+    editing_model: ControlNet | InstructPix2Pix | LCM,
     evaluation_pipeline: EvaluationPipeline,
 ) -> tuple[float, int]:
     overall_score = 0.0
