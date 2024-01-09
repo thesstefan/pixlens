@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+import numpy.typing as npt
 import torch
 
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
@@ -13,7 +14,6 @@ from pixlens.evaluation.interfaces import (
 from pixlens.evaluation.utils import (
     angle_between,
     center_of_mass,
-    radians_to_degrees,
 )
 from pixlens.visualization.annotation import draw_center_of_masses
 
@@ -61,13 +61,12 @@ class PositionReplacement(OperationEvaluation):
 
         edited_idx = 0
         if len(category_in_edited.detection_output.phrases) > 1:
-            edited_idx = int(
-                torch.argmax(
-                    category_in_edited.segmentation_output.masks.sum(
-                        dim=(2, 3),
-                    ),
-                ).item(),
+            largest_object = torch.argmax(
+                category_in_edited.segmentation_output.masks.sum(
+                    dim=(2, 3),
+                ),
             )
+            edited_idx = int(largest_object.item())
 
         category_pos_end = center_of_mass(
             category_in_edited.segmentation_output.masks[edited_idx],
@@ -200,7 +199,7 @@ class PositionReplacement(OperationEvaluation):
         self,
         ini: tuple[float, float],
         end: tuple[float, float],
-    ) -> np.ndarray:
+    ) -> npt.NDArray[np.float64]:
         return np.array(
             [
                 end[1] - ini[1],
@@ -231,7 +230,7 @@ class PositionReplacement(OperationEvaluation):
             direction_vectors[intended_relative_position],
         )
 
-        angle_in_degrees = radians_to_degrees(angle)
+        angle_in_degrees = float(np.rad2deg(angle))
 
         # score of edit is a linear interpolation between 0 (perfect angle)
         # and 90 (worst angle), if angle is higher than 90, the score is 0
