@@ -268,7 +268,7 @@ class PositionReplacement(OperationEvaluation):
     # function that given the width of the image and a x coordinate
     # returns the position of the coordinate in the image classified
     # as left, center or right
-    def get_position(
+    def get_position_name(
         self,
         x: float,
         image_width: int,
@@ -291,7 +291,7 @@ class PositionReplacement(OperationEvaluation):
         end: tuple[float, float],
         image_width: int,
     ) -> float:
-        real_final_position = self.get_position(end[1], image_width)
+        real_final_position = self.get_position_name(end[1], image_width)
 
         if initial_position == real_final_position:  # same position
             return 0

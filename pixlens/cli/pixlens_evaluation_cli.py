@@ -106,7 +106,7 @@ def main() -> None:
 
     logging.info("Overall score: %s", overall_score / successful_edits)
     logging.info(
-        "Percentage of successful edits: %s",
+        "Percentage of successfuly evaluated edits: %s",
         successful_edits / len(edits),
     )
 
