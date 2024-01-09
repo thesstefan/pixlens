@@ -20,6 +20,7 @@ directions_and_instructions = [
     "right",
     "left",
     "below",
+    # "toppings",
 ]
 edits = list(EditType)
 new_object = ["object_addition", "object_replacement", "background", "texture"]
@@ -259,7 +260,22 @@ def center_of_mass(segmentation_mask: torch.Tensor) -> tuple[float, float]:
 def compute_mask_intersection(
     whole: torch.Tensor,
     part: torch.Tensor,
+    tol: float = 1e-10,
 ) -> float:
+    if whole.shape != part.shape:
+        # Resize part tensor to match the shape of the whole tensor
+        part_float = (
+            F.interpolate(
+                part.float().unsqueeze(0).unsqueeze(0),
+                size=whole.shape,
+                mode="nearest",
+            )
+            .squeeze(0)
+            .squeeze(0)
+        )
+        true_threshold = 0.5
+        part = part_float > true_threshold
+
     intersection = torch.logical_and(
         whole,
         part,

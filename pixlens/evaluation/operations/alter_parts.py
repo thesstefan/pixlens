@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+import torch
 
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
 from pixlens.evaluation.interfaces import (
@@ -9,7 +10,7 @@ from pixlens.evaluation.interfaces import (
     EvaluationOutput,
     OperationEvaluation,
 )
-from pixlens.evaluation.utils import compute_bbox_intersection
+from pixlens.evaluation.utils import compute_mask_intersection
 
 
 class AlterParts(OperationEvaluation):
@@ -23,49 +24,46 @@ class AlterParts(OperationEvaluation):
         if to_attribute is None:
             return self.handle_missing_to_attribute()
 
-        category_in_edited = self.get_category_in_edited(
+        category_in_input = self.get_category_in_input(
             category,
-            evaluation_input.edited_detection_segmentation_result,
+            evaluation_input.input_detection_segmentation_result,
         )
 
-        if len(category_in_edited.detection_output.bounding_boxes) == 0:
-            return self.handle_no_category_in_edited(
+        if len(category_in_input.detection_output.bounding_boxes) == 0:
+            return self.handle_no_category_in_input(
                 category,
             )
-        if len(category_in_edited.detection_output.bounding_boxes) > 1:
+
+        category_input_idx = 0
+        if len(category_in_input.detection_output.bounding_boxes) > 1:
             logging.warning(
-                "More than one object of the same category in the edited image,"
+                "More than one object of the same category in the input image,"
                 " when evaluating an alter parts operation.",
             )
+            largest_object = torch.argmax(
+                category_in_input.segmentation_output.masks.sum(
+                    dim=(2, 3),
+                ),
+            )
+            category_input_idx = int(largest_object.item())
 
         tos_in_edited = self.get_tos_in_edited(
             to_attribute,
             evaluation_input.edited_detection_segmentation_result,
         )
+
         if len(tos_in_edited.detection_output.bounding_boxes) == 0:
             return self.handle_no_to_attribute_in_edited(to_attribute)
 
-        intersection_ratios = []
-        for to_mask in tos_in_edited.detection_output.bounding_boxes:
-            intersection_ratio = compute_bbox_intersection(
-                whole_bbox=category_in_edited.detection_output.bounding_boxes[
-                    0
-                ],
-                # we are assuming that there is only one object for
-                # {category} in the input image
-                part_bbox=to_mask,
-            )
-            intersection_ratios.append(intersection_ratio)
-
-        # why not mask intersection? well because, assuming the segmentation
-        # is correct the intersection of the masks would be empty.
-        # That is the whole point of segmenation, to separate objects.
-        # So we are using the bounding boxes instead.
-
-        average_intersection_ratio = float(np.mean(intersection_ratios))
+        # compute score with category in input into account
+        score = self.compute_score(
+            tos_in_edited,
+            category_in_input,
+            category_input_idx,
+        )
 
         return EvaluationOutput(
-            edit_specific_score=average_intersection_ratio,
+            edit_specific_score=score,
             success=True,
         )
 
@@ -78,6 +76,16 @@ class AlterParts(OperationEvaluation):
             success=False,
         )
 
+    def get_category_in_input(
+        self,
+        category: str,
+        input_detection_segmentation_result: DetectionSegmentationResult,
+    ) -> DetectionSegmentationResult:
+        return get_detection_segmentation_result_of_target(
+            input_detection_segmentation_result,
+            category,
+        )
+
     def get_category_in_edited(
         self,
         category: str,
@@ -86,6 +94,18 @@ class AlterParts(OperationEvaluation):
         return get_detection_segmentation_result_of_target(
             edited_detection_segmentation_result,
             category,
+        )
+
+    def handle_no_category_in_input(
+        self,
+        category: str,
+    ) -> EvaluationOutput:
+        warning_msg = f"No {category} (category) detected in the input image,"
+        " when evaluating an alter parts operation."
+        logging.warning(warning_msg)
+        return EvaluationOutput(
+            edit_specific_score=0,
+            success=False,
         )
 
     def handle_no_category_in_edited(
@@ -123,3 +143,26 @@ class AlterParts(OperationEvaluation):
             edited_detection_segmentation_result,
             to_attribute,
         )
+
+    def compute_score(
+        self,
+        tos_in_edited: DetectionSegmentationResult,
+        category: DetectionSegmentationResult,
+        category_idx: int,
+    ) -> float:
+        intersection_ratios = []
+        for to_mask in tos_in_edited.segmentation_output.masks:
+            intersection_ratio = compute_mask_intersection(
+                whole=category.segmentation_output.masks[category_idx],
+                # we are assuming that there is only one object for
+                # {category} in the input image
+                part=to_mask,
+            )
+            intersection_ratios.append(intersection_ratio)
+
+        # why not mask intersection? well because, assuming the segmentation
+        # is correct the intersection of the masks would be empty.
+        # That is the whole point of segmenation, to separate objects.
+        # So we are using the bounding boxes instead.
+
+        return float(np.mean(intersection_ratios))
