@@ -37,11 +37,11 @@ class PositionReplacement(OperationEvaluation):
             evaluation_input.updated_strings.category,
             evaluation_input.input_detection_segmentation_result,
         )
-        if len(category_in_input.detection_output.phrases) == 0:
+        if len(category_in_input.detection_output.bounding_boxes) == 0:
             return self.handle_no_category_in_input(
                 evaluation_input.updated_strings.category,
             )
-        if len(category_in_input.detection_output.phrases) > 1:
+        if len(category_in_input.detection_output.bounding_boxes) > 1:
             logging.warning(
                 "More than one object of the same category in the input image."
                 " When evaluating a position replacement operation.",
@@ -60,7 +60,7 @@ class PositionReplacement(OperationEvaluation):
         )
 
         edited_idx = 0
-        if len(category_in_edited.detection_output.phrases) > 1:
+        if len(category_in_edited.detection_output.bounding_boxes) > 1:
             largest_object = torch.argmax(
                 category_in_edited.segmentation_output.masks.sum(
                     dim=(2, 3),
@@ -87,6 +87,7 @@ class PositionReplacement(OperationEvaluation):
         direction_of_movement = self.compute_direction_of_movement(
             category_pos_initial,
             category_pos_end,
+            evaluation_input.edited_image.size,
         )
 
         relative_position_change_score = self.compute_relative_score(
@@ -101,10 +102,21 @@ class PositionReplacement(OperationEvaluation):
                 intended_position,
                 category_pos_initial,
                 category_pos_end,
-                image_width=evaluation_input.edited_image.shape[1],
+                image_width=evaluation_input.edited_image.size[0],
             )
 
             if absolute_position_change_score == -1:
+                # This should never happen, as it means that the
+                # position change is in the opposite direction, however
+                # the relative position change is positive, which means
+                # that the position change is in the correct direction
+                # this should be investigated
+                critical_msg = (
+                    "Absolute position change is in the opposite direction"
+                    " of the relative position change. When evaluating a"
+                    " position replacement operation."
+                )
+                logging.critical(critical_msg)
                 return EvaluationOutput(
                     edit_specific_score=0,
                     success=False,
@@ -123,7 +135,7 @@ class PositionReplacement(OperationEvaluation):
             )
         return EvaluationOutput(
             edit_specific_score=0,
-            success=False,
+            success=True,
         )
 
     def get_intended_relative_position(
@@ -199,13 +211,23 @@ class PositionReplacement(OperationEvaluation):
         self,
         ini: tuple[float, float],
         end: tuple[float, float],
+        image_size: tuple[int, int],
+        min_required_movement: float = 0.05,
     ) -> npt.NDArray[np.float64]:
-        return np.array(
+        direction = np.array(
             [
                 end[1] - ini[1],
                 ini[0] - end[0],
             ],
         )
+        # if direction vector length is too small in comparison
+        # to the size of the input image
+        # the direction vector is considered to be 0
+        if np.linalg.norm(direction) < min_required_movement * np.linalg.norm(
+            image_size,
+        ):
+            direction = np.array([0, 0])
+        return direction
 
     def compute_relative_score(
         self,
@@ -214,6 +236,10 @@ class PositionReplacement(OperationEvaluation):
         initial_position: str,
         intended_relative_position: str,
     ) -> float:
+        if np.isclose(np.linalg.norm(direction_of_movement), 0):
+            # no movement whatsoever
+            return 0
+
         direction_vectors = {
             "left": np.array([-1, 0]),
             "right": np.array([1, 0]),
@@ -267,26 +293,31 @@ class PositionReplacement(OperationEvaluation):
         end: tuple[float, float],
         image_width: int,
     ) -> float:
-        real_initial_position = self.get_position(ini[0], image_width)
-        real_final_position = self.get_position(end[0], image_width)
-
-        if real_initial_position != initial_position:
-            logging.critical(
-                "Logic in position replacement is failing."
-                " Initial position is not the same as the one computed.",
-            )
-            return -1
+        real_final_position = self.get_position(end[1], image_width)
 
         if initial_position == real_final_position:  # same position
             return 0
-        if (  # partially correct position
-            initial_position == "left"
-            and intended_position == "right"
-            and real_final_position == "center"
-        ) or (
-            initial_position == "right"
-            and intended_position == "left"
-            and real_final_position == "center"
+        if (
+            (  # partially correct position = either too much or too little
+                initial_position == "left"
+                and intended_position == "right"
+                and real_final_position == "center"
+            )
+            or (
+                initial_position == "right"
+                and intended_position == "left"
+                and real_final_position == "center"
+            )
+            or (
+                initial_position == "left"
+                and intended_position == "center"
+                and real_final_position == "right"
+            )
+            or (
+                initial_position == "right"
+                and intended_position == "center"
+                and real_final_position == "left"
+            )
         ):
             return 0.5
         if intended_position == real_final_position:  # correct position

@@ -92,6 +92,7 @@ class PositionalAddition(OperationEvaluation):
         direction_of_movement = self.compute_direction_of_movement(
             category_center_of_mass,
             to_center_of_mass,
+            evaluation_input.input_image.size,
         )
 
         return self.compute_score(
@@ -168,19 +169,35 @@ class PositionalAddition(OperationEvaluation):
         self,
         category_center_of_mass: tuple[float, float],
         to_center_of_mass: tuple[float, float],
+        input_image_size: tuple[int, int],
+        min_required_movement: float = 0.1,
     ) -> np.ndarray:
-        return np.array(
+        direction_of_movement = np.array(
             [
                 to_center_of_mass[1] - category_center_of_mass[1],
                 category_center_of_mass[0] - to_center_of_mass[0],
             ],
         )
+        if np.linalg.norm(
+            direction_of_movement,
+        ) < min_required_movement * np.linalg.norm(
+            np.array(input_image_size),
+        ):
+            direction_of_movement = np.array([0, 0])
+        return direction_of_movement
 
     def compute_score(
         self,
         direction_of_movement: np.ndarray,
         intended_relative_position: str,
     ) -> EvaluationOutput:
+        if np.isclose(np.linalg.norm(direction_of_movement), 0):
+            # no movement whatsoever
+            return EvaluationOutput(
+                edit_specific_score=0,
+                success=True,
+            )
+
         direction_vectors = {
             "left": np.array([-1, 0]),
             "right": np.array([1, 0]),
