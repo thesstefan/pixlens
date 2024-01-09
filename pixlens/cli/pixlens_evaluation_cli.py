@@ -158,7 +158,7 @@ def evaluate_edits(
                 ).with_suffix(""),
             ).with_suffix(".png"),
         )
-        evaluation_input.edited_image.save(
+        evaluation_input.annotated_edited_image.save(
             (edit_dir / ("ANNOTATED_" + evaluation_input.prompt)).with_suffix(
                 ".png",
             ),
