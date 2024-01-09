@@ -1,10 +1,9 @@
+import numpy as np
 import torch
 from numpy.typing import NDArray
 
 from pixlens.evaluation import interfaces as evaluation_interfaces
 from pixlens.evaluation import utils as image_utils
-
-import matplotlib.pyplot as plt
 
 
 class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
@@ -16,12 +15,25 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
         edited_image = evaluation_input.edited_image
         masks = self.get_masks(evaluation_input)
         masks = [self.mask_into_np(mask) for mask in masks]
-        union_mask = image_utils.compute_union_segmentation_masks(masks)
-        # plt.figure()
-        # plt.imshow(union_mask, cmap="gray")
-        # plt.title("Union of All Masks")
-        # plt.colorbar()
-        # plt.show()
+        target_shape = masks[0].shape
+        reshaped_masks = []
+        for mask in masks:
+            if mask.shape != masks[0].shape:
+                new_mask = np.zeros(target_shape, dtype=mask.dtype)
+                new_mask[
+                    : min(mask.shape[0], target_shape[0]),
+                    : min(mask.shape[1], target_shape[1]),
+                ] = mask[
+                    : min(mask.shape[0], target_shape[0]),
+                    : min(mask.shape[1], target_shape[1]),
+                ]
+                reshaped_masks.append(new_mask)
+            else:
+                reshaped_masks.append(mask)
+
+        union_mask = image_utils.compute_union_segmentation_masks(
+            reshaped_masks,
+        )
         return image_utils.extract_decimal_part(
             1
             - image_utils.compute_mse_over_mask(
@@ -58,13 +70,13 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
             edit_type_class.POSITION_REPLACEMENT,
             edit_type_class.VIEWPOINT,
         ]
-        masks = []
+        masks = [torch.zeros(evaluation_input.input_image.size)]
         if edit_type in add_type:
             indices = image_utils.find_word_indices(
                 evaluation_input.edited_detection_segmentation_result.detection_output.phrases,
                 evaluation_input.updated_strings.to_attribute,
             )
-            masks = [
+            masks += [
                 evaluation_input.edited_detection_segmentation_result.segmentation_output.masks[
                     index
                 ][0]
@@ -75,7 +87,7 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
                 evaluation_input.input_detection_segmentation_result.detection_output.phrases,
                 evaluation_input.updated_strings.category,
             )
-            masks = [
+            masks += [
                 evaluation_input.input_detection_segmentation_result.segmentation_output.masks[
                     index
                 ][0]
@@ -88,7 +100,7 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
             m = evaluation_input.edited_detection_segmentation_result.segmentation_output.masks.size()[  # noqa: E501
                 0
             ]
-            masks = [
+            masks += [
                 evaluation_input.input_detection_segmentation_result.segmentation_output.masks[
                     i
                 ][0]
@@ -99,8 +111,6 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
                 ][0]
                 for i in range(m)
             ]
-        if len(masks) == 0:
-            masks = [torch.zeros(evaluation_input.input_image.size)]
         return masks
 
     def mask_into_np(self, mask: torch.Tensor) -> NDArray:

@@ -210,6 +210,9 @@ def evaluate_edit(
     edit: Edit,
     evaluation_input: EvaluationInput,
 ) -> EvaluationOutput:
+    import os
+
+    os.makedirs(f"results/{edit.edit_type}", exist_ok=True)
     background_score = BackgroundPreservation().evaluate_edit(evaluation_input)
     logging.info(
         "Background preservation: %f",
@@ -221,6 +224,7 @@ def evaluate_edit(
     evaluation_input.annotated_input_image.save(
         f"results/{edit.edit_type}/{str(background_score)}_{edit.edit_id}_input.png",
     )  # noqa: E501
+    return EvaluationOutput(success=False, edit_specific_score=0.0)
     if edit.edit_type == EditType.OBJECT_ADDITION:
         return ObjectAddition().evaluate_edit(evaluation_input)
     if edit.edit_type == EditType.COLOR:
@@ -233,8 +237,8 @@ def evaluate_edit(
         return ObjectReplacement().evaluate_edit(evaluation_input)
     if edit.edit_type == EditType.POSITIONAL_ADDITION:
         return PositionalAddition().evaluate_edit(evaluation_input)
-    error_msg = f"Invalid edit type: {edit.edit_type}"
-    raise ValueError(error_msg)
+    # error_msg = f"Invalid edit type: {edit.edit_type}"
+    # raise ValueError(error_msg)
 
 
 if __name__ == "__main__":

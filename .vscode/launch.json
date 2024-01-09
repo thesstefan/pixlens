@@ -143,7 +143,7 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--edit-type",
-                "size", // Replace with the desired edit ID / edit type
+                "object_addition", // Replace with the desired edit ID / edit type
                 "--editing-model",
                 "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
