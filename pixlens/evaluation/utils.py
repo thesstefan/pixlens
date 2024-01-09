@@ -369,3 +369,13 @@ def extract_decimal_part(number: float) -> float:
     if decimal_point_index != -1:
         return float("0." + str_number[decimal_point_index + 2 :])
     return 0.0
+
+
+def unit_vector(vector: np.ndarray) -> np.ndarray:
+    return vector / np.linalg.norm(vector)
+
+
+def angle_between(v1: np.ndarray, v2: np.ndarray) -> float:
+    v1_u = unit_vector(v1)
+    v2_u = unit_vector(v2)
+    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))

@@ -10,22 +10,11 @@ from pixlens.evaluation.interfaces import (
     EvaluationOutput,
     OperationEvaluation,
 )
-from pixlens.evaluation.utils import center_of_mass
+from pixlens.evaluation.utils import (
+    angle_between,
+    center_of_mass,
+)
 from pixlens.visualization.annotation import draw_center_of_masses
-
-
-def unit_vector(vector: np.ndarray) -> np.ndarray:
-    return vector / np.linalg.norm(vector)
-
-
-def angle_between(v1: np.ndarray, v2: np.ndarray) -> float:
-    v1_u = unit_vector(v1)
-    v2_u = unit_vector(v2)
-    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
-
-
-def radians_to_degrees(radians: float) -> float:
-    return radians * 180 / np.pi
 
 
 class PositionalAddition(OperationEvaluation):
@@ -53,7 +42,8 @@ class PositionalAddition(OperationEvaluation):
             )
         if len(category_in_input.detection_output.phrases) > 1:
             logging.warning(
-                "More than one object of the same category in the input image.",
+                "More than one object of the same category in the input image."
+                " When evaluating a positional addition operation.",
             )
 
         tos_in_edited = self.get_tos_in_edited(
@@ -102,6 +92,7 @@ class PositionalAddition(OperationEvaluation):
         direction_of_movement = self.compute_direction_of_movement(
             category_center_of_mass,
             to_center_of_mass,
+            evaluation_input.input_image.size,
         )
 
         return self.compute_score(
@@ -178,19 +169,35 @@ class PositionalAddition(OperationEvaluation):
         self,
         category_center_of_mass: tuple[float, float],
         to_center_of_mass: tuple[float, float],
+        input_image_size: tuple[int, int],
+        min_required_movement: float = 0.05,
     ) -> np.ndarray:
-        return np.array(
+        direction_of_movement = np.array(
             [
                 to_center_of_mass[1] - category_center_of_mass[1],
                 category_center_of_mass[0] - to_center_of_mass[0],
             ],
         )
+        if np.linalg.norm(
+            direction_of_movement,
+        ) < min_required_movement * np.linalg.norm(
+            np.array(input_image_size),
+        ):
+            direction_of_movement = np.array([0, 0])
+        return direction_of_movement
 
     def compute_score(
         self,
         direction_of_movement: np.ndarray,
         intended_relative_position: str,
     ) -> EvaluationOutput:
+        if np.isclose(np.linalg.norm(direction_of_movement), 0):
+            # no movement whatsoever
+            return EvaluationOutput(
+                edit_specific_score=0,
+                success=True,
+            )
+
         direction_vectors = {
             "left": np.array([-1, 0]),
             "right": np.array([1, 0]),
@@ -203,7 +210,7 @@ class PositionalAddition(OperationEvaluation):
             direction_vectors[intended_relative_position],
         )
 
-        angle_in_degrees = radians_to_degrees(angle)
+        angle_in_degrees = float(np.rad2deg(angle))
 
         # score of edit is a linear interpolation between 0 (perfect angle)
         # and 90 (worst angle), if angle is higher than 90, the score is 0
