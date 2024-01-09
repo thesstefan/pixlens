@@ -1,6 +1,7 @@
 from typing import Any
 
 import numpy as np
+import cv2  # type: ignore[import]
 import numpy.typing as npt
 import torch
 from groundingdino.util import box_ops, inference
@@ -93,3 +94,27 @@ def draw_center_of_masses(
         width=2,
     )
     return annotated_image
+
+
+def sift_match_visualization(  # type: ignore[no-any-unimported]
+    input_image: Image.Image,
+    edited_image: Image.Image,
+    matches: tuple[tuple[cv2.DMatch, cv2.DMatch], ...],
+    input_keypoints: tuple[cv2.KeyPoint, ...],
+    edited_keypoints: tuple[cv2.KeyPoint, ...],
+) -> Image.Image:
+    cv_match_img = cv2.drawMatchesKnn(
+        cv2.cvtColor(np.array(input_image), cv2.COLOR_RGB2BGR),
+        input_keypoints,
+        cv2.cvtColor(np.array(edited_image), cv2.COLOR_RGB2BGR),
+        edited_keypoints,
+        matches,
+        None,
+        matchColor=(0, 255, 0),
+        singlePointColor=(255, 0, 0),
+        flags=cv2.DrawMatchesFlags_DEFAULT,
+    )
+
+    return Image.fromarray(
+        np.array(cv2.cvtColor(cv_match_img, cv2.COLOR_RGB2BGR)),
+    )
