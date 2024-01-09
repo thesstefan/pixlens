@@ -70,6 +70,7 @@ class ControlNet(interfaces.PromptableImageEditingModel):
     ) -> None:
         self.model = load_controlnet(controlnet_type, device)
         self.device = device
+        self.controlnet_type = controlnet_type
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
         self.text_guidance_scale = text_guidance_scale

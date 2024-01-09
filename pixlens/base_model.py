@@ -26,7 +26,8 @@ class BaseModel(abc.ABC, YamlConstructible):
         return self.get_model_name() + "_" + self.params_hash
 
     def to_yaml(self, yaml_path: pathlib.Path) -> None:
+        yaml_path.parent.mkdir(parents=True, exist_ok=True)
         data = {"class": self.get_model_name(), "params": self.params_dict}
 
-        with yaml_path.open("w") as outfile:
-            yaml.dump(data, outfile, default_flow_style=False)
+        with yaml_path.open("w") as yaml_file:
+            yaml.dump(data, yaml_file, default_flow_style=False)
