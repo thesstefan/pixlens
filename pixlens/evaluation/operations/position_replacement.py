@@ -59,7 +59,7 @@ class PositionReplacement(OperationEvaluation):
             category_in_input.segmentation_output.masks[0],
         )
 
-        edited_idx = -1
+        edited_idx = 0
         if len(category_in_edited.detection_output.phrases) > 1:
             edited_idx = int(
                 torch.argmax(
@@ -68,8 +68,6 @@ class PositionReplacement(OperationEvaluation):
                     ),
                 ).item(),
             )
-        else:
-            edited_idx = 0
 
         category_pos_end = center_of_mass(
             category_in_edited.segmentation_output.masks[edited_idx],
