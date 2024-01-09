@@ -100,7 +100,6 @@ class PositionReplacement(OperationEvaluation):
             absolute_position_change_score = self.compute_absolute_score(
                 initial_position,
                 intended_position,
-                category_pos_initial,
                 category_pos_end,
                 image_width=evaluation_input.edited_image.size[0],
             )
@@ -289,7 +288,6 @@ class PositionReplacement(OperationEvaluation):
         self,
         initial_position: str,
         intended_position: str,
-        ini: tuple[float, float],
         end: tuple[float, float],
         image_width: int,
     ) -> float:

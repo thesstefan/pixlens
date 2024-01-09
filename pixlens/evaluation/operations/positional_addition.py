@@ -170,7 +170,7 @@ class PositionalAddition(OperationEvaluation):
         category_center_of_mass: tuple[float, float],
         to_center_of_mass: tuple[float, float],
         input_image_size: tuple[int, int],
-        min_required_movement: float = 0.1,
+        min_required_movement: float = 0.05,
     ) -> np.ndarray:
         direction_of_movement = np.array(
             [
