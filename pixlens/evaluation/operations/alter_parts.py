@@ -9,7 +9,7 @@ from pixlens.evaluation.interfaces import (
     EvaluationOutput,
     OperationEvaluation,
 )
-from pixlens.evaluation.utils import compute_mask_intersection
+from pixlens.evaluation.utils import compute_bbox_intersection
 
 
 class AlterParts(OperationEvaluation):
@@ -21,20 +21,20 @@ class AlterParts(OperationEvaluation):
         category = evaluation_input.updated_strings.category
 
         if to_attribute is None:
-            return self.handle_no_to_attribute()
+            return self.handle_missing_to_attribute()
 
-        category_in_input = self.get_category_in_input(
+        category_in_edited = self.get_category_in_edited(
             category,
-            evaluation_input.input_detection_segmentation_result,
+            evaluation_input.edited_detection_segmentation_result,
         )
 
-        if len(category_in_input.detection_output.phrases) == 0:
-            return self.handle_no_category_in_input(
+        if len(category_in_edited.detection_output.bounding_boxes) == 0:
+            return self.handle_no_category_in_edited(
                 category,
             )
-        if len(category_in_input.detection_output.phrases) > 1:
+        if len(category_in_edited.detection_output.bounding_boxes) > 1:
             logging.warning(
-                "More than one object of the same category in the input image,"
+                "More than one object of the same category in the edited image,"
                 " when evaluating an alter parts operation.",
             )
 
@@ -42,18 +42,25 @@ class AlterParts(OperationEvaluation):
             to_attribute,
             evaluation_input.edited_detection_segmentation_result,
         )
-        if len(tos_in_edited.detection_output.phrases) == 0:
+        if len(tos_in_edited.detection_output.bounding_boxes) == 0:
             return self.handle_no_to_attribute_in_edited(to_attribute)
 
         intersection_ratios = []
-        for to_mask in tos_in_edited.segmentation_output.masks:
-            intersection_ratio = compute_mask_intersection(
-                whole=category_in_input.segmentation_output.masks[0],
+        for to_mask in tos_in_edited.detection_output.bounding_boxes:
+            intersection_ratio = compute_bbox_intersection(
+                whole_bbox=category_in_edited.detection_output.bounding_boxes[
+                    0
+                ],
                 # we are assuming that there is only one object for
                 # {category} in the input image
-                part=to_mask,
+                part_bbox=to_mask,
             )
             intersection_ratios.append(intersection_ratio)
+
+        # why not mask intersection? well because, assuming the segmentation
+        # is correct the intersection of the masks would be empty.
+        # That is the whole point of segmenation, to separate objects.
+        # So we are using the bounding boxes instead.
 
         average_intersection_ratio = float(np.mean(intersection_ratios))
 
@@ -62,7 +69,7 @@ class AlterParts(OperationEvaluation):
             success=True,
         )
 
-    def handle_no_to_attribute(self) -> EvaluationOutput:
+    def handle_missing_to_attribute(self) -> EvaluationOutput:
         logging.warning(
             "No {to} attribute provided in an alter parts operation.",
         )
@@ -71,26 +78,26 @@ class AlterParts(OperationEvaluation):
             success=False,
         )
 
-    def get_category_in_input(
+    def get_category_in_edited(
         self,
         category: str,
-        input_detection_segmentation_result: DetectionSegmentationResult,
+        edited_detection_segmentation_result: DetectionSegmentationResult,
     ) -> DetectionSegmentationResult:
         return get_detection_segmentation_result_of_target(
-            input_detection_segmentation_result,
+            edited_detection_segmentation_result,
             category,
         )
 
-    def handle_no_category_in_input(
+    def handle_no_category_in_edited(
         self,
         category: str,
     ) -> EvaluationOutput:
-        warning_msg = f"No {category} (categiry) detected in the input image,"
+        warning_msg = f"No {category} (categiry) detected in the edited image,"
         " when evaluating an alter parts operation."
         logging.warning(warning_msg)
         return EvaluationOutput(
             edit_specific_score=0,
-            success=False,
+            success=True,
         )
 
     def handle_no_to_attribute_in_edited(

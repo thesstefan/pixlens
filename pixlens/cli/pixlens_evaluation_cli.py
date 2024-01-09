@@ -23,6 +23,7 @@ from pixlens.evaluation.operations.object_replacement import ObjectReplacement
 from pixlens.evaluation.operations.positional_addition import PositionalAddition
 from pixlens.evaluation.operations.size import SizeEdit
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
+from pixlens.evaluation.operations.alter_parts import AlterParts
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
 parser.add_argument(
@@ -216,6 +217,9 @@ def evaluate_edit(
         return ObjectReplacement().evaluate_edit(evaluation_input)
     if edit.edit_type == EditType.POSITIONAL_ADDITION:
         return PositionalAddition().evaluate_edit(evaluation_input)
+    if edit.edit_type == EditType.ALTER_PARTS:
+        return AlterParts().evaluate_edit(evaluation_input)
+
     error_msg = f"Invalid edit type: {edit.edit_type}"
     raise ValueError(error_msg)
 

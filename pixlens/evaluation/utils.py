@@ -30,7 +30,7 @@ same_object = [
     if edit not in new_object + new_object_with_indication
 ]
 tol = 1e-6
-DIVDING_BY_ZERO_MSG = "Cannot divide by zero"
+DIVIDING_BY_ZERO_MSG = "Cannot divide by zero"
 
 
 def remove_words_from_string(
@@ -78,7 +78,7 @@ def compute_area_ratio(
     area1 = compute_area(numerator)
     area2 = compute_area(denominator)
     if area2 < tol:
-        raise ValueError(DIVDING_BY_ZERO_MSG)
+        raise ValueError(DIVIDING_BY_ZERO_MSG)
     return area1 / area2
 
 
@@ -266,5 +266,29 @@ def compute_mask_intersection(
     ).sum()
     part_sum = part.sum()
     if part_sum < tol:
-        raise ValueError(DIVDING_BY_ZERO_MSG)
+        raise ValueError(DIVIDING_BY_ZERO_MSG)
     return intersection.item() / part_sum.item()
+
+
+def compute_bbox_intersection(
+    whole_bbox: torch.Tensor,
+    part_bbox: torch.Tensor,
+) -> float:
+    # compute the intersection of the bounding boxes
+    # where each bbox is a tensor of the form
+    # [ymin, xmin, ymax, xmax]
+
+    # compute the intersection of as a ratio of the area of the intersection
+    # over the area of the whole_bbox
+    intersection = (
+        (
+            torch.min(whole_bbox[2:], part_bbox[2:])
+            - torch.max(whole_bbox[:2], part_bbox[:2])
+        )
+        .clamp(min=0)
+        .prod()
+    )
+    part_bbox_area = (part_bbox[2:] - part_bbox[:2]).prod()
+    if part_bbox_area < tol:
+        raise ValueError(DIVIDING_BY_ZERO_MSG)
+    return intersection.item() / part_bbox_area.item()
