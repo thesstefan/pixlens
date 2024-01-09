@@ -343,8 +343,29 @@ def compute_mse_over_mask(
     )  # normalize
     edited_image_masked = flatten_and_select(edited_image_array, mask2) / 255
     if background:
-        input_image_masked = flatten_and_select(input_image_array, ~mask1) / 255
+        input_image_masked = (
+            flatten_and_select(
+                input_image_array,
+                ~mask1,
+            )
+            / 255
+        )
         edited_image_masked = (
             flatten_and_select(edited_image_array, ~mask2) / 255
         )
     return float(np.mean((input_image_masked - edited_image_masked) ** 2))
+
+
+def extract_decimal_part(number: float) -> float:
+    if number < 0.9:
+        return 0.0
+    # Convert the number to a string to work with its decimal part
+    str_number = str(number)
+
+    # Find the position of the decimal point
+    decimal_point_index = str_number.find(".")
+
+    # Extract the decimal part from the second decimal place onwards
+    if decimal_point_index != -1:
+        return float("0." + str_number[decimal_point_index + 2 :])
+    return 0.0

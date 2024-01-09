@@ -215,6 +215,12 @@ def evaluate_edit(
         "Background preservation: %f",
         background_score,
     )
+    evaluation_input.annotated_edited_image.save(
+        f"results/{edit.edit_type}/{str(background_score)}_{edit.edit_id}_edit.png",
+    )  # noqa: E501
+    evaluation_input.annotated_input_image.save(
+        f"results/{edit.edit_type}/{str(background_score)}_{edit.edit_id}_input.png",
+    )  # noqa: E501
     if edit.edit_type == EditType.OBJECT_ADDITION:
         return ObjectAddition().evaluate_edit(evaluation_input)
     if edit.edit_type == EditType.COLOR:
