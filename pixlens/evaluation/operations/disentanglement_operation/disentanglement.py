@@ -64,6 +64,9 @@ class Disentanglement:
     ) -> None:
         self.model = model
 
+    def get_path_model(self) -> Path:
+        return get_cache_dir() / Path("models--" + self.model.get_model_name())
+
     def load_attributes_and_objects(self) -> tuple[dict, list]:
         with self.json_file_path.open() as file:
             data_loaded = json.load(file)
@@ -91,8 +94,7 @@ class Disentanglement:
         self.set_model(model)
         self.generate_images = generate_images
         self.results_path = (
-            get_cache_dir()
-            / Path("models--" + self.model.get_model_name())
+            self.get_path_model()
             / Path("disentanglement/")
             / Path("results.json")
         )
@@ -144,12 +146,7 @@ class Disentanglement:
                 json.dump(self.results, file, indent=4)
 
     def check_if_pd_dataset_existent(self) -> bool:
-        cache_dir = get_cache_dir()
-        parent_folder = (
-            cache_dir
-            / Path("models--" + self.model.get_model_name())
-            / Path("disentanglement/")
-        )
+        parent_folder = self.get_path_model() / Path("disentanglement/")
         parent_folder.mkdir(parents=True, exist_ok=True)
         self.final_dataset_path = parent_folder / Path("disentanglement.pkl")
         return self.final_dataset_path.exists()
@@ -237,9 +234,8 @@ class Disentanglement:
                         image_path=str_img_path,
                     )
                     image.save(
-                        get_cache_dir()
-                        / Path("models--" + self.model.get_model_name())
-                        / Path("000000000000")
+                        self.get_path_model()
+                        / Path("white_image")
                         / Path(prompt + ".png"),
                     )
                 data_to_append.append(
@@ -272,8 +268,7 @@ class Disentanglement:
             if self.generate_images:
                 image = self.model.edit_image(prompt=a, image_path=image_path)
                 image.save(
-                    get_cache_dir()
-                    / Path("models--" + self.model.get_model_name())
+                    self.get_path_model()
                     / Path("000000000000")
                     / Path(a + ".png"),
                 )
