@@ -119,22 +119,71 @@ class PreprocessingPipeline:
     def get_all_edits_edit_type(self, edit_type: str) -> pd.DataFrame:
         return self.edit_dataset[self.edit_dataset["edit_type"] == edit_type]
 
+    def get_edited_image_path(
+        self,
+        input_image_path: Path,
+        prompt: str,
+        editing_model: PromptableImageEditingModel,
+    ) -> Path:
+        return (
+            get_cache_dir()
+            / editing_model.model_id
+            / input_image_path.stem
+            / prompt
+        ).with_suffix(".png")
+
+    def save_edited_image(
+        self,
+        edit: Edit,
+        prompt: str,
+        editing_model: PromptableImageEditingModel,
+    ) -> None:
+        edited_image_path = self.get_edited_image_path(
+            Path(edit.image_path),
+            prompt,
+            editing_model,
+        )
+
+        if edited_image_path.exists():
+            logging.info(
+                "Image already exists at %s...",
+                edited_image_path,
+            )
+
+            return
+
+        logging.info("Editing image...")
+
+        edited_image_path.parent.mkdir(parents=True, exist_ok=True)
+        edited_image = editing_model.edit_image(prompt, edit.image_path, edit)
+        edited_image.save(edited_image_path)
+
+        logging.info("Image saved to %s", edited_image_path)
+
+    def init_model_dir(self, model: PromptableImageEditingModel) -> None:
+        model_dir = get_cache_dir() / model.model_id
+        model_dir.parent.mkdir(parents=True, exist_ok=True)
+        model.to_yaml(model_dir / "model_params.yaml")
+
     def execute_pipeline(
         self,
         models: list[PromptableImageEditingModel],
     ) -> None:
         for model in models:
             logging.info("Running model: %s", model.get_model_name())
+
+            self.init_model_dir(model)
+
             for idx in self.edit_dataset.index:
                 edit = self.get_edit(idx, self.edit_dataset)
-                # if (
-                #     edit.edit_type != EditType.ALTER_PARTS
-                # ):  # TODO: remove this line  # noqa: FIX002, TD003, TD002
-                #     continue
                 prompt = model.generate_prompt(edit)
+
                 logging.info("prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)
-                model.edit(prompt, edit.image_path, edit)
+
+                self.save_edited_image(edit, prompt, model)
+
+                logging.info("")
 
     def add_object_removal(self, records: list[dict]) -> list[dict]:
         for category_path in Path(self.dataset_path).iterdir():

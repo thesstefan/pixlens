@@ -48,6 +48,12 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
         self.device = device
         self.model = load_diffedit(self.get_model_name(), device)
 
+    @property
+    def params_dict(self) -> dict[str, str | bool | int | float]:
+        return {
+            "device": str(self.device),
+        }
+
     def edit_image(
         self,
         prompt: str,
