@@ -112,8 +112,10 @@ class Classifier:
             ]
 
             for _, row in matching_rows.iterrows():
-                z_end_diff = current_z_end - row["z_end"]
-                z_end_diff = z_end_diff.to("cpu", dtype=torch.float32)
+                z_end_diff = torch.abs(current_z_end - row["z_end"]).to(
+                    "cpu",
+                    dtype=torch.float32,
+                )
                 inputs_list.append(z_end_diff)
 
                 label = self.dataset.loc[i, "attribute_type"]
