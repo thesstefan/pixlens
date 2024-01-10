@@ -56,18 +56,17 @@ class InstructPix2Pix(interfaces.PromptableImageEditingModel):
         num_inference_steps: int = 100,
         image_guidance_scale: float = 1.0,
         text_guidance_scale: float = 7.5,
+        seed: int = 0,
+        latent_guidance_scale: float = 25,
     ) -> None:
         self.model = load_instruct_pix2pix(instruct_pix2pix_type, device)
         self.instruct_pix2pix_type = instruct_pix2pix_type
         self.device = device
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
-        self.generator = torch.Generator()
-        self.generator.manual_seed(4)  # reproducibility
         self.text_guidance_scale = text_guidance_scale
-
-    def get_model_name(self) -> str:
-        return "InstructPix2Pix"
+        self.latent_guidance_scale = latent_guidance_scale
+        self.seed = seed
 
     @property
     def params_dict(self) -> dict[str, str | bool | int | float]:
@@ -77,6 +76,8 @@ class InstructPix2Pix(interfaces.PromptableImageEditingModel):
             "num_inference_steps": self.num_inference_steps,
             "image_guidance_scale": self.image_guidance_scale,
             "text_guidance_scale": self.text_guidance_scale,
+            "latent_guidance_scale": self.latent_guidance_scale,
+            "seed": self.seed,
         }
 
     def edit_image(
@@ -88,26 +89,26 @@ class InstructPix2Pix(interfaces.PromptableImageEditingModel):
         del edit_info
 
         input_image = Image.open(image_path)
-
         return self.model(  # type: ignore[operator, no-any-return]
             prompt,
             input_image,
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
-            generator=self.generator,
+            generator=torch.manual_seed(self.seed),
             guidance_scale=self.text_guidance_scale,
         )
 
     def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
         input_image = Image.open(image_path)
+
         output = self.model(
             prompt,
             input_image,
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
             output_type="latent",
-            generator=self.generator,
-            guidance_scale=25,
+            generator=torch.manual_seed(self.seed),
+            guidance_scale=self.latent_guidance_scale,
         )
         output_images: list[torch.Tensor] = output.images
         return output_images[0]
