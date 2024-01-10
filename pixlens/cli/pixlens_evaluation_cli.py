@@ -6,7 +6,8 @@ import torch
 from pixlens.detection.grounded_sam import GroundedSAM
 from pixlens.detection.owl_vit_sam import OwlViTSAM
 from pixlens.editing.controlnet import ControlNet
-from pixlens.editing.pix2pix import Pix2pix
+from pixlens.editing.instruct_pix2pix import InstructPix2Pix
+from pixlens.editing.lcm import LCM
 from pixlens.evaluation.evaluation_pipeline import (
     EvaluationPipeline,
 )
@@ -20,6 +21,10 @@ from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.object_removal import ObjectRemoval
 from pixlens.evaluation.operations.object_replacement import ObjectReplacement
+from pixlens.evaluation.operations.position_replacement import (
+    PositionReplacement,
+)
+from pixlens.evaluation.operations.positional_addition import PositionalAddition
 from pixlens.evaluation.operations.size import SizeEdit
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 
@@ -102,7 +107,7 @@ def main() -> None:
 
     logging.info("Overall score: %s", overall_score / successful_edits)
     logging.info(
-        "Percentage of successful edits: %s",
+        "Percentage of successfuly evaluated edits: %s",
         successful_edits / len(edits),
     )
 
@@ -110,11 +115,11 @@ def main() -> None:
 def get_editing_model(
     model_name: str,
     device: torch.device,
-) -> ControlNet | Pix2pix:
+) -> ControlNet | InstructPix2Pix:
     if model_name.lower() == "controlnet":
         return ControlNet(device=device)
-    if model_name.lower() == "pix2pix":
-        return Pix2pix(device=device)
+    if model_name.lower() == "instructpix2pix":
+        return InstructPix2Pix(device=device)
     error_msg = f"Invalid editing model name: {model_name.lower()}"
     raise ValueError(error_msg)
 
@@ -167,13 +172,13 @@ def get_edits(
 
 def evaluate_edits(
     edits: list[Edit],
-    editing_model: ControlNet | Pix2pix,
+    editing_model: ControlNet | InstructPix2Pix | LCM,
     evaluation_pipeline: EvaluationPipeline,
 ) -> tuple[float, int]:
     overall_score = 0.0
     successful_edits = 0
     for edit in edits:
-        logging.info("Running edit: %s", edit.edit_id)
+        logging.info("Evaluating edit: %s", edit.edit_id)
         logging.info("Edit type: %s", edit.edit_type)
         logging.info("Image path: %s", edit.image_path)
         logging.info("Category: %s", edit.category)
@@ -188,13 +193,13 @@ def evaluate_edits(
         if evaluation_output.success:
             successful_edits += 1
             overall_score += evaluation_output.edit_specific_score
-            if evaluation_output.edit_specific_score > 0:
-                logging.info("Good sample!")
-                logging.info(evaluation_output.edit_specific_score)
-                logging.info(edit.image_path)
-            logging.info(evaluation_output.edit_specific_score)
+            logging.info("Evaluation was successful")
+            score_msg = f"Score: {evaluation_output.edit_specific_score}"
+            logging.info(score_msg)
         else:
             logging.info("Evaluation failed")
+
+        logging.info("")
 
     return overall_score, successful_edits
 
@@ -203,16 +208,20 @@ def evaluate_edit(
     edit: Edit,
     evaluation_input: EvaluationInput,
 ) -> EvaluationOutput:
-    if edit.edit_type == EditType.OBJECT_ADDITION:
-        return ObjectAddition().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.COLOR:
-        return ColorEdit().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.SIZE:
-        return SizeEdit().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.OBJECT_REMOVAL:
-        return ObjectRemoval().evaluate_edit(evaluation_input)
-    if edit.edit_type == EditType.OBJECT_REPLACEMENT:
-        return ObjectReplacement().evaluate_edit(evaluation_input)
+    evaluation_classes = {
+        EditType.OBJECT_ADDITION: ObjectAddition(),
+        EditType.COLOR: ColorEdit(),
+        EditType.SIZE: SizeEdit(),
+        EditType.OBJECT_REMOVAL: ObjectRemoval(),
+        EditType.OBJECT_REPLACEMENT: ObjectReplacement(),
+        EditType.POSITIONAL_ADDITION: PositionalAddition(),
+        EditType.POSITION_REPLACEMENT: PositionReplacement(),
+    }
+
+    if edit.edit_type in evaluation_classes:
+        evaluation_class = evaluation_classes[edit.edit_type]
+        return evaluation_class.evaluate_edit(evaluation_input)
+
     error_msg = f"Invalid edit type: {edit.edit_type}"
     raise ValueError(error_msg)
 

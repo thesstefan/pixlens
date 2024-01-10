@@ -1,0 +1,6 @@
+class: LCM
+params:
+    instruct_pix2pix_type: "SimianLuo/LCM_Dreamshaper_v7"
+    num_inference_steps: 8
+    text_guidance_scale: 8
+    device: cuda
