@@ -18,6 +18,9 @@ from pixlens.utils.utils import get_cache_dir
 
 class Disentanglement:
     model: editing_interfaces.PromptableImageEditingModel
+    obj_dataset: pd.DataFrame
+    att_dataset: pd.DataFrame
+    dataset: pd.DataFrame
 
     def __init__(
         self,
@@ -44,10 +47,10 @@ class Disentanglement:
                 "norm",
             ],
         )
-        self.obj_dataset: pd.DataFrame = pd.DataFrame(
+        self.obj_dataset = pd.DataFrame(
             columns=["attribute_type", "attribute", "object", "z"],
         )
-        self.att_dataset: pd.DataFrame = pd.DataFrame(
+        self.att_dataset = pd.DataFrame(
             columns=["attribute_type", "attribute", "z"],
         )
         self.json_file_path = Path(json_file_path)
