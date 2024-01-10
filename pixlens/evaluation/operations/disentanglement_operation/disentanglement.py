@@ -68,7 +68,7 @@ class Disentanglement:
         return (
             get_cache_dir()
             / Path("models--" + self.model.get_model_name())
-            / Path("/disentanglement")
+            / "/disentanglement"
         )
 
     def load_attributes_and_objects(self) -> tuple[dict, list]:
@@ -97,11 +97,7 @@ class Disentanglement:
         """
         self.set_model(model)
         self.generate_images = generate_images
-        self.results_path = (
-            self.get_path_model()
-            / Path("disentanglement/")
-            / Path("results.json")
-        )
+        self.results_path = self.get_path_model() / "results.json"
         self.results = {}
         if self.results_path.exists():
             with self.results_path.open() as file:
@@ -150,9 +146,9 @@ class Disentanglement:
                 json.dump(self.results, file, indent=4)
 
     def check_if_pd_dataset_existent(self) -> bool:
-        parent_folder = self.get_path_model() / Path("disentanglement/")
+        parent_folder = self.get_path_model() / "/disentanglement/"
         parent_folder.mkdir(parents=True, exist_ok=True)
-        self.final_dataset_path = parent_folder / Path("disentanglement.pkl")
+        self.final_dataset_path = parent_folder / "/disentanglement.pkl"
         return self.final_dataset_path.exists()
 
     def generate_dataset(self) -> None:
@@ -177,9 +173,7 @@ class Disentanglement:
                 self.final_dataset_path.parent / "att_dataset.pkl"
             )
             if not self.obj_dataset_path.exists():
-                image_file = self.image_data_path / Path(
-                    "000000000002.jpg",
-                )
+                image_file = self.image_data_path / "white_image.jpg"
                 self.generate_all_latents_for_image(image_file)
             else:
                 with self.obj_dataset_path.open("rb") as file:
