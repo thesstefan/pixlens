@@ -17,6 +17,8 @@ from pixlens.utils.utils import get_cache_dir
 
 
 class Disentanglement:
+    model: editing_interfaces.PromptableImageEditingModel
+
     def __init__(
         self,
         json_file_path: str = "disentanglement_json/objects_textures_sizes_colors_styles_extended.json",  # noqa: E501
@@ -48,13 +50,12 @@ class Disentanglement:
         self.att_dataset: pd.DataFrame = pd.DataFrame(
             columns=["attribute_type", "attribute", "z"],
         )
-        self.model: editing_interfaces.PromptableImageEditingModel
-        self.json_file_path: Path = Path(json_file_path)
-        self.image_data_path: Path = Path(image_data_path)
+        self.json_file_path = Path(json_file_path)
+        self.image_data_path = Path(image_data_path)
         self.data_attributes, self.objects = self.load_attributes_and_objects()
         self.generate_images = False
 
-    def init_model(
+    def set_model(
         self,
         model: editing_interfaces.PromptableImageEditingModel,
     ) -> None:
@@ -84,7 +85,7 @@ class Disentanglement:
             model: The model to evaluate.
             generate_images: Whether to generate images or not.
         """
-        self.init_model(model)
+        self.set_model(model)
         self.generate_images = generate_images
         self.results_path = (
             get_cache_dir()
