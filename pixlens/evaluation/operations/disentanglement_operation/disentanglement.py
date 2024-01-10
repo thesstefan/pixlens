@@ -65,7 +65,7 @@ class Disentanglement:
         self.model = model
 
     def load_attributes_and_objects(self) -> tuple[dict, list]:
-        with Path.open(self.json_file_path) as file:
+        with self.json_file_path.open() as file:
             data_loaded = json.load(file)
         objects = data_loaded["objects"]
         data_loaded.pop("objects")
@@ -98,7 +98,7 @@ class Disentanglement:
         )
         self.results = {}
         if self.results_path.exists():
-            with Path.open(self.results_path) as file:
+            with self.results_path.open() as file:
                 self.results = json.load(file)
         if self.model.get_model_name() not in self.results:
             self.results[self.model.get_model_name()] = {}
@@ -119,7 +119,7 @@ class Disentanglement:
                     "Avg_norm_per_attribute"
                 ][attribute],
             )
-        with Path.open(self.results_path, "w") as file:
+        with self.results_path.open("w") as file:
             json.dump(self.results, file, indent=4)
         logging.info(
             "Average norm overall: %f",
@@ -133,14 +133,14 @@ class Disentanglement:
             self.results[self.model.get_model_name()][
                 "Inter_sample_and_intra_attribute"
             ] = self.inter_sample_and_intra_attribute()
-            with Path.open(self.results_path, "w") as file:
+            with self.results_path.open("w") as file:
                 json.dump(self.results, file, indent=4)
         if "Inter_attribute" not in self.results[self.model.get_model_name()]:
             logging.info("Doing inter attribute evaluation")
             self.results[self.model.get_model_name()][
                 "Inter_attribute"
             ] = self.inter_attribute()
-            with Path.open(self.results_path, "w") as file:
+            with self.results_path.open("w") as file:
                 json.dump(self.results, file, indent=4)
 
     def check_if_pd_dataset_existent(self) -> bool:
@@ -181,9 +181,10 @@ class Disentanglement:
                 )
                 self.generate_all_latents_for_image(image_file)
             else:
-                with Path.open(self.obj_dataset_path, "rb") as file:
+                with self.obj_dataset_path.open("rb") as file:
                     self.object_dataset = joblib.load(file)
-                with Path.open(self.att_dataset_path, "rb") as file:
+
+                with self.att_dataset_path.open("rb") as file:
                     self.att_dataset = joblib.load(file)
 
             self.generate_final_dataset()
