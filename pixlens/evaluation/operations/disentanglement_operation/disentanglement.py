@@ -65,7 +65,11 @@ class Disentanglement:
         self.model = model
 
     def get_path_model(self) -> Path:
-        return get_cache_dir() / Path("models--" + self.model.get_model_name())
+        return (
+            get_cache_dir()
+            / Path("models--" + self.model.get_model_name())
+            / Path("/disentanglement")
+        )
 
     def load_attributes_and_objects(self) -> tuple[dict, list]:
         with self.json_file_path.open() as file:
@@ -269,7 +273,7 @@ class Disentanglement:
                 image = self.model.edit_image(prompt=a, image_path=image_path)
                 image.save(
                     self.get_path_model()
-                    / Path("000000000000")
+                    / Path("white_image")
                     / Path(a + ".png"),
                 )
             data.append(
