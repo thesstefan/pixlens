@@ -30,6 +30,8 @@ class EvaluationOutput:
     edit_specific_score: float
     success: bool
     ssim_score: float | None = None
+    background_preservation_score_mse: float | None = None
+    background_preservation_score_ssim: float | None = None
 
 
 @dataclasses.dataclass
@@ -75,5 +77,6 @@ class GeneralEvaluation(Protocol):
     def evaluate_edit(
         self,
         evaluation_input: EvaluationInput,
-    ) -> float:
+        precomputed_evaluation_output: EvaluationOutput,
+    ) -> None:
         ...

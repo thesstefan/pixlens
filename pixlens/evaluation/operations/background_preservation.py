@@ -10,7 +10,8 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
     def evaluate_edit(
         self,
         evaluation_input: evaluation_interfaces.EvaluationInput,
-    ) -> float:
+        precomputed_evaluation_output: evaluation_interfaces.EvaluationOutput,
+    ) -> None:
         input_image = evaluation_input.input_image
         edited_image = evaluation_input.edited_image
         masks = self.get_masks(evaluation_input)
@@ -34,7 +35,7 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
         union_mask = image_utils.compute_union_segmentation_masks(
             reshaped_masks,
         )
-        return image_utils.extract_decimal_part(
+        background_preservation_mse = image_utils.extract_decimal_part(
             1
             - image_utils.compute_mse_over_mask(
                 input_image,
@@ -43,13 +44,21 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
                 union_mask,
                 background=True,
             )
-        )  # image_utils.compute_ssim_over_mask(
-        #     input_image,
-        #     edited_image,
-        #     union_mask,
-        #     union_mask,
-        #     background=True,
-        # )*(1 - union_mask.sum() / union_mask.size) #TO MENTION IN THE PAPER
+        )
+        background_preservation_ssim = image_utils.compute_ssim_over_mask(
+            input_image,
+            edited_image,
+            union_mask,
+            union_mask,
+            background=True,
+        ) * (1 - union_mask.sum() / union_mask.size)  # TO MENTION IN THE PAPER
+
+        precomputed_evaluation_output.background_preservation_score_mse = (
+            background_preservation_mse
+        )
+        precomputed_evaluation_output.background_preservation_score_ssim = (
+            background_preservation_ssim
+        )
 
     def get_masks(
         self,

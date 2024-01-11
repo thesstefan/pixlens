@@ -214,11 +214,6 @@ def evaluate_edit(
     edit: Edit,
     evaluation_input: EvaluationInput,
 ) -> EvaluationOutput:
-    background_score = BackgroundPreservation().evaluate_edit(evaluation_input)
-    logging.info(
-        "Background preservation: %f",
-        background_score,
-    )
     evaluation_classes = {
         EditType.OBJECT_ADDITION: ObjectAddition(),
         EditType.COLOR: ColorEdit(),
@@ -231,7 +226,19 @@ def evaluate_edit(
 
     if edit.edit_type in evaluation_classes:
         evaluation_class = evaluation_classes[edit.edit_type]
-        return evaluation_class.evaluate_edit(evaluation_input)
+        evaluation_output = evaluation_class.evaluate_edit(evaluation_input)
+        BackgroundPreservation().evaluate_edit(
+            evaluation_input,
+            evaluation_output,
+        )
+        logging.info(
+            "Background preservation (SSIM): %f",
+            evaluation_output.background_preservation_score_ssim,
+        )
+        logging.info(
+            "Background preservation (MSE): %f",
+            evaluation_output.background_preservation_score_mse,
+        )
 
     error_msg = f"Invalid edit type: {edit.edit_type}"
     raise ValueError(error_msg)
