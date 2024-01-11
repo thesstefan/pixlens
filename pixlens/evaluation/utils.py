@@ -274,7 +274,7 @@ def cosine_similarity(a: npt.ArrayLike, b: npt.ArrayLike) -> float:
 
 def compute_color_hist_vector(
     image: Image.Image,
-    mask: npt.NDArray[np.uint8] | None = None,
+    mask: npt.NDArray[np.bool_] | None = None,
     bins: int = 32,
 ) -> npt.NDArray[np.uint]:
     cv_bgr_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
@@ -284,7 +284,7 @@ def compute_color_hist_vector(
             cv2.calcHist(
                 [cv_bgr_image],
                 [color],
-                mask if mask is not None else None,
+                mask.astype(np.uint8) if mask is not None else None,
                 [bins],
                 [0, 256],
             )
@@ -296,23 +296,48 @@ def compute_color_hist_vector(
     return bgr_hist.reshape(-1)
 
 
-def mask_iou(mask_1: torch.Tensor, mask_2: torch.Tensor) -> float:
+def mask_iou(mask_1: npt.NDArray, mask_2: npt.NDArray) -> float:
     intersection = (mask_1 * mask_2).sum()
 
     if intersection == 0:
         return 0.0
-    union = torch.logical_or(mask_1, mask_2).to(torch.int).sum()
+    union = np.logical_or(mask_1, mask_2).astype(np.uint8).sum()
 
-    return (intersection / union).item()
+    return float(intersection / union)
 
 
 def pad_into_shape_2d(
     array: npt.NDArray,
     shape: tuple[int, ...],
 ) -> npt.NDArray:
-    assert array.shape == len(shape) == 2  # noqa: PLR2004, S101
+    assert len(array.shape) == len(shape) == 2  # noqa: PLR2004, S101
 
     resized = np.zeros(shape)
     resized[: array.shape[0], : array.shape[1]] = array
 
     return resized
+
+
+def translate_to_top_left_2d(array: npt.NDArray) -> npt.NDArray:
+    assert len(array.shape) == 2  # noqa: PLR2004, S101
+
+    y_nonzero_indices, x_nonzero_indices = np.nonzero(array)
+    min_y = np.min(y_nonzero_indices)
+    min_x = np.min(x_nonzero_indices)
+
+    translated = np.zeros_like(array)
+    translated[y_nonzero_indices - min_y, x_nonzero_indices - min_x] = array[
+        y_nonzero_indices,
+        x_nonzero_indices,
+    ]
+
+    return translated
+
+
+def aligned_mask_iou(mask_1: npt.NDArray, mask_2: npt.NDArray) -> float:
+    assert mask_1.shape == mask_2.shape  # noqa: S101
+
+    aligned_mask_1 = translate_to_top_left_2d(mask_1)
+    aligned_mask_2 = translate_to_top_left_2d(mask_2)
+
+    return mask_iou(aligned_mask_1, aligned_mask_2)

@@ -5,6 +5,7 @@ import pprint
 
 import cv2  # type: ignore[import]
 import numpy as np
+import numpy.typing as npt
 import torch
 from PIL import Image
 
@@ -45,6 +46,8 @@ class SubjectPreservationOutput(EvaluationOutput):
     sift_score: float = 0.0
     color_score: float = 0.0
     position_score: float = 0.0
+    aligned_iou: float = 0.0
+    ssim_score: float = 0.0
 
     def persist(self, save_dir: pathlib.Path) -> None:
         save_dir = save_dir / "subject_preservation"
@@ -55,6 +58,8 @@ class SubjectPreservationOutput(EvaluationOutput):
             "sift_score": self.sift_score,
             "color_score": self.color_score,
             "position_score": self.position_score,
+            "ssim_score": self.ssim_score,
+            "aligned_iou": self.aligned_iou,
         }
         json_str = pprint.pformat(score_summary, compact=True).replace("'", '"')
         score_json_path = save_dir / "scores.json"
@@ -122,37 +127,49 @@ class SubjectPreservation(OperationEvaluation):
                 success=False,
             )
 
-        category_mask_edited = torch.Tensor(
-            utils.pad_into_shape_2d(
+        # TODO: Add multiplicity support
+        category_mask_input = np.squeeze(
+            category_in_input.segmentation_output.masks[0].cpu().numpy(),
+        )
+        category_mask_edited = utils.pad_into_shape_2d(
+            np.squeeze(
                 category_in_edited.segmentation_output.masks[0].cpu().numpy(),
-                category_in_input.segmentation_output.masks[0].shape,
             ),
+            category_mask_input.shape,
         )
 
         sift_score, sift_visualization = self.compute_sift_score(
             evaluation_input.input_image,
             evaluation_input.edited_image,
-            category_in_input.segmentation_output.masks[0],
+            category_mask_input,
             category_mask_edited,
         )
 
         color_score, color_histogram_visualization = self.compute_color_score(
             evaluation_input.input_image,
             evaluation_input.edited_image,
-            category_in_input.segmentation_output.masks[0],
+            category_mask_input,
+            # Color histogram require original size mask
+            np.squeeze(
+                category_in_edited.segmentation_output.masks[0].cpu().numpy(),
+            ),
+        )
+
+        aligned_iou = utils.aligned_mask_iou(
+            category_mask_input,
             category_mask_edited,
         )
 
         position_score, position_visualization = self.compute_position_score(
             evaluation_input.input_image,
-            category_in_input.segmentation_output.masks[0],
+            category_mask_input,
             category_mask_edited,
         )
 
-        ssim_score = self.compute_ssim_score(
+        ssim_score = utils.compute_ssim_over_mask(
             evaluation_input.input_image,
             evaluation_input.edited_image,
-            category_in_input.segmentation_output.masks[0],
+            category_mask_input,
             category_mask_edited,
         )
 
@@ -161,6 +178,7 @@ class SubjectPreservation(OperationEvaluation):
             edit_specific_score=0,
             sift_score=sift_score,
             color_score=color_score,
+            aligned_iou=aligned_iou,
             position_score=position_score,
             ssim_score=ssim_score,
             artifacts=SubjectPreservationArtifacts(
@@ -174,8 +192,8 @@ class SubjectPreservation(OperationEvaluation):
         self,
         input_image: Image.Image,
         edited_image: Image.Image,
-        input_mask: torch.Tensor,
-        edited_mask: torch.Tensor,
+        input_mask: npt.NDArray[np.bool_],
+        edited_mask: npt.NDArray[np.bool_],
     ) -> tuple[float, Image.Image | None]:
         input_cv_image = cv2.cvtColor(
             np.array(input_image),
@@ -189,11 +207,11 @@ class SubjectPreservation(OperationEvaluation):
         # TODO: Handle multiple objects
         input_keypoints, input_descriptors = self.sift.detectAndCompute(
             input_cv_image,
-            np.squeeze(input_mask.cpu().numpy().astype(np.uint8)) * 255,
+            input_mask.astype(np.uint8) * 255,
         )
         edited_keypoints, edited_descriptors = self.sift.detectAndCompute(
             edited_cv_image,
-            np.squeeze(edited_mask.cpu().numpy().astype(np.uint8)) * 255,
+            edited_mask.astype(np.uint8) * 255,
         )
 
         matches = self.flann_matcher.knnMatch(
@@ -230,17 +248,17 @@ class SubjectPreservation(OperationEvaluation):
         self,
         input_image: Image.Image,
         edited_image: Image.Image,
-        input_mask: torch.Tensor,
-        edited_mask: torch.Tensor,
+        input_mask: npt.NDArray[np.bool_],
+        edited_mask: npt.NDArray[np.bool_],
     ) -> tuple[float, Image.Image]:
         input_color_hist = utils.compute_color_hist_vector(
             input_image,
-            mask=np.squeeze(input_mask.cpu().numpy().astype(np.uint8)),
+            mask=input_mask,
             bins=self.color_hist_bins,
         )
         edited_color_hist = utils.compute_color_hist_vector(
             edited_image,
-            mask=np.squeeze(edited_mask.cpu().numpy().astype(np.uint8)),
+            mask=edited_mask,
             bins=self.color_hist_bins,
         )
 
@@ -263,40 +281,22 @@ class SubjectPreservation(OperationEvaluation):
 
         return score, figure_to_image(color_histogram_figure)
 
-    def compute_iou_score(
-        self,
-        input_mask: torch.Tensor,
-        edited_mask: torch.Tensor,
-    ) -> float:
-        # TODO: Implement aligned IoU
-        raise NotImplementedError
-
-    def compute_ssim_score(
-        self,
-        input_image: Image.Image,
-        edited_image: Image.Image,
-        input_mask: torch.Tensor,
-        edited_mask: torch.Tensor,
-    ) -> float:
-        return utils.compute_ssim_over_mask(
-            input_image,
-            edited_image,
-            input_mask.cpu().numpy(),
-            edited_mask.cpu().numpy(),
-        )
-
     def compute_position_score(
         self,
         input_image: Image.Image,
-        input_mask: torch.Tensor,
-        edited_mask: torch.Tensor,
+        input_mask: npt.NDArray[np.bool_],
+        edited_mask: npt.NDArray[np.bool_],
     ) -> tuple[float, Image.Image]:
         # TODO: Make utils.center_of_mass return a np.array
-        input_center = np.array(utils.center_of_mass(input_mask))
-        edited_center = np.array(utils.center_of_mass(edited_mask))
+        input_center = np.array(
+            utils.center_of_mass(torch.Tensor(input_mask).unsqueeze(0)),
+        )
+        edited_center = np.array(
+            utils.center_of_mass(torch.Tensor(edited_mask).unsqueeze(0)),
+        )
 
         visualization_image = annotation.annotate_mask(
-            torch.stack([input_mask, edited_mask]),
+            torch.Tensor(np.stack([input_mask, edited_mask])),
             input_image,
         )
         visualization_image = annotation.draw_center_of_masses(
@@ -305,14 +305,8 @@ class SubjectPreservation(OperationEvaluation):
             (edited_center[0], edited_center[1]),
         )
 
-        normalized_input_center = np.divide(
-            input_center,
-            np.squeeze(input_mask).shape,
-        )
-        normalized_edit_center = np.divide(
-            edited_center,
-            np.squeeze(edited_mask).shape,
-        )
+        normalized_input_center = np.divide(input_center, input_mask.shape)
+        normalized_edit_center = np.divide(edited_center, edited_mask.shape)
 
         score = np.linalg.norm(
             normalized_input_center - normalized_edit_center,
