@@ -1,4 +1,5 @@
 import functools
+import hashlib
 import logging
 import pathlib
 import shutil
@@ -114,3 +115,12 @@ def get_image_extension(
         if image_path.with_suffix(ext).is_file():
             return ext
     return None
+
+
+def hash_primitive_list(
+    items: list[str | bool | int | float],
+    hash_length: int = 3,
+) -> str:
+    item_str = "".join(map(str, items))
+
+    return hashlib.shake_256(item_str.encode()).hexdigest(hash_length)

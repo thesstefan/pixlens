@@ -1,6 +1,4 @@
 import enum
-import logging
-from pathlib import Path
 
 import torch
 from PIL import Image
