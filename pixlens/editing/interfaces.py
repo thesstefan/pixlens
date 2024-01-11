@@ -1,6 +1,7 @@
 import enum
 from abc import abstractmethod
 
+import torch
 from PIL import Image
 
 from pixlens.base_model import BaseModel
@@ -29,4 +30,8 @@ class PromptableImageEditingModel(BaseModel):
         image_path: str,
         edit_info: Edit | None = None,
     ) -> Image.Image:
+        ...
+
+    @abstractmethod
+    def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
         ...

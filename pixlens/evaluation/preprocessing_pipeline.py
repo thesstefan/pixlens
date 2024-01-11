@@ -162,7 +162,9 @@ class PreprocessingPipeline:
 
     def init_model_dir(self, model: PromptableImageEditingModel) -> None:
         model_dir = get_cache_dir() / model.model_id
-        model_dir.parent.mkdir(parents=True, exist_ok=True)
+        model_dir.mkdir(
+            parents=True, exist_ok=True
+        )  # Here there was a .parents that i think it's wrong
         model.to_yaml(model_dir / "model_params.yaml")
 
     def execute_pipeline(
