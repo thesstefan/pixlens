@@ -171,26 +171,24 @@ def apply_mask(
     np_image: NDArray,
     mask: NDArray,
     *,
-    opposite: bool = False,
+    opposite_color: bool = False,
 ) -> NDArray:
     # Ensure the mask is a boolean array
     mask = mask.astype(bool)
     if mask.shape != np_image.shape[:2]:
-        mask = mask.T  # transpose mask
+        mask = mask.T
 
     # Apply the mask to each channel
     masked_image = np.zeros_like(np_image)
-    if opposite:
-        # Set masked areas to white
-        for i in range(
-            np_image.shape[2],
-        ):  # Assuming image has shape [Height, Width, Channels]
-            masked_image[:, :, i] = np.where(~mask, 255, np_image[:, :, i])
-    else:
-        for i in range(
-            np_image.shape[2],
-        ):  # Assuming image has shape [Height, Width, Channels]
-            masked_image[:, :, i] = np_image[:, :, i] * mask
+    color_integer = 0
+    if opposite_color:
+        color_integer = 255
+    for i in range(
+        np_image.shape[2],
+    ):  # Assuming image has shape [Height, Width, Channels]
+        masked_image[:, :, i] = np.where(
+            ~mask, color_integer, np_image[:, :, i]
+        )
 
     return masked_image
 
@@ -222,7 +220,7 @@ def compute_ssim_over_mask(
         edited_malicious_masked = apply_mask(
             edited_image_array,
             ~mask2,
-            opposite=True,
+            opposite_color=True,
         )
         return (
             float(
