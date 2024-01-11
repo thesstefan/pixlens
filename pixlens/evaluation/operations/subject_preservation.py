@@ -136,7 +136,6 @@ class SubjectPreservation(OperationEvaluation):
             category_mask_edited,
         )
 
-        # TODO: Normalize this by mask size
         color_score, color_histogram_visualization = self.compute_color_score(
             evaluation_input.input_image,
             evaluation_input.edited_image,
@@ -245,10 +244,22 @@ class SubjectPreservation(OperationEvaluation):
             bins=self.color_hist_bins,
         )
 
-        color_histogram_figure = plotting.plot_color_histograms(
-            np.stack([input_color_hist, edited_color_hist]),
+        normalized_input_color_hist = input_color_hist / (
+            input_image.width * input_image.height
         )
-        score = utils.cosine_similarity(input_color_hist, edited_color_hist)
+        normalized_edited_color_hist = edited_color_hist / (
+            edited_image.width * edited_image.height
+        )
+
+        color_histogram_figure = plotting.plot_color_histograms(
+            np.stack(
+                [normalized_input_color_hist, normalized_edited_color_hist],
+            ),
+        )
+        score = utils.cosine_similarity(
+            normalized_input_color_hist,
+            normalized_edited_color_hist,
+        )
 
         return score, figure_to_image(color_histogram_figure)
 
