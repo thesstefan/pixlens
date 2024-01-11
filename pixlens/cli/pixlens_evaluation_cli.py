@@ -219,15 +219,6 @@ def evaluate_edit(
         "Background preservation: %f",
         background_score,
     )
-    os.makedirs(f"results/{edit.edit_type}", exist_ok=True)
-    input_name = (
-        f"results/{edit.edit_type}/{background_score}{edit.edit_id}_input.png"
-    )
-    edited_name = (
-        f"results/{edit.edit_type}/{background_score}{edit.edit_id}_edited.png"
-    )
-    evaluation_input.input_image.save(input_name)
-    evaluation_input.edited_image.save(edited_name)
     evaluation_classes = {
         EditType.OBJECT_ADDITION: ObjectAddition(),
         EditType.COLOR: ColorEdit(),
@@ -240,7 +231,19 @@ def evaluate_edit(
 
     if edit.edit_type in evaluation_classes:
         evaluation_class = evaluation_classes[edit.edit_type]
-        return evaluation_class.evaluate_edit(evaluation_input)
+        evaluation_output = evaluation_class.evaluate_edit(evaluation_input)
+        BackgroundPreservation().evaluate_edit(
+            evaluation_input,
+            evaluation_output,
+        )
+        logging.info(
+            "Background preservation (SSIM): %f",
+            evaluation_output.background_preservation_score_ssim,
+        )
+        logging.info(
+            "Background preservation (MSE): %f",
+            evaluation_output.background_preservation_score_mse,
+        )
 
     error_msg = f"Invalid edit type: {edit.edit_type}"
     raise ValueError(error_msg)

@@ -10,7 +10,8 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
     def evaluate_edit(
         self,
         evaluation_input: evaluation_interfaces.EvaluationInput,
-    ) -> float:
+        precomputed_evaluation_output: evaluation_interfaces.EvaluationOutput,
+    ) -> None:
         input_image = evaluation_input.input_image
         edited_image = evaluation_input.edited_image
         masks = self.get_masks(evaluation_input)
