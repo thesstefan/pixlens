@@ -1,7 +1,6 @@
 import logging
 
 import numpy as np
-import torch
 
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
 from pixlens.evaluation.interfaces import (
@@ -10,7 +9,7 @@ from pixlens.evaluation.interfaces import (
     EvaluationOutput,
     OperationEvaluation,
 )
-from pixlens.evaluation.utils import compute_mask_intersection, center_of_mass
+from pixlens.evaluation.utils import center_of_mass, compute_mask_intersection
 
 
 class AlterParts(OperationEvaluation):
@@ -34,18 +33,11 @@ class AlterParts(OperationEvaluation):
                 category,
             )
 
-        # category_input_idx = 0
         if len(category_in_input.detection_output.bounding_boxes) > 1:
             logging.warning(
                 "More than one object of the same category in the input image,"
                 " when evaluating an alter parts operation.",
             )
-            # largest_object = torch.argmax(
-            #     category_in_input.segmentation_output.masks.sum(
-            #         dim=(2, 3),
-            #     ),
-            # )
-            # category_input_idx = int(largest_object.item())
 
         tos_in_edited = self.get_tos_in_edited(
             to_attribute,
