@@ -296,7 +296,7 @@ class SubjectPreservation(OperationEvaluation):
         edited_center = np.array(utils.center_of_mass(edited_mask))
 
         visualization_image = annotation.annotate_mask(
-            input_mask,
+            torch.stack([input_mask, edited_mask]),
             input_image,
         )
         visualization_image = annotation.draw_center_of_masses(
