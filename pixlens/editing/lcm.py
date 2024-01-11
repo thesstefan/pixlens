@@ -55,6 +55,7 @@ class LCM(interfaces.PromptableImageEditingModel):
         latent_guidance_scale: float = 25,
     ) -> None:
         self.device = device
+        self.lcm_type = lcm_type
         self.model = load_lcm(lcm_type, device)
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale

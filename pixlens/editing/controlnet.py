@@ -71,6 +71,7 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         latent_guidance_scale: float = 25,
     ) -> None:
         self.device = device
+        self.controlnet_type = controlnet_type
         self.model = load_controlnet(controlnet_type, device)
         self.device = device
         self.num_inference_steps = num_inference_steps

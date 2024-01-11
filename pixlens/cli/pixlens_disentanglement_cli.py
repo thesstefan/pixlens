@@ -1,10 +1,6 @@
 import argparse
 
-import torch
-
 from pixlens.editing import (
-    controlnet,
-    instruct_pix2pix,
     load_editing_model_from_yaml,
 )
 from pixlens.editing.interfaces import PromptableImageEditingModel
@@ -25,11 +21,11 @@ def main() -> None:
     args = parser.parse_args()
     model: PromptableImageEditingModel
     disentangle = Disentanglement(
-        json_file_path="disentanglement_json/objects_textures_sizes_colors_styles_test.json",
-        image_data_path="editval_instances",
+        json_file_path="disentanglement_files/objects_textures_sizes_colors_styles_extended.json",
+        image_data_path="disentanglement_files",
     )
     model = load_editing_model_from_yaml(args.model_params_yaml)
-    disentangle.evaluate_model(model=model)
+    disentangle.evaluate_model(model=model, generate_images=True)
 
 
 if __name__ == "__main__":

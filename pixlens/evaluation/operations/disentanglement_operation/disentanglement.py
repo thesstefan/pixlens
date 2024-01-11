@@ -15,6 +15,14 @@ from pixlens.evaluation.operations.disentanglement_operation.disentangle_model i
 )
 from pixlens.utils.utils import get_cache_dir
 
+more_than_1_prompt = ["DiffEdit"]
+
+
+def get_composite_prompt(model_name: str, outdated_prompt: str) -> str:
+    if model_name == "DiffEdit":
+        return outdated_prompt + "[SEP]" + outdated_prompt
+    raise NotImplementedError
+
 
 class Disentanglement:
     model: editing_interfaces.PromptableImageEditingModel
@@ -24,8 +32,8 @@ class Disentanglement:
 
     def __init__(
         self,
-        json_file_path: str = "disentanglement_json/objects_textures_sizes_colors_styles_extended.json",  # noqa: E501
-        image_data_path: str = "editval_instances",
+        json_file_path: str = "disentanglement_files/objects_textures_sizes_colors_styles_extended.json",  # noqa: E501
+        image_data_path: str = "disentanglement_files",
     ) -> None:
         """Initialize of datasets and variables.
 
@@ -68,7 +76,7 @@ class Disentanglement:
         return (
             get_cache_dir()
             / Path("models--" + self.model.get_model_name())
-            / "/disentanglement"
+            / "disentanglement"
         )
 
     def load_attributes_and_objects(self) -> tuple[dict, list]:
@@ -97,6 +105,12 @@ class Disentanglement:
         """
         self.set_model(model)
         self.generate_images = generate_images
+        if self.generate_images:
+            Path.mkdir(
+                self.get_path_model() / "white_image",
+                parents=True,
+                exist_ok=True,
+            )
         self.results_path = self.get_path_model() / "results.json"
         self.results = {}
         if self.results_path.exists():
@@ -146,9 +160,9 @@ class Disentanglement:
                 json.dump(self.results, file, indent=4)
 
     def check_if_pd_dataset_existent(self) -> bool:
-        parent_folder = self.get_path_model() / "/disentanglement/"
+        parent_folder = self.get_path_model()
         parent_folder.mkdir(parents=True, exist_ok=True)
-        self.final_dataset_path = parent_folder / "/disentanglement.pkl"
+        self.final_dataset_path = parent_folder / "disentanglement.pkl"
         return self.final_dataset_path.exists()
 
     def generate_dataset(self) -> None:
@@ -222,6 +236,12 @@ class Disentanglement:
                 ),
             ):
                 prompt = utils.get_prompt(o, a)
+                if self.model.get_model_name() in more_than_1_prompt:
+                    prompt = get_composite_prompt(
+                        self.model.get_model_name(),
+                        prompt,
+                    )
+
                 z = self.model.get_latent(
                     prompt=prompt,
                     image_path=str_img_path,
@@ -262,9 +282,16 @@ class Disentanglement:
         """
         data = []
         for a in self.data_attributes[attribute]:
-            z = self.model.get_latent(prompt=a, image_path=image_path)
+            if self.model.get_model_name() in more_than_1_prompt:
+                prompt = get_composite_prompt(self.model.get_model_name(), a)
+            else:
+                prompt = a
+            z = self.model.get_latent(prompt=prompt, image_path=image_path)
             if self.generate_images:
-                image = self.model.edit_image(prompt=a, image_path=image_path)
+                image = self.model.edit_image(
+                    prompt=prompt,
+                    image_path=image_path,
+                )
                 image.save(
                     self.get_path_model()
                     / Path("white_image")
@@ -384,7 +411,11 @@ class Disentanglement:
                     (
                         avg_cos_similarity,
                         avg_angle,
-                    ) = utils.compute_attribute_directions(self.dataset, a1, a2)
+                    ) = utils.compute_angle_of_attribute_vectors(
+                        self.dataset,
+                        a1,
+                        a2,
+                    )
                     angles.append(avg_angle)
                     cos_similarities.append(avg_cos_similarity)
                     results[attribute_type][a1 + "_" + a2] = {

@@ -7,7 +7,7 @@ from PIL import Image
 from scipy.spatial.distance import cosine
 
 
-def compute_attribute_directions(
+def compute_angle_of_attribute_vectors(
     dataset: pd.DataFrame,
     a1: str,
     a2: str,

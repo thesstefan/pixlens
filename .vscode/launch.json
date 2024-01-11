@@ -156,15 +156,14 @@
             "jinja": false,
             "justMyCode": true
         },
-    
         {
             "name": "Disentanglement Evaluation",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_disentanglement_cli.py",
             "args": [
-                "--editing-model",
-                "InstructPix2Pix" // Replace with the desired editing model name
+                "--model_params_yaml",
+                "model_cfgs/diffedit.yaml" // Replace with the desired editing model name
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
