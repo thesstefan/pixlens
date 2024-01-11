@@ -187,7 +187,9 @@ def apply_mask(
         np_image.shape[2],
     ):  # Assuming image has shape [Height, Width, Channels]
         masked_image[:, :, i] = np.where(
-            ~mask, color_integer, np_image[:, :, i]
+            ~mask,
+            color_integer,
+            np_image[:, :, i],
         )
 
     return masked_image
@@ -272,7 +274,7 @@ def compute_union_segmentation_masks(masks: list[NDArray]) -> NDArray:
     if not masks:
         raise ValueError("The list of masks cannot be empty")
 
-    union_mask = masks[0]  # First type mustmask be from image 1.
+    union_mask = masks[0]
     for mask in masks[1:]:
         union_mask = np.bitwise_or(union_mask, mask)
     return union_mask
