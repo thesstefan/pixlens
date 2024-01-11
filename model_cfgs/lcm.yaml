@@ -2,11 +2,7 @@ class: LCM
 params:
     lcm_type: "SimianLuo/LCM_Dreamshaper_v7"
     num_inference_steps: 20
-    text_guidance_scale: 50
+    text_guidance_scale: 25
     device: cuda
     latent_guidance_scale: 50
     seed: 0
-
-
-
-#Best 10,30
