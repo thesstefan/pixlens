@@ -17,6 +17,7 @@ from pixlens.evaluation.interfaces import (
     EvaluationInput,
     EvaluationOutput,
 )
+from pixlens.evaluation.operations.alter_parts import AlterParts
 from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.object_removal import ObjectRemoval
@@ -216,6 +217,7 @@ def evaluate_edit(
         EditType.OBJECT_REPLACEMENT: ObjectReplacement(),
         EditType.POSITIONAL_ADDITION: PositionalAddition(),
         EditType.POSITION_REPLACEMENT: PositionReplacement(),
+        EditType.ALTER_PARTS: AlterParts(),
     }
 
     if edit.edit_type in evaluation_classes:

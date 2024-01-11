@@ -20,6 +20,7 @@ directions_and_instructions = [
     "right",
     "left",
     "below",
+    # "toppings",
 ]
 edits = list(EditType)
 new_object = ["object_addition", "object_replacement", "background", "texture"]
@@ -29,8 +30,6 @@ same_object = [
     for edit in edits
     if edit not in new_object + new_object_with_indication
 ]
-tol = 1e-6
-DIVDING_BY_ZERO_MSG = "Cannot divide by zero"
 
 
 def remove_words_from_string(
@@ -77,8 +76,8 @@ def compute_area_ratio(
 ) -> float:
     area1 = compute_area(numerator)
     area2 = compute_area(denominator)
-    if area2 < tol:
-        raise ValueError(DIVDING_BY_ZERO_MSG)
+    if not area2 > 0:
+        raise ZeroDivisionError
     return area1 / area2
 
 
@@ -254,6 +253,58 @@ def center_of_mass(segmentation_mask: torch.Tensor) -> tuple[float, float]:
     center_of_mass_x = sum_x / total_true_values
 
     return center_of_mass_y.item(), center_of_mass_x.item()
+
+
+def compute_mask_intersection(
+    whole: torch.Tensor,
+    part: torch.Tensor,
+) -> float:
+    if whole.shape != part.shape:
+        # Resize part tensor to match the shape of the whole tensor
+        part_float = (
+            F.interpolate(
+                part.float().unsqueeze(0).unsqueeze(0),
+                size=whole.shape,
+                mode="nearest",
+            )
+            .squeeze(0)
+            .squeeze(0)
+        )
+        true_threshold = 0.5
+        part = part_float > true_threshold
+
+    intersection = torch.logical_and(
+        whole,
+        part,
+    ).sum()
+    part_sum = part.sum()
+    if not part_sum > 0:
+        raise ZeroDivisionError
+    return intersection.item() / part_sum.item()
+
+
+def compute_bbox_part_whole_ratio(
+    whole_bbox: torch.Tensor,
+    part_bbox: torch.Tensor,
+) -> float:
+    # compute the intersection of the bounding boxes
+    # where each bbox is a tensor of the form
+    # [ymin, xmin, ymax, xmax]
+
+    # compute the intersection of as a ratio of the area of the intersection
+    # over the area of the whole_bbox
+    intersection = (
+        (
+            torch.min(whole_bbox[2:], part_bbox[2:])
+            - torch.max(whole_bbox[:2], part_bbox[:2])
+        )
+        .clamp(min=0)
+        .prod()
+    )
+    part_bbox_area = (part_bbox[2:] - part_bbox[:2]).prod()
+    if not part_bbox_area > 0:
+        raise ZeroDivisionError
+    return intersection.item() / part_bbox_area.item()
 
 
 def unit_vector(vector: np.ndarray) -> np.ndarray:

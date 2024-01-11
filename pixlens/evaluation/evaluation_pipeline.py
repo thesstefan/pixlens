@@ -89,10 +89,13 @@ class EvaluationPipeline:
         from_attribute = (
             None if pd.isna(edit.from_attribute) else edit.from_attribute
         )
-        edit.to_attribute = "".join(
-            char if char.isalpha() or char.isspace() else " "
-            for char in edit.to_attribute
-        )
+
+        if not pd.isna(edit.to_attribute):
+            edit.to_attribute = "".join(
+                char if char.isalpha() or char.isspace() else " "
+                for char in edit.to_attribute
+            )
+
         filtered_to_attribute = get_clean_to_attribute_for_detection(edit)
         category = "".join(
             char if char.isalpha() or char.isspace() else " "
@@ -105,7 +108,6 @@ class EvaluationPipeline:
         ]
 
         list_for_det_seg = list(set(list_for_det_seg))
-
         separator = get_separator(self.detection_model)
         prompt_for_det_seg = separator.join(list_for_det_seg)
 
@@ -115,6 +117,18 @@ class EvaluationPipeline:
                 prompt_for_det_seg,
             )
         )
+        if edit.edit_type == "alter_parts":
+            # if alter_parts, we need to do detection and segmentation
+            # on the edited image ONLY with the to_attribute
+            list_for_det_seg = [
+                filtered_to_attribute
+                if filtered_to_attribute is not None
+                else " ",
+            ]
+            list_for_det_seg = list(set(list_for_det_seg))
+            separator = get_separator(self.detection_model)
+            prompt_for_det_seg = separator.join(list_for_det_seg)
+
         edited_detection_segmentation_result = (
             self.do_detection_and_segmentation(
                 edited_image,
