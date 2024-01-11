@@ -8,9 +8,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from pixlens.detection.utils import (
-    get_detection_segmentation_result_of_target,
-)
+from pixlens.detection.utils import get_detection_segmentation_result_of_target
 from pixlens.evaluation import utils
 from pixlens.evaluation.interfaces import (
     EvaluationArtifacts,
@@ -27,6 +25,7 @@ from pixlens.visualization.plotting import figure_to_image
 class SubjectPreservationArtifacts(EvaluationArtifacts):
     sift_matches: Image.Image | None
     color_hist_plots: Image.Image | None
+    position_visualization: Image.Image | None
 
     def persist(self, save_dir: pathlib.Path) -> None:
         save_dir.mkdir(parents=True, exist_ok=True)
@@ -36,6 +35,9 @@ class SubjectPreservationArtifacts(EvaluationArtifacts):
 
         if self.color_hist_plots:
             self.color_hist_plots.save(save_dir / "color_histogram.png")
+
+        if self.position_visualization:
+            self.position_visualization.save(save_dir / "position_diff.png")
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -120,11 +122,18 @@ class SubjectPreservation(OperationEvaluation):
                 success=False,
             )
 
+        category_mask_edited = torch.Tensor(
+            utils.pad_into_shape_2d(
+                category_in_edited.segmentation_output.masks[0].cpu().numpy(),
+                category_in_input.segmentation_output.masks[0].shape,
+            ),
+        )
+
         sift_score, sift_visualization = self.compute_sift_score(
             evaluation_input.input_image,
             evaluation_input.edited_image,
             category_in_input.segmentation_output.masks[0],
-            category_in_edited.segmentation_output.masks[0],
+            category_mask_edited,
         )
 
         # TODO: Normalize this by mask size
@@ -132,25 +141,21 @@ class SubjectPreservation(OperationEvaluation):
             evaluation_input.input_image,
             evaluation_input.edited_image,
             category_in_input.segmentation_output.masks[0],
-            category_in_edited.segmentation_output.masks[0],
+            category_mask_edited,
         )
 
-        # TODO: Normalize this by image size
         position_score, position_visualization = self.compute_position_score(
             evaluation_input.input_image,
             category_in_input.segmentation_output.masks[0],
-            category_in_edited.segmentation_output.masks[0],
+            category_mask_edited,
         )
 
-        # TODO: Fix this, currently broken
-        """
         ssim_score = self.compute_ssim_score(
             evaluation_input.input_image,
             evaluation_input.edited_image,
             category_in_input.segmentation_output.masks[0],
-            category_in_edited.segmentation_output.masks[0],
+            category_mask_edited,
         )
-        """
 
         return SubjectPreservationOutput(
             success=True,
@@ -158,10 +163,11 @@ class SubjectPreservation(OperationEvaluation):
             sift_score=sift_score,
             color_score=color_score,
             position_score=position_score,
-            ssim_score=0,
+            ssim_score=ssim_score,
             artifacts=SubjectPreservationArtifacts(
                 sift_visualization,
                 color_histogram_visualization,
+                position_visualization,
             ),
         )
 
@@ -288,6 +294,17 @@ class SubjectPreservation(OperationEvaluation):
             (edited_center[0], edited_center[1]),
         )
 
-        score = np.linalg.norm(input_center - edited_center).item()
+        normalized_input_center = np.divide(
+            input_center,
+            np.squeeze(input_mask).shape,
+        )
+        normalized_edit_center = np.divide(
+            edited_center,
+            np.squeeze(edited_mask).shape,
+        )
+
+        score = np.linalg.norm(
+            normalized_input_center - normalized_edit_center,
+        ).item()
 
         return score, visualization_image

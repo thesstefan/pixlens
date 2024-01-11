@@ -304,3 +304,15 @@ def mask_iou(mask_1: torch.Tensor, mask_2: torch.Tensor) -> float:
     union = torch.logical_or(mask_1, mask_2).to(torch.int).sum()
 
     return (intersection / union).item()
+
+
+def pad_into_shape_2d(
+    array: npt.NDArray,
+    shape: tuple[int, ...],
+) -> npt.NDArray:
+    assert array.shape == len(shape) == 2  # noqa: PLR2004, S101
+
+    resized = np.zeros(shape)
+    resized[: array.shape[0], : array.shape[1]] = array
+
+    return resized
