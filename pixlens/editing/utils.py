@@ -177,7 +177,7 @@ def generate_instruction_based_prompt(edit: Edit) -> str:
         EditType.COLOR: f"Change the color of the {category} to {to_attribute}",
         EditType.SIZE: f"Change the size of the {category} to {to_attribute}",
         EditType.OBJECT_ADDITION: f"Add a {to_attribute} to the image",
-        EditType.POSITIONAL_ADDITION: f"Add a {to_attribute} the {category}",
+        EditType.POSITIONAL_ADDITION: f"Add a {to_attribute} of the {category}",  # it was without the of
         EditType.OBJECT_REMOVAL: f"Remove the {category}",
         EditType.OBJECT_REPLACEMENT: (
             f"Replace the {from_attribute} with a {to_attribute}"
