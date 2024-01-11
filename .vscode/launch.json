@@ -168,7 +168,8 @@
                 "--detection-model",
                 "groundedsam", // Replace with the desired detection model name
                 "--edit-type",
-                "color"
+                "color",
+                "--do-all-edits",
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",

@@ -219,6 +219,15 @@ def evaluate_edit(
         "Background preservation: %f",
         background_score,
     )
+    os.makedirs(f"results/{edit.edit_type}", exist_ok=True)
+    input_name = (
+        f"results/{edit.edit_type}/{background_score}{edit.edit_id}_input.png"
+    )
+    edited_name = (
+        f"results/{edit.edit_type}/{background_score}{edit.edit_id}_edited.png"
+    )
+    evaluation_input.input_image.save(input_name)
+    evaluation_input.edited_image.save(edited_name)
     evaluation_classes = {
         EditType.OBJECT_ADDITION: ObjectAddition(),
         EditType.COLOR: ColorEdit(),

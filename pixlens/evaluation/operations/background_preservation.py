@@ -14,42 +14,39 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
         input_image = evaluation_input.input_image
         edited_image = evaluation_input.edited_image
         masks = self.get_masks(evaluation_input)
-        masks = [self.mask_into_np(mask) for mask in masks]
-        target_shape = masks[0].shape
+        np_masks = [self.mask_into_np(mask) for mask in masks]
         reshaped_masks = []
-        for mask in masks:
+        for mask in np_masks:
             if mask.shape != masks[0].shape:
-                new_mask = np.zeros(target_shape, dtype=mask.dtype)
-                new_mask[
-                    : min(mask.shape[0], target_shape[0]),
-                    : min(mask.shape[1], target_shape[1]),
-                ] = mask[
-                    : min(mask.shape[0], target_shape[0]),
-                    : min(mask.shape[1], target_shape[1]),
-                ]
+                new_mask = image_utils.resize_mask(mask, np_masks[0])
                 reshaped_masks.append(new_mask)
             else:
                 reshaped_masks.append(mask)
-
         union_mask = image_utils.compute_union_segmentation_masks(
             reshaped_masks,
         )
-        return image_utils.extract_decimal_part(
+        return image_utils.get_normalized_background_score(
             1
-            - image_utils.compute_mse_over_mask(
-                input_image,
-                edited_image,
-                union_mask,
-                union_mask,
-                background=True,
+            - (
+                image_utils.compute_mse_over_mask(
+                    input_image,
+                    edited_image,
+                    union_mask,
+                    union_mask,
+                    background=True,
+                    gray_scale=False,
+                )
+                + image_utils.compute_mse_over_mask(
+                    input_image,
+                    edited_image,
+                    union_mask,
+                    union_mask,
+                    background=True,
+                    gray_scale=True,
+                )
             )
-        )  # image_utils.compute_ssim_over_mask(
-        #     input_image,
-        #     edited_image,
-        #     union_mask,
-        #     union_mask,
-        #     background=True,
-        # )*(1 - union_mask.sum() / union_mask.size) #TO MENTION IN THE PAPER
+            / 2,
+        )
 
     def get_masks(
         self,
@@ -69,6 +66,7 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
             edit_type_class.STYLE,
             edit_type_class.POSITION_REPLACEMENT,
             edit_type_class.VIEWPOINT,
+            edit_type_class.OBJECT_REMOVAL,
         ]
         masks = [torch.zeros(evaluation_input.input_image.size)]
         if edit_type in add_type:
@@ -79,7 +77,7 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
             masks += [
                 evaluation_input.edited_detection_segmentation_result.segmentation_output.masks[
                     index
-                ][0]
+                ].reshape(evaluation_input.edited_image.size)
                 for index in indices
             ]
         elif edit_type in only_category_type:
@@ -90,7 +88,7 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
             masks += [
                 evaluation_input.input_detection_segmentation_result.segmentation_output.masks[
                     index
-                ][0]
+                ].reshape(evaluation_input.input_image.size)
                 for index in indices
             ]
         else:

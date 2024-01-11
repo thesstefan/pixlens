@@ -254,20 +254,29 @@ def compute_ssim(
     return float(ssim(input_image_np, edited_image_np, channel_axis=2))
 
 
+def resize_mask(
+    mask_to_be_resized: NDArray,
+    target_mask: NDArray,
+) -> NDArray:
+    new_mask = np.zeros_like(target_mask, dtype=bool)
+    target_shape = target_mask.shape
+    new_mask[
+        : min(mask_to_be_resized.shape[0], target_shape[0]),
+        : min(mask_to_be_resized.shape[1], target_shape[1]),
+    ] = mask_to_be_resized[
+        : min(mask_to_be_resized.shape[0], target_shape[0]),
+        : min(mask_to_be_resized.shape[1], target_shape[1]),
+    ]
+    return new_mask
+
+
 def compute_union_segmentation_masks(masks: list[NDArray]) -> NDArray:
     if not masks:
         raise ValueError("The list of masks cannot be empty")
 
     union_mask = masks[0]  # First type mustmask be from image 1.
     for mask in masks[1:]:
-        if mask.shape != union_mask.shape:
-            resized_mask = np.zeros_like(union_mask, dtype=bool)
-            resized_mask[: mask.shape[0], : mask.shape[1]] = mask
-        else:
-            resized_mask = mask
-
-        union_mask = np.bitwise_or(union_mask, resized_mask)
-
+        union_mask = np.bitwise_or(union_mask, mask)
     return union_mask
 
 
@@ -311,10 +320,18 @@ def center_of_mass(segmentation_mask: torch.Tensor) -> tuple[float, float]:
     return center_of_mass_y.item(), center_of_mass_x.item()
 
 
-def flatten_and_select(np_image: NDArray, mask: NDArray) -> NDArray:
+def flatten_and_select(
+    np_image: NDArray,
+    mask: NDArray,
+    *,
+    channels: int = 3,
+) -> NDArray:
     mask = mask.astype(bool)
     # Flatten both image and mask
-    flat_image: NDArray = np_image.reshape(-1, np_image.shape[-1])
+    if channels == 1:
+        flat_image = np_image.reshape(-1)
+    else:
+        flat_image = np_image.reshape(-1, np_image.shape[-1])
     flat_mask = mask.flatten()
     return flat_image[flat_mask]
 
@@ -326,7 +343,13 @@ def compute_mse_over_mask(
     mask2: NDArray | None = None,
     *,
     background: bool = False,
+    gray_scale: bool = False,
 ) -> float:
+    channels = 3
+    if gray_scale:
+        input_image = input_image.convert("L")
+        edited_image = edited_image.convert("L")
+        channels = 1
     input_image_array = np.array(input_image)
     edited_image_array = np.array(edited_image)
 
@@ -338,41 +361,32 @@ def compute_mse_over_mask(
         edited_image_array = np.array(edited_image_resized)
     if mask2 is None:
         mask2 = mask1
-    input_image_masked = (
-        flatten_and_select(input_image_array, mask1) / 255
-    )  # normalize
-    edited_image_masked = flatten_and_select(edited_image_array, mask2) / 255
     if background:
         input_image_masked = (
-            flatten_and_select(
-                input_image_array,
-                ~mask1,
-            )
+            flatten_and_select(input_image_array, ~mask1, channels=channels)
             / 255
         )
         edited_image_masked = (
-            flatten_and_select(edited_image_array, ~mask2) / 255
+            flatten_and_select(edited_image_array, ~mask2, channels=channels)
+            / 255
         )
+    else:
+        input_image_masked = (
+            flatten_and_select(input_image_array, mask1, channels=channels)
+            / 255
+        )  # normalize
+        edited_image_masked = (
+            flatten_and_select(edited_image_array, mask2, channels=channels)
+            / 255
+        )
+
     return float(np.mean((input_image_masked - edited_image_masked) ** 2))
 
 
-def extract_decimal_part(number: float) -> float:
-    if number < 0.9:  # noqa: PLR2004
+def get_normalized_background_score(number: float) -> float:
+    if number is np.nan:
         return 0.0
-    # Convert the number to a string to work with its decimal part
-    str_number = str(number)
-
-    # Find the position of the decimal point
-    decimal_point_index = str_number.find(".")
-
-    # Extract the decimal part from the second decimal place onwards
-    if decimal_point_index != -1:
-        return float("0." + str_number[decimal_point_index + 2 :])
-    return 0.0
-
-
-def unit_vector(vector: np.ndarray) -> np.ndarray:
-    return vector / np.linalg.norm(vector)
+    return np.clip((number - 0.9) * 10, 0, 1)  # type: float
 
 
 def angle_between(v1: np.ndarray, v2: np.ndarray) -> float:
