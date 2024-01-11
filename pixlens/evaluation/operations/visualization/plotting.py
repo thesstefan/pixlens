@@ -43,7 +43,7 @@ def plot_color_histograms(
         )
 
         def describe_ax(ax: plt.Axes, color: str) -> None:
-            ax.set_xlabel("Color Bins")
+            ax.set_xlabel("Color Value")
             ax.set_ylabel("Bin Color Occurences / Image Pixel Count")
             ax.set_title(f"Color Histogram ({color}, bins={bin_count})")
 
