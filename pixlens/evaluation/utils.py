@@ -351,12 +351,12 @@ def compute_mse_over_mask(
     input_image_array = np.array(input_image)
     edited_image_array = np.array(edited_image)
 
-    if edited_image_array.shape != input_image_array.shape:
-        edited_image_resized = edited_image.resize(
-            input_image.size,
-            Image.Resampling.LANCZOS,
-        )
-        edited_image_array = np.array(edited_image_resized)
+    # if edited_image_array.shape != input_image_array.shape:
+    #     edited_image_resized = edited_image.resize(
+    #         input_image.size,
+    #         Image.Resampling.LANCZOS,
+    #     )
+    #     edited_image_array = np.array(edited_image_resized)
     if mask2 is None:
         mask2 = mask1
     if background:
@@ -383,7 +383,7 @@ def compute_mse_over_mask(
 
 def get_normalized_background_score(number: float) -> float:
     if number is np.nan:
-        return 0.0
+        return -1
     return np.clip((number - 0.9) * 10, 0, 1)  # type: float
 
 

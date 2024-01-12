@@ -1,19 +1,71 @@
+import dataclasses
+import pathlib
+import pprint
+
 import numpy as np
 import torch
 from numpy.typing import NDArray
+from PIL import Image
 
 from pixlens.evaluation import interfaces as evaluation_interfaces
 from pixlens.evaluation import utils as image_utils
+from pixlens.visualization import annotation
 
 
-class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
+@dataclasses.dataclass
+class BackgroundPreservationArtifacts(
+    evaluation_interfaces.EvaluationArtifacts,
+):
+    union_mask_input: Image.Image | None
+    union_mask_edited: Image.Image | None
+
+    def persist(self, save_dir: pathlib.Path) -> None:
+        save_dir.mkdir(parents=True, exist_ok=True)
+
+        if self.union_mask_input:
+            self.union_mask_input.save(
+                save_dir / "background_union_mask_input.png",
+            )
+        if self.union_mask_edited:
+            self.union_mask_edited.save(
+                save_dir / "background_union_mask_edited.png",
+            )
+
+
+@dataclasses.dataclass(kw_only=True)
+class BackgroundPreservationOutput(evaluation_interfaces.EvaluationOutput):
+    background_score: float = 0.0
+
+    def persist(self, save_dir: pathlib.Path) -> None:
+        save_dir = save_dir / "background_preservation"
+        save_dir.mkdir(parents=True, exist_ok=True)
+
+        score_summary = {
+            "success": self.success,
+            "background_score": self.background_score,
+        }
+        json_str = pprint.pformat(score_summary, compact=True).replace("'", '"')
+        score_json_path = save_dir / "scores.json"
+
+        with score_json_path.open("w") as score_json:
+            score_json.write(json_str)
+
+        if self.artifacts:
+            self.artifacts.persist(save_dir)
+
+
+class BackgroundPreservation(evaluation_interfaces.OperationEvaluation):
     def evaluate_edit(
         self,
         evaluation_input: evaluation_interfaces.EvaluationInput,
-        precomputed_evaluation_output: evaluation_interfaces.EvaluationOutput,
-    ) -> None:
+    ) -> BackgroundPreservationOutput:
         input_image = evaluation_input.input_image
         edited_image = evaluation_input.edited_image
+        if input_image.size != edited_image.size:
+            edited_image = edited_image.resize(
+                input_image.size,
+                Image.Resampling.LANCZOS,
+            )
         masks = self.get_masks(evaluation_input)
         np_masks = [self.mask_into_np(mask) for mask in masks]
         reshaped_masks = []
@@ -26,7 +78,7 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
         union_mask = image_utils.compute_union_segmentation_masks(
             reshaped_masks,
         )
-        return image_utils.get_normalized_background_score(
+        score = image_utils.get_normalized_background_score(
             1
             - (
                 image_utils.compute_mse_over_mask(
@@ -47,6 +99,34 @@ class BackgroundPreservation(evaluation_interfaces.GeneralEvaluation):
                 )
             )
             / 2,
+        )
+        if score == -1:
+            return BackgroundPreservationOutput(
+                success=False,
+                edit_specific_score=0,
+            )
+        return BackgroundPreservationOutput(
+            success=True,
+            edit_specific_score=0,
+            background_score=score,
+            artifacts=BackgroundPreservationArtifacts(
+                union_mask_input=annotation.annotate_mask(
+                    masks=torch.tensor(union_mask).view(
+                        [1, 1, union_mask.shape[1], union_mask.shape[0]],
+                    ),
+                    image=input_image,
+                    mask_alpha=1,
+                    color_mask=np.array([0, 0, 0]),
+                ),
+                union_mask_edited=annotation.annotate_mask(
+                    masks=torch.tensor(union_mask).view(
+                        [1, 1, union_mask.shape[1], union_mask.shape[0]],
+                    ),
+                    image=edited_image,
+                    mask_alpha=1,
+                    color_mask=np.array([0, 0, 0]),
+                ),
+            ),
         )
 
     def get_masks(
