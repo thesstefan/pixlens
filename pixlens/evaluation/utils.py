@@ -168,16 +168,27 @@ def color_change_applied_correctly(
     return target_color in [color[0] for color in closest_colors]
 
 
-def apply_mask(np_image: NDArray, mask: NDArray) -> NDArray:
+def apply_mask(
+    np_image: NDArray,
+    mask: NDArray,
+    *,
+    color_integer: int = 0,
+) -> NDArray:
     # Ensure the mask is a boolean array
     mask = mask.astype(bool)
+    if mask.shape != np_image.shape[:2]:
+        mask = mask.T
 
     # Apply the mask to each channel
     masked_image = np.zeros_like(np_image)
     for i in range(
         np_image.shape[2],
     ):  # Assuming image has shape [Height, Width, Channels]
-        masked_image[:, :, i] = np_image[:, :, i] * mask
+        masked_image[:, :, i] = np.where(
+            ~mask,
+            color_integer,
+            np_image[:, :, i],
+        )
 
     return masked_image
 
@@ -199,15 +210,30 @@ def compute_ssim_over_mask(
             Image.Resampling.LANCZOS,
         )
         edited_image_array = np.array(edited_image_resized)
-
-    if mask2 is None:
-        mask2 = mask1
+        if mask2 is None:
+            mask2 = mask1
     input_image_masked = apply_mask(input_image_array, mask1)
     edited_image_masked = apply_mask(edited_image_array, mask2)
     if background:
         input_image_masked = apply_mask(input_image_array, ~mask1)
         edited_image_masked = apply_mask(edited_image_array, ~mask2)
-
+        edited_malicious_masked = apply_mask(
+            edited_image_array,
+            ~mask2,
+            opposite_color=True,
+        )
+        return (
+            float(
+                ssim(input_image_masked, edited_image_masked, channel_axis=2),
+            )
+            + float(
+                ssim(
+                    input_image_masked,
+                    edited_malicious_masked,
+                    channel_axis=2,
+                ),
+            )
+        ) / 2
     return float(ssim(input_image_masked, edited_image_masked, channel_axis=2))
 
 
@@ -224,6 +250,41 @@ def compute_ssim(
         edited_image_np = np.array(edited_image_resized)
 
     return float(ssim(input_image_np, edited_image_np, channel_axis=2))
+
+
+def resize_mask(
+    mask_to_be_resized: NDArray,
+    target_mask: NDArray,
+) -> NDArray:
+    new_mask = np.zeros_like(target_mask, dtype=bool)
+    target_shape = target_mask.shape
+    new_mask[
+        : min(mask_to_be_resized.shape[0], target_shape[0]),
+        : min(mask_to_be_resized.shape[1], target_shape[1]),
+    ] = mask_to_be_resized[
+        : min(mask_to_be_resized.shape[0], target_shape[0]),
+        : min(mask_to_be_resized.shape[1], target_shape[1]),
+    ]
+    return new_mask
+
+
+def compute_union_segmentation_masks(masks: list[NDArray]) -> NDArray:
+    if not masks:
+        raise ValueError("The list of masks cannot be empty")
+
+    union_mask = masks[0]
+    for mask in masks[1:]:
+        union_mask = np.bitwise_or(union_mask, mask)
+    return union_mask
+
+
+def find_word_indices(
+    word_list: list[str],
+    target_word: str,
+) -> list[int | None]:
+    return [
+        index for index, word in enumerate(word_list) if word == target_word
+    ]
 
 
 def center_of_mass(segmentation_mask: torch.Tensor) -> tuple[float, float]:
@@ -255,6 +316,75 @@ def center_of_mass(segmentation_mask: torch.Tensor) -> tuple[float, float]:
     center_of_mass_x = sum_x / total_true_values
 
     return center_of_mass_y.item(), center_of_mass_x.item()
+
+
+def flatten_and_select(
+    np_image: NDArray,
+    mask: NDArray,
+    *,
+    channels: int = 3,
+) -> NDArray:
+    mask = mask.astype(bool)
+    # Flatten both image and mask
+    if channels == 1:
+        flat_image = np_image.reshape(-1)
+    else:
+        flat_image = np_image.reshape(-1, np_image.shape[-1])
+    flat_mask = mask.flatten()
+    return flat_image[flat_mask]
+
+
+def compute_mse_over_mask(
+    input_image: Image.Image,
+    edited_image: Image.Image,
+    mask1: NDArray,
+    mask2: NDArray | None = None,
+    *,
+    background: bool = False,
+    gray_scale: bool = False,
+) -> float:
+    channels = 3
+    if gray_scale:
+        input_image = input_image.convert("L")
+        edited_image = edited_image.convert("L")
+        channels = 1
+    input_image_array = np.array(input_image)
+    edited_image_array = np.array(edited_image)
+
+    # if edited_image_array.shape != input_image_array.shape:
+    #     edited_image_resized = edited_image.resize(
+    #         input_image.size,
+    #         Image.Resampling.LANCZOS,
+    #     )
+    #     edited_image_array = np.array(edited_image_resized)
+    if mask2 is None:
+        mask2 = mask1
+    if background:
+        input_image_masked = (
+            flatten_and_select(input_image_array, ~mask1, channels=channels)
+            / 255
+        )
+        edited_image_masked = (
+            flatten_and_select(edited_image_array, ~mask2, channels=channels)
+            / 255
+        )
+    else:
+        input_image_masked = (
+            flatten_and_select(input_image_array, mask1, channels=channels)
+            / 255
+        )  # normalize
+        edited_image_masked = (
+            flatten_and_select(edited_image_array, mask2, channels=channels)
+            / 255
+        )
+
+    return float(np.mean((input_image_masked - edited_image_masked) ** 2))
+
+
+def get_normalized_background_score(number: float) -> float:
+    if number is np.nan:
+        return -1
+    return np.clip((number - 0.9) * 10, 0, 1)  # type: float
 
 
 def compute_mask_intersection(
@@ -309,8 +439,73 @@ def compute_bbox_part_whole_ratio(
     return intersection.item() / part_bbox_area.item()
 
 
-def unit_vector(vector: np.ndarray) -> np.ndarray:
-    return vector / np.linalg.norm(vector)
+def flatten_and_select(
+    np_image: NDArray,
+    mask: NDArray,
+    *,
+    channels: int = 3,
+) -> NDArray:
+    mask = mask.astype(bool)
+    # Flatten both image and mask
+    if channels == 1:
+        flat_image = np_image.reshape(-1)
+    else:
+        flat_image = np_image.reshape(-1, np_image.shape[-1])
+    flat_mask = mask.flatten()
+    return flat_image[flat_mask]
+
+
+def compute_mse_over_mask(
+    input_image: Image.Image,
+    edited_image: Image.Image,
+    mask1: NDArray,
+    mask2: NDArray | None = None,
+    *,
+    background: bool = False,
+    gray_scale: bool = False,
+) -> float:
+    channels = 3
+    if gray_scale:
+        input_image = input_image.convert("L")
+        edited_image = edited_image.convert("L")
+        channels = 1
+    input_image_array = np.array(input_image)
+    edited_image_array = np.array(edited_image)
+
+    if edited_image_array.shape != input_image_array.shape:
+        edited_image_resized = edited_image.resize(
+            input_image.size,
+            Image.Resampling.LANCZOS,
+        )
+        edited_image_array = np.array(edited_image_resized)
+    if mask2 is None:
+        mask2 = mask1
+    if background:
+        input_image_masked = (
+            flatten_and_select(input_image_array, ~mask1, channels=channels)
+            / 255
+        )
+        edited_image_masked = (
+            flatten_and_select(edited_image_array, ~mask2, channels=channels)
+            / 255
+        )
+    else:
+        input_image_masked = (
+            flatten_and_select(input_image_array, mask1, channels=channels)
+            / 255
+        )  # normalize
+        edited_image_masked = (
+            flatten_and_select(edited_image_array, mask2, channels=channels)
+            / 255
+        )
+
+    return float(np.mean((input_image_masked - edited_image_masked) ** 2))
+
+
+def get_normalized_background_score(number: float) -> float:
+    if number is np.nan:
+        return 0.0
+    return np.clip((number - 0.9) * 10, 0, 1)  # type: float
 
 
 def angle_between(v1: np.ndarray, v2: np.ndarray) -> float:

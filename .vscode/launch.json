@@ -142,12 +142,29 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--edit-id",
-                "0", // Replace with the desired edit ID
+                "--edit-type",
+                "object_addition", // Replace with the desired edit ID / edit type
                 "--editing-model",
                 "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
-                "groundedsam" // Replace with the desired detection model name
+                "groundedsam", // Replace with the desired detection model name
+                "--do-all-edits", // Optional: If you want to run all edits for the given edit type 
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        },
+        {
+            "name": "Disentanglement Evaluation",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_disentanglement_cli.py",
+            "args": [
+                "--model_params_yaml",
+                "model_cfgs/diffedit.yaml" // Replace with the desired editing model name
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
@@ -178,12 +195,13 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--editing-model",
-                "instructpix2pix", // Replace with the desired editing model name
-                "--detection-model",
-                "groundedsam", // Replace with the desired detection model name
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
                 "--edit-type",
                 "color",
+                "--do-all-edits",
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",

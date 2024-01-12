@@ -17,7 +17,7 @@ class ColorEdit(evaluation_interfaces.OperationEvaluation):
                 "present at input",
             )
             return evaluation_interfaces.EvaluationOutput(
-                score=-1.0,
+                edit_specific_score=-1.0,
                 success=False,
             )  # Object wasn't even present at input
         if edit_segmentation.masks.any().item():
@@ -31,10 +31,10 @@ class ColorEdit(evaluation_interfaces.OperationEvaluation):
                 target_color=target_color,
             ):
                 return evaluation_interfaces.EvaluationOutput(
-                    score=1.0,
+                    edit_specific_score=1.0,
                     success=True,
                 )
         return evaluation_interfaces.EvaluationOutput(
-            score=0.0,
+            edit_specific_score=0.0,
             success=True,
         )  # Object wasn't present at output or color was not changed correctly

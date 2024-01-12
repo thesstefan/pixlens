@@ -2,6 +2,7 @@ import argparse
 import logging
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import torch
 
 from pixlens.detection import load_detect_segment_model_from_yaml
@@ -16,6 +17,9 @@ from pixlens.evaluation.interfaces import (
     OperationEvaluation,
 )
 from pixlens.evaluation.operations.alter_parts import AlterParts
+from pixlens.evaluation.operations.background_preservation import (
+    BackgroundPreservation,
+)
 from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.object_removal import ObjectRemoval
@@ -179,19 +183,38 @@ def evaluate_edits(
 
 def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
     subject_preservation = SubjectPreservation(sift_min_matches=5)
-
+    background_preservation = BackgroundPreservation()
     return {
-        EditType.COLOR: [subject_preservation],
-        EditType.SIZE: [SizeEdit(), subject_preservation],
+        EditType.COLOR: [
+            subject_preservation,
+            background_preservation,
+        ],
+        EditType.SIZE: [
+            SizeEdit(),
+            subject_preservation,
+            background_preservation,
+        ],
         EditType.POSITION_REPLACEMENT: [
             PositionReplacement(),
             subject_preservation,
+            background_preservation,
         ],
-        EditType.POSITIONAL_ADDITION: [PositionalAddition()],
-        EditType.OBJECT_ADDITION: [ObjectAddition()],
-        EditType.OBJECT_REMOVAL: [ObjectRemoval()],
-        EditType.OBJECT_REPLACEMENT: [ObjectReplacement()],
-        EditType.ALTER_PARTS: [AlterParts()],
+        EditType.POSITIONAL_ADDITION: [
+            PositionalAddition(),
+            background_preservation,
+        ],
+        EditType.OBJECT_ADDITION: [
+            ObjectAddition(),
+            background_preservation,
+        ],
+        EditType.OBJECT_REMOVAL: [
+            ObjectRemoval(),
+            background_preservation,
+        ],
+        EditType.OBJECT_REPLACEMENT: [
+            ObjectReplacement(),
+            background_preservation,
+        ],
     }
 
 
