@@ -16,7 +16,6 @@ from pixlens.evaluation.interfaces import (
     EditType,
     OperationEvaluation,
 )
-
 from pixlens.evaluation.operations.alter_parts import AlterParts
 from pixlens.evaluation.operations.background_preservation import (
     BackgroundPreservation,
