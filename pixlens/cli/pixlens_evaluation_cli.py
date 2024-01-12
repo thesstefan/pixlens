@@ -15,7 +15,6 @@ from pixlens.evaluation.interfaces import (
     EditType,
     OperationEvaluation,
 )
-from pixlens.evaluation.operations.alter_parts import AlterParts
 from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.object_removal import ObjectRemoval
@@ -181,7 +180,7 @@ def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
     subject_preservation = SubjectPreservation(sift_min_matches=5)
 
     return {
-        EditType.COLOR: [subject_preservation],
+        EditType.COLOR: [ColorEdit(), subject_preservation],
         EditType.SIZE: [SizeEdit(), subject_preservation],
         EditType.POSITION_REPLACEMENT: [
             PositionReplacement(),
