@@ -80,16 +80,6 @@ class InstructPix2Pix(interfaces.PromptableImageEditingModel):
             "seed": self.seed,
         }
 
-    @property
-    def params_dict(self) -> dict[str, str | bool | int | float]:
-        return {
-            "device": str(self.device),
-            "instruct_pix2pix_type": str(self.instruct_pix2pix_type),
-            "num_inference_steps": self.num_inference_steps,
-            "image_guidance_scale": self.image_guidance_scale,
-            "text_guidance_scale": self.text_guidance_scale,
-        }
-
     def edit_image(
         self,
         prompt: str,
