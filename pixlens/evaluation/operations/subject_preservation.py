@@ -120,6 +120,14 @@ class SubjectPreservation(OperationEvaluation):
             evaluation_input.input_detection_segmentation_result,
             category,
         )
+
+        if len(category_in_input.detection_output.phrases) == 0:
+            logging.warning("No %s detected in the input image", category)
+            return SubjectPreservationOutput(
+                edit_specific_score=0,
+                success=False,
+            )
+
         selected_category_idx_in_input = select_one_2d(
             category_in_input.segmentation_output.masks.cpu().numpy(),
             self.category_input_resolution,
@@ -140,6 +148,14 @@ class SubjectPreservation(OperationEvaluation):
             evaluation_input.edited_detection_segmentation_result,
             category,
         )
+
+        if len(category_in_edited.detection_output.phrases) == 0:
+            logging.warning("No %s detected in edited image", category)
+            return SubjectPreservationOutput(
+                edit_specific_score=0,
+                success=False,
+            )
+
         selected_category_idx_in_edited_idx = select_one_2d(
             category_in_edited.segmentation_output.masks.cpu().numpy(),
             self.category_edited_resolution,
@@ -155,20 +171,6 @@ class SubjectPreservation(OperationEvaluation):
             .cpu()
             .numpy(),
         )
-
-        if len(category_in_input.detection_output.phrases) == 0:
-            logging.warning("No %s detected in the input image", category)
-            return SubjectPreservationOutput(
-                edit_specific_score=0,
-                success=False,
-            )
-
-        if len(category_in_edited.detection_output.phrases) == 0:
-            logging.warning("No %s detected in edited image", category)
-            return SubjectPreservationOutput(
-                edit_specific_score=0,
-                success=False,
-            )
 
         padded_category_mask_edited = utils.pad_into_shape_2d(
             category_mask_edited,
