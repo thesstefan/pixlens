@@ -47,7 +47,7 @@ class EvaluationPipeline:
         prompt = model.generate_prompt(edit)
         edit_path = Path(
             get_cache_dir(),
-            "models--" + model.get_model_name(),
+            model.model_id,
             f"000000{edit.image_id!s:>06}",
             prompt,
         )
@@ -109,7 +109,6 @@ class EvaluationPipeline:
         ]
 
         list_for_det_seg = list(set(list_for_det_seg))
-
         separator = get_separator(self.detection_model)
         prompt_for_det_seg = separator.join(list_for_det_seg)
 
@@ -119,6 +118,18 @@ class EvaluationPipeline:
                 prompt_for_det_seg,
             )
         )
+        if edit.edit_type == "alter_parts":
+            # if alter_parts, we need to do detection and segmentation
+            # on the edited image ONLY with the to_attribute
+            list_for_det_seg = [
+                filtered_to_attribute
+                if filtered_to_attribute is not None
+                else " ",
+            ]
+            list_for_det_seg = list(set(list_for_det_seg))
+            separator = get_separator(self.detection_model)
+            prompt_for_det_seg = separator.join(list_for_det_seg)
+
         edited_detection_segmentation_result = (
             self.do_detection_and_segmentation(
                 edited_image,

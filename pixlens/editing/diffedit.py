@@ -60,6 +60,12 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
             "seed": self.seed,
         }
 
+    @property
+    def params_dict(self) -> dict[str, str | bool | int | float]:
+        return {
+            "device": str(self.device),
+        }
+
     def edit_image(
         self,
         prompt: str,

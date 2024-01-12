@@ -2,5 +2,5 @@ class: OwlViTSAM
 params:
     owlvit_type: google/owlvit-large-patch14
     sam_type: vit_h
-    detection_confidence_threshold: 0.3
+    detection_confidence_threshold: 0.1
     device: cuda

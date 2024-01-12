@@ -75,6 +75,16 @@ class LCM(interfaces.PromptableImageEditingModel):
             "latent_guidance_scale": self.latent_guidance_scale,
         }
 
+    @property
+    def params_dict(self) -> dict[str, str | bool | int | float]:
+        return {
+            "device": str(self.device),
+            "lcm_type": str(self.lcm_type),
+            "num_inference_steps": self.num_inference_steps,
+            "image_guidance_scale": self.image_guidance_scale,
+            "text_guidance_scale": self.text_guidance_scale,
+        }
+
     def edit_image(
         self,
         prompt: str,

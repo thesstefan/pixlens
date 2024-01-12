@@ -1,6 +1,7 @@
 import dataclasses
 import enum
 from typing import Protocol
+import pathlib
 
 from PIL import Image
 
@@ -25,13 +26,25 @@ class EditType(enum.StrEnum):
     ALTER_PARTS = "alter_parts"
 
 
-@dataclasses.dataclass
-class EvaluationOutput:
-    edit_specific_score: float
+class Persistable(Protocol):
+    def persist(self, save_dir: pathlib.Path) -> None:
+        ...
+
+
+class EvaluationArtifacts(Persistable):
+    ...
+
+
+@dataclasses.dataclass(kw_only=True)
+class EvaluationOutput(Persistable):
     success: bool
+    edit_specific_score: float
     ssim_score: float | None = None
-    background_preservation_score_mse: float | None = None
-    background_preservation_score_ssim: float | None = None
+    artifacts: EvaluationArtifacts | None = None
+
+    def persist(self, save_dir: pathlib.Path) -> None:
+        if self.artifacts:
+            self.artifacts.persist(save_dir)
 
 
 @dataclasses.dataclass
