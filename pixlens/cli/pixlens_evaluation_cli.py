@@ -191,6 +191,7 @@ def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
         EditType.OBJECT_ADDITION: [ObjectAddition()],
         EditType.OBJECT_REMOVAL: [ObjectRemoval()],
         EditType.OBJECT_REPLACEMENT: [ObjectReplacement()],
+        EditType.ALTER_PARTS: [AlterParts()],
     }
 
 
