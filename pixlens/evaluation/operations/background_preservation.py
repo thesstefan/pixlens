@@ -1,4 +1,5 @@
 import dataclasses
+import json
 import pathlib
 import pprint
 
@@ -44,7 +45,7 @@ class BackgroundPreservationOutput(evaluation_interfaces.EvaluationOutput):
             "success": self.success,
             "background_score": self.background_score,
         }
-        json_str = pprint.pformat(score_summary, compact=True).replace("'", '"')
+        json_str = json.dumps(score_summary, indent=4)
         score_json_path = save_dir / "scores.json"
 
         with score_json_path.open("w") as score_json:

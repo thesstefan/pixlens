@@ -20,7 +20,7 @@ def size_change_applied_correctly(
             numerator=output_mask,
             denominator=input_mask,
         ) < (1 - minimum_required_change)
-    if direction == "big":
+    if direction == "large":
         return compute_area_ratio(
             numerator=output_mask,
             denominator=input_mask,

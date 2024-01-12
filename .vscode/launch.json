@@ -216,13 +216,14 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--editing-model",
-                "instructpix2pix", // Replace with the desired editing model name
-                "--detection-model",
-                "groundedsam", // Replace with the desired detection model name
+                "--edit-id",
+                "535",
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
                 "--edit-type",
                 "size",
-                "--do-all-edits",
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
@@ -237,10 +238,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--editing-model",
-                "instructpix2pix", // Replace with the desired editing model name
-                "--detection-model",
-                "groundedsam", // Replace with the desired detection model name
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
                 "--edit-type",
                 "object_removal",
                 "--do-all-edits",
@@ -258,10 +259,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--editing-model",
-                "instructpix2pix", // Replace with the desired editing model name
-                "--detection-model",
-                "groundedsam", // Replace with the desired detection model name
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
                 "--edit-type",
                 "object_replacement",
                 "--do-all-edits",
@@ -279,10 +280,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--editing-model",
-                "instructpix2pix", // Replace with the desired editing model name
-                "--detection-model",
-                "groundedsam", // Replace with the desired detection model name
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
                 "--edit-type",
                 "positional_addition",
                 "--do-all-edits",
@@ -300,10 +301,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--editing-model",
-                "instructpix2pix", // Replace with the desired editing model name
-                "--detection-model",
-                "groundedsam", // Replace with the desired detection model name
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
                 "--edit-type",
                 "position_replacement",
                 "--do-all-edits",
@@ -321,10 +322,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--editing-model",
-                "instructpix2pix", // Replace with the desired editing model name
-                "--detection-model",
-                "groundedsam", // Replace with the desired detection model name
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
                 "--edit-type",
                 "alter_parts",
                 "--do-all-edits",
