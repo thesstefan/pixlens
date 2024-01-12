@@ -126,14 +126,14 @@ class SubjectPreservation(OperationEvaluation):
             confidences=category_in_input.detection_output.logits.cpu().numpy(),
             relative_mask=None,
         )
-        category_mask_input = (
+        category_mask_input = np.squeeze(
             (
                 category_in_input.segmentation_output.masks[
                     selected_category_idx_in_input
                 ]
             )
             .cpu()
-            .numpy()
+            .numpy(),
         )
 
         category_in_edited = get_detection_segmentation_result_of_target(
@@ -143,17 +143,17 @@ class SubjectPreservation(OperationEvaluation):
         selected_category_idx_in_edited_idx = select_one_2d(
             category_in_edited.segmentation_output.masks.cpu().numpy(),
             self.category_edited_resolution,
-            confidences=category_in_input.detection_output.logits.cpu().numpy(),
+            confidences=category_in_edited.detection_output.logits.cpu().numpy(),
             relative_mask=category_mask_input,
         )
-        category_mask_edited = (
+        category_mask_edited = np.squeeze(
             (
                 category_in_edited.segmentation_output.masks[
                     selected_category_idx_in_edited_idx
                 ]
             )
             .cpu()
-            .numpy()
+            .numpy(),
         )
 
         if len(category_in_input.detection_output.phrases) == 0:

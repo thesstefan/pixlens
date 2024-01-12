@@ -14,16 +14,20 @@ class MultiplicityResolution(enum.StrEnum):
 
 
 def select_largest_2d(masks_2d: npt.NDArray) -> int:
-    assert len(np.squeeze(masks_2d)) == 3  # noqa: S101, PLR2004
+    assert len(masks_2d.shape) in [3, 4]  # noqa: S101
+
+    if len(masks_2d.shape) == 4:  # noqa: PLR2004
+        masks_2d = np.squeeze(masks_2d, axis=1)
 
     return np.argmax(np.count_nonzero(masks_2d, axis=(-2, -1))).item()
 
 
 def select_closest_2d(masks_2d: npt.NDArray, relative: npt.NDArray) -> int:
     # TODO: Update center_of_mass to use np arrays and not depend on shape
+    # TODO: Make this take a relative point instead
 
-    assert len(np.squeeze(masks_2d)) == 3  # noqa: S101, PLR2004
-    assert len(np.squeeze(relative)) == 2  # noqa: S101, PLR2004
+    assert len(masks_2d.shape) in [3, 4]  # noqa: S101
+    assert len(relative.shape) in [2, 3]  # noqa: S101
 
     if len(masks_2d.shape) == 3:  # noqa: PLR2004
         masks_2d = np.expand_dims(masks_2d, 1)
@@ -36,7 +40,7 @@ def select_closest_2d(masks_2d: npt.NDArray, relative: npt.NDArray) -> int:
         np.array(center_of_mass(torch.Tensor(mask))) for mask in masks_2d
     ]
 
-    return np.argmax(
+    return np.argmin(
         [
             np.linalg.norm(mask_center - relative_center)
             for mask_center in mask_centers
@@ -56,13 +60,13 @@ def select_one_2d(
         case MultiplicityResolution.LARGEST:
             return select_largest_2d(masks_2d)
         case MultiplicityResolution.MOST_CONFIDENT:
-            assert confidences  # noqa: S101
+            assert confidences is not None  # noqa: S101
             assert len(masks_2d) == len(confidences)  # noqa: S101
             assert len(confidences.shape) == 1  # noqa: S101
 
             return np.argmax(confidences).item()
         case MultiplicityResolution.CLOSEST:
-            assert relative_mask  # noqa: S101
+            assert relative_mask is not None  # noqa: S101
 
             return select_closest_2d(masks_2d, relative_mask)
         case _:
