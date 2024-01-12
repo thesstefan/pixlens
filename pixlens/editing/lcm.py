@@ -3,6 +3,7 @@ import enum
 import torch
 from diffusers import AutoPipelineForImage2Image
 from PIL import Image
+from torch._tensor import Tensor
 
 from pixlens.editing import interfaces
 from pixlens.editing.utils import (
@@ -50,12 +51,29 @@ class LCM(interfaces.PromptableImageEditingModel):
         num_inference_steps: int = 10,
         image_guidance_scale: float = 1.0,
         text_guidance_scale: float = 7.5,
+        seed: int = 0,
+        latent_guidance_scale: float = 25,
     ) -> None:
         self.device = device
+        self.lcm_type = lcm_type
         self.model = load_lcm(lcm_type, device)
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
         self.text_guidance_scale = text_guidance_scale
+        self.seed = seed
+        self.latent_guidance_scale = latent_guidance_scale
+
+    @property
+    def params_dict(self) -> dict[str, str | bool | int | float]:
+        return {
+            "device": str(self.device),
+            "lcm_type": str(self.lcm_type),
+            "num_inference_steps": self.num_inference_steps,
+            "image_guidance_scale": self.image_guidance_scale,
+            "text_guidance_scale": self.text_guidance_scale,
+            "seed": self.seed,
+            "latent_guidance_scale": self.latent_guidance_scale,
+        }
 
     @property
     def params_dict(self) -> dict[str, str | bool | int | float]:
@@ -83,7 +101,22 @@ class LCM(interfaces.PromptableImageEditingModel):
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
             guidance_scale=self.text_guidance_scale,
+            generator=torch.manual_seed(self.seed),
         ).images[0]
+
+    def get_latent(self, prompt: str, image_path: str) -> Tensor:
+        input_image = Image.open(image_path)
+        output = self.model(
+            prompt,
+            input_image,
+            num_inference_steps=self.num_inference_steps,
+            image_guidance_scale=self.image_guidance_scale,
+            output_type="latent",
+            generator=torch.manual_seed(self.seed),
+            guidance_scale=self.latent_guidance_scale,
+        )
+        output_images: list[torch.Tensor] = output.images
+        return output_images[0]
 
     @property
     def prompt_type(self) -> interfaces.ImageEditingPromptType:

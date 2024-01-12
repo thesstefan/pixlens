@@ -67,6 +67,8 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         num_inference_steps: int = 100,
         image_guidance_scale: float = 1.0,
         text_guidance_scale: float = 7.0,
+        seed: int = 0,
+        latent_guidance_scale: float = 25,
     ) -> None:
         self.model = load_controlnet(controlnet_type, device)
         self.device = device
@@ -74,6 +76,20 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
         self.text_guidance_scale = text_guidance_scale
+        self.latent_guidance_scale = latent_guidance_scale
+        self.seed = seed
+
+    @property
+    def params_dict(self) -> dict[str, str | bool | int | float]:
+        return {
+            "device": str(self.device),
+            "controlnet_type": str(self.controlnet_type),
+            "num_inference_steps": self.num_inference_steps,
+            "image_guidance_scale": self.image_guidance_scale,
+            "text_guidance_scale": self.text_guidance_scale,
+            "latent_guidance_scale": self.latent_guidance_scale,
+            "seed": self.seed,
+        }
 
     @property
     def params_dict(self) -> dict[str, str | bool | int | float]:
@@ -105,7 +121,6 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         edit_info: Edit | None = None,
     ) -> Image.Image:
         del edit_info
-
         input_image = self.prepare_image(image_path)
         return self.model(  # type: ignore[no-any-return]
             prompt,
@@ -113,7 +128,19 @@ class ControlNet(interfaces.PromptableImageEditingModel):
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
             guidance_scale=self.text_guidance_scale,
-            generator=torch.manual_seed(0),
+            generator=torch.manual_seed(self.seed),
+        ).images[0]
+
+    def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
+        input_image = self.prepare_image(image_path)
+        return self.model(  # type: ignore[no-any-return]
+            prompt,
+            input_image,
+            num_inference_steps=100,
+            image_guidance_scale=1.0,
+            output_type="latent",
+            guidance_scale=self.latent_guidance_scale,
+            generator=torch.manual_seed(self.seed),
         ).images[0]
 
     @property

@@ -1,0 +1,56 @@
+{
+    "objects": [
+        "chair",
+        "bowl",
+        "plate",
+        "nail",
+        "bucket",
+        "backpack",
+        "book",
+        "ball",
+        "clock",
+        "donut"
+    ],
+    "texture": [
+        "steel",
+        "wood",
+        "glass",
+        "plastic",
+        "wool",
+        "cotton",
+        "silk"
+    ],
+    "color": [
+        "verdant",
+        "red",
+        "azure",
+        "green",
+        "gold",
+        "purple",
+        "black",
+        "pink"
+    ],
+    "style": [
+        "vintage",
+        "modern",
+        "abstract",
+        "realistic",
+        "cartoon",
+        "surreal",
+        "expressionist",
+        "futuristic",
+        "retro"
+    ],
+    "pattern": [
+        "striped",
+        "polka dot",
+        "plaid",
+        "paisley",
+        "floral",
+        "geometric",
+        "abstract",
+        "animal print",
+        "checkered",
+        "herringbone"
+    ]
+}

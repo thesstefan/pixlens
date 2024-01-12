@@ -44,9 +44,21 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
     def __init__(
         self,
         device: torch.device | None = None,
+        latent_guidance_scale: float = 25.0,
+        seed: int = 0,
     ) -> None:
         self.device = device
         self.model = load_diffedit(self.get_model_name(), device)
+        self.latent_guidance_scale = latent_guidance_scale
+        self.seed = seed
+
+    @property
+    def params_dict(self) -> dict[str, str | bool | int | float]:
+        return {
+            "device": str(self.device),
+            "latent_guidance_scale": self.latent_guidance_scale,
+            "seed": self.seed,
+        }
 
     @property
     def params_dict(self) -> dict[str, str | bool | int | float]:
@@ -79,6 +91,30 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
             mask_image=mask_image,
             image_latents=inv_latents,
             negative_prompt=source_prompt,
+            generator=torch.manual_seed(self.seed),
+        ).images[0]
+
+    def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
+        source_prompt, target_prompt = prompt.split("[SEP]")
+        input_image = Image.open(image_path)
+        mask_image = self.model.generate_mask(  # type: ignore[attr-defined]
+            image=input_image,
+            source_prompt=source_prompt,
+            target_prompt=target_prompt,
+        )
+        inv_latents = self.model.invert(  # type: ignore[attr-defined]
+            prompt=source_prompt,
+            image=input_image,
+        ).latents
+
+        return self.model(  # type: ignore[operator, no-any-return]
+            prompt=target_prompt,
+            mask_image=mask_image,
+            image_latents=inv_latents,
+            negative_prompt=source_prompt,
+            output_type="latent",
+            guidance_scale=self.latent_guidance_scale,
+            generator=torch.manual_seed(self.seed),
         ).images[0]
 
     @property
