@@ -70,10 +70,9 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         seed: int = 0,
         latent_guidance_scale: float = 25,
     ) -> None:
-        self.device = device
-        self.controlnet_type = controlnet_type
         self.model = load_controlnet(controlnet_type, device)
         self.device = device
+        self.controlnet_type = controlnet_type
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
         self.text_guidance_scale = text_guidance_scale
@@ -90,6 +89,16 @@ class ControlNet(interfaces.PromptableImageEditingModel):
             "text_guidance_scale": self.text_guidance_scale,
             "latent_guidance_scale": self.latent_guidance_scale,
             "seed": self.seed,
+        }
+
+    @property
+    def params_dict(self) -> dict[str, str | bool | int | float]:
+        return {
+            "device": str(self.device),
+            "controlnet_type": str(self.controlnet_type),
+            "num_inference_steps": self.num_inference_steps,
+            "image_guidance_scale": self.image_guidance_scale,
+            "text_guidance_scale": self.text_guidance_scale,
         }
 
     def prepare_image(self, image_path: str) -> Image.Image:
