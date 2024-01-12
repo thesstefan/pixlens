@@ -214,10 +214,15 @@ class SubjectPreservation(OperationEvaluation):
             edited_mask.astype(np.uint8) * 255,
         )
 
-        matches = self.flann_matcher.knnMatch(
-            input_descriptors,
-            edited_descriptors,
-            k=2,
+        k = 2
+        matches = (
+            self.flann_matcher.knnMatch(
+                input_descriptors,
+                edited_descriptors,
+                k=k,
+            )
+            if len(input_descriptors) > k and len(edited_descriptors) > k
+            else []
         )
 
         good_matches = tuple(
