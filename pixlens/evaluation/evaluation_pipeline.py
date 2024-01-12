@@ -47,7 +47,7 @@ class EvaluationPipeline:
         prompt = model.generate_prompt(edit)
         edit_path = Path(
             get_cache_dir(),
-            "models--" + model.get_model_name(),
+            model.model_id,
             f"000000{edit.image_id!s:>06}",
             prompt,
         )
