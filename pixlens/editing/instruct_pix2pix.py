@@ -96,7 +96,7 @@ class InstructPix2Pix(interfaces.PromptableImageEditingModel):
             image_guidance_scale=self.image_guidance_scale,
             generator=torch.manual_seed(self.seed),
             guidance_scale=self.text_guidance_scale,
-        )
+        ).images[0]
 
     def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
         input_image = Image.open(image_path)
