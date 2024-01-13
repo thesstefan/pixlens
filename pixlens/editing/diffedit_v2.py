@@ -1,8 +1,12 @@
+from omegaconf import OmegaConf
 import torch
 from PIL import Image
 
 from pixlens.editing import interfaces as editing_interfaces
-from pixlens.editing.impl.diffedit.diffedit import diffedit
+from pixlens.editing.impl.diffedit.diffedit import (
+    diffedit,
+    load_model_from_config,
+)
 from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
 
@@ -19,6 +23,10 @@ class DiffEdit(editing_interfaces.PromptableImageEditingModel):
         self.device = device
         self.seed = seed
         self.ddim_steps = ddim_steps
+
+    def load_model(self, config_path: str, ckpt_path: str) -> None:
+        config = OmegaConf.load(config_path)
+        self.model = load_model_from_config(config, ckpt_path)
 
     @property
     def params_dict(self) -> dict[str, str | bool | int | float]:
@@ -45,4 +53,4 @@ class DiffEdit(editing_interfaces.PromptableImageEditingModel):
             ddim_steps=self.ddim_steps,
             seed=self.seed,
         )
-        
+        return images[0]
