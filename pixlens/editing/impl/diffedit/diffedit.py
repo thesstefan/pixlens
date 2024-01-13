@@ -599,11 +599,11 @@ def resize_image1_into_image2(image1: Image.Image, image2: Image.Image) -> Image
     return image1
 
 
-in_path = "data/example_input.jpg"
-url = "https://raw.githubusercontent.com/timothybrooks/instruct-pix2pix/main/imgs/example.jpg"
-image = download_image(url)
-image.save(in_path)
-bench_path = "data/ex.jpg"
-model, opt = set_args()
-images, recover = diffedit(model, bench_path, opt=opt, ddim_steps=20)  # 80
-images[0].save("data/example_output.jpg")
+# in_path = "data/example_input.jpg"
+# url = "https://raw.githubusercontent.com/timothybrooks/instruct-pix2pix/main/imgs/example.jpg"
+# image = download_image(url)
+# image.save(in_path)
+# bench_path = "data/ex.jpg"
+# model, opt = set_args()
+# images, recover = diffedit(model, bench_path, opt=opt, ddim_steps=20)  # 80
+# images[0].save("data/example_output.jpg")
