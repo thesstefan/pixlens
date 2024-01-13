@@ -19,8 +19,16 @@ from pixlens.evaluation.multiplicity_resolver import (
     MultiplicityResolution,
     select_one_2d,
 )
-from pixlens.evaluation.operations.visualization import plotting
-from pixlens.visualization.plotting import figure_to_image
+
+COLOR_NAME_ALIAS: dict[str, str] = {
+    "golden": "gold",
+}
+
+COLOR_RBG_ALIAS: dict[str, tuple[int, int, int]] = {
+    # ImageColors.get("green") return (0, 128, 0) which skews results
+    # quite badly
+    "green": (0, 255, 0),
+}
 
 
 @dataclasses.dataclass
@@ -59,13 +67,16 @@ class ColorEditOutput(EvaluationOutput):
 
 class ColorEdit(OperationEvaluation):
     color_hist_bins: int
+    hist_cmp_method: utils.HistogramComparisonMethod
     category_input_resolution: MultiplicityResolution
     category_edited_resolution: MultiplicityResolution
 
     def __init__(
         self,
-        # Must be a divisor of 256
         color_hist_bins: int = 32,
+        hist_cmp_method: utils.HistogramComparisonMethod = (
+            utils.HistogramComparisonMethod.CORRELATION
+        ),
         category_input_resolution: MultiplicityResolution = (
             MultiplicityResolution.LARGEST
         ),
@@ -74,6 +85,7 @@ class ColorEdit(OperationEvaluation):
         ),
     ) -> None:
         self.color_hist_bins = color_hist_bins
+        self.hist_cmp_method = hist_cmp_method
         self.category_input_resolution = category_input_resolution
         self.category_edited_resolution = category_edited_resolution
 
@@ -83,6 +95,10 @@ class ColorEdit(OperationEvaluation):
     ) -> EvaluationOutput:
         category = evaluation_input.updated_strings.category
         target_color = evaluation_input.edit.to_attribute
+
+        # Some prompts contain "golden", while "gold" is the equivalent color
+        # provided by PIL.ImageColors
+        target_color = COLOR_NAME_ALIAS.get(target_color, target_color)
 
         category_in_input = get_detection_segmentation_result_of_target(
             evaluation_input.input_detection_segmentation_result,
@@ -158,37 +174,17 @@ class ColorEdit(OperationEvaluation):
         mask: npt.NDArray[np.bool_],
         target_color: str,
     ) -> tuple[float, Image.Image]:
-        image_color_hist = utils.compute_color_hist_vector(
+        target_rgb = COLOR_RBG_ALIAS.get(
+            target_color,
+            ImageColor.getrgb(target_color),
+        )
+        synthetic_image = Image.new("RGB", image.size, target_rgb)
+
+        return utils.compare_color_histograms(
             image,
-            mask=mask,
-            bins=self.color_hist_bins,
+            mask,
+            synthetic_image,
+            mask,
+            method=self.hist_cmp_method,
+            num_bins=self.color_hist_bins,
         )
-
-        target_rgb = ImageColor.getrgb(target_color)
-        target_bgr = (target_rgb[2], target_rgb[1], target_rgb[0])
-
-        synthetic_channel_hist = np.zeros((3 * self.color_hist_bins,))
-        values_per_bin = 256 // self.color_hist_bins
-        pixel_count = image.width * image.height
-
-        for color in range(3):  # BLUE = 0, GREEN = 1, RED = 2
-            corresponding_bin = target_bgr[color] // values_per_bin
-
-            synthetic_channel_hist[
-                corresponding_bin + color * self.color_hist_bins
-            ] = pixel_count
-
-        normalized_image_color_hist = image_color_hist / pixel_count
-        normalized_synthetic_color_hist = synthetic_channel_hist / pixel_count
-
-        color_histogram_figure = plotting.plot_color_histograms(
-            np.stack(
-                [normalized_image_color_hist, normalized_synthetic_color_hist],
-            ),
-        )
-        score = utils.cosine_similarity(
-            normalized_image_color_hist,
-            normalized_synthetic_color_hist,
-        )
-
-        return score, figure_to_image(color_histogram_figure)

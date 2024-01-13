@@ -1,3 +1,4 @@
+import enum
 
 import cv2
 import numpy as np
@@ -11,6 +12,8 @@ from PIL import Image
 from skimage.metrics import structural_similarity as ssim
 
 from pixlens.evaluation.interfaces import Edit, EditType, EvaluationInput
+from pixlens.evaluation.operations.visualization import plotting
+from pixlens.visualization.plotting import figure_to_image
 
 directions_and_instructions = [
     "add",
@@ -262,30 +265,6 @@ def cosine_similarity(a: npt.ArrayLike, b: npt.ArrayLike) -> float:
     return (np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))).item()  # type: ignore[no-any-return]
 
 
-def compute_color_hist_vector(
-    image: Image.Image,
-    mask: npt.NDArray[np.bool_] | None = None,
-    bins: int = 32,
-) -> npt.NDArray[np.uint]:
-    cv_bgr_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-
-    bgr_hist: npt.NDArray[np.uint] = np.concatenate(
-        [
-            cv2.calcHist(
-                [cv_bgr_image],
-                [color],
-                mask.astype(np.uint8) if mask is not None else None,
-                [bins],
-                [0, 256],
-            )
-            for color in range(3)  # BLUE = 0, GREEN = 1, RED = 2
-        ],
-        axis=0,
-    )
-
-    return bgr_hist.reshape(-1)
-
-
 def mask_iou(mask_1: npt.NDArray, mask_2: npt.NDArray) -> float:
     intersection = (mask_1 * mask_2).sum()
 
@@ -331,3 +310,95 @@ def aligned_mask_iou(mask_1: npt.NDArray, mask_2: npt.NDArray) -> float:
     aligned_mask_2 = translate_to_top_left_2d(mask_2)
 
     return mask_iou(aligned_mask_1, aligned_mask_2)
+
+
+def compute_normalized_rgb_hist_1d(
+    rgb_image: Image.Image,
+    mask: npt.NDArray[np.bool_] | None = None,
+    num_bins: int = 256,
+) -> npt.NDArray[np.uint]:
+    cv_rgb_image = np.array(rgb_image)
+
+    bgr_histograms = [
+        cv2.calcHist(
+            [cv_rgb_image],
+            [color],
+            mask.astype(np.uint8) if mask is not None else None,
+            [num_bins],
+            [0, 256],
+        )
+        for color in range(3)  # RED = 0, GREEN = 1, BLUE = 2
+    ]
+
+    normalized_bgr_histograms = [
+        cv2.normalize(hist, hist) for hist in bgr_histograms
+    ]
+
+    return np.concatenate(normalized_bgr_histograms, axis=0).reshape(-1)  # type: ignore[no-any-return]
+
+
+def compute_normalized_rgb_hist_3d(
+    rgb_image: Image.Image,
+    mask: npt.NDArray[np.bool_] | None = None,
+    num_bins: int = 8,
+) -> npt.NDArray[np.uint]:
+    cv_rgb_image = np.array(rgb_image)
+
+    color_hist = cv2.calcHist(
+        [cv_rgb_image],
+        [0, 1, 2],  # RED = 0, BLUE = 1, GREEN = 2
+        mask.astype(np.uint8) if mask is not None else None,
+        [num_bins, num_bins, num_bins],
+        [0, 256, 0, 256, 0, 256],
+    )
+
+    return cv2.normalize(color_hist, color_hist)  # type: ignore[no-any-return]
+
+
+class HistogramComparisonMethod(enum.IntEnum):
+    CORRELATION = cv2.HISTCMP_CORREL
+    INTERSECTION = cv2.HISTCMP_INTERSECT
+    CHI_SQ = cv2.HISTCMP_CHISQR
+    CHI_SQ_ALT = cv2.HISTCMP_CHISQR_ALT
+    HELLINGER = cv2.HISTCMP_HELLINGER
+    BHATTACHARYYA = cv2.HISTCMP_BHATTACHARYYA
+    KL_DIVERGENCE = cv2.HISTCMP_KL_DIV
+
+
+def compare_color_histograms(  # noqa: PLR0913
+    img_1: Image.Image,
+    mask_1: npt.NDArray[np.bool_],
+    img_2: Image.Image,
+    mask_2: npt.NDArray[np.bool_],
+    method: HistogramComparisonMethod = HistogramComparisonMethod.CORRELATION,
+    num_bins: int = 32,
+) -> tuple[float, Image.Image]:
+    hist_1_3d = compute_normalized_rgb_hist_3d(
+        img_1,
+        mask=mask_1,
+        num_bins=num_bins,
+    )
+    hist_2_3d = compute_normalized_rgb_hist_3d(
+        img_2,
+        mask=mask_2,
+        num_bins=num_bins,
+    )
+
+    score = cv2.compareHist(hist_1_3d, hist_2_3d, method)
+
+    hist_1_1d = compute_normalized_rgb_hist_1d(
+        img_1,
+        mask=mask_1,
+        num_bins=256,
+    )
+    hist_2_1d = compute_normalized_rgb_hist_1d(
+        img_2,
+        mask=mask_2,
+        num_bins=256,
+    )
+
+    color_histogram_figure = plotting.plot_rgb_histograms(
+        np.stack([hist_1_1d, hist_2_1d]),
+    )
+
+    return score, figure_to_image(color_histogram_figure)

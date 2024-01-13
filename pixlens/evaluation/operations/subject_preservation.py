@@ -21,9 +21,7 @@ from pixlens.evaluation.multiplicity_resolver import (
     MultiplicityResolution,
     select_one_2d,
 )
-from pixlens.evaluation.operations.visualization import plotting
 from pixlens.visualization import annotation
-from pixlens.visualization.plotting import figure_to_image
 
 
 @dataclasses.dataclass
@@ -77,6 +75,7 @@ class SubjectPreservationOutput(EvaluationOutput):
 
 class SubjectPreservation(OperationEvaluation):
     color_hist_bins: int
+    hist_cmp_method: utils.HistogramComparisonMethod
     sift_min_matches: int
     sift: cv2.SIFT  # type: ignore[no-any-unimported]
     flann_matcher: cv2.FlannBasedMatcher  # type: ignore[no-any-unimported]
@@ -84,6 +83,9 @@ class SubjectPreservation(OperationEvaluation):
     def __init__(  # noqa: PLR0913
         self,
         color_hist_bins: int = 32,
+        hist_cmp_method: utils.HistogramComparisonMethod = (
+            utils.HistogramComparisonMethod.CORRELATION
+        ),
         sift_min_matches: int = 5,
         # See section 7.1 in SIFT paper (https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf)
         sift_distance_ratio: float = 0.75,
@@ -95,6 +97,7 @@ class SubjectPreservation(OperationEvaluation):
         ),
     ) -> None:
         self.color_hist_bins = color_hist_bins
+        self.hist_cmp_method = hist_cmp_method
         self.sift_min_matches = sift_min_matches
         self.sift_distance_ratio = sift_distance_ratio
 
@@ -292,35 +295,14 @@ class SubjectPreservation(OperationEvaluation):
         input_mask: npt.NDArray[np.bool_],
         edited_mask: npt.NDArray[np.bool_],
     ) -> tuple[float, Image.Image]:
-        input_color_hist = utils.compute_color_hist_vector(
+        return utils.compare_color_histograms(
             input_image,
-            mask=input_mask,
-            bins=self.color_hist_bins,
-        )
-        edited_color_hist = utils.compute_color_hist_vector(
+            input_mask,
             edited_image,
-            mask=edited_mask,
-            bins=self.color_hist_bins,
+            edited_mask,
+            method=self.hist_cmp_method,
+            num_bins=self.color_hist_bins,
         )
-
-        normalized_input_color_hist = input_color_hist / (
-            input_image.width * input_image.height
-        )
-        normalized_edited_color_hist = edited_color_hist / (
-            edited_image.width * edited_image.height
-        )
-
-        color_histogram_figure = plotting.plot_color_histograms(
-            np.stack(
-                [normalized_input_color_hist, normalized_edited_color_hist],
-            ),
-        )
-        score = utils.cosine_similarity(
-            normalized_input_color_hist,
-            normalized_edited_color_hist,
-        )
-
-        return score, figure_to_image(color_histogram_figure)
 
     def compute_position_score(
         self,
