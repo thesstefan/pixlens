@@ -1,0 +1,4 @@
+[submodule "diffedit"]
+    path = pixlens/editing/impl/diffedit
+    url = https://github.com/Xiang-cd/DiffEdit-stable-diffusion.git
+    branch = master

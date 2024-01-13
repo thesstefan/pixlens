@@ -1,5 +1,5 @@
 class: DiffEdit 
 params:
     device: cuda
-    latent_guidance_scale: 50
-    seed: 17
+    ddim_steps: 50
+    seed: 0
