@@ -1,6 +1,6 @@
 import dataclasses
+import json
 import logging
-import pprint
 from pathlib import Path
 
 import numpy as np
@@ -55,7 +55,7 @@ class ColorEditOutput(EvaluationOutput):
             "score": self.edit_specific_score,
         }
 
-        json_str = pprint.pformat(score_summary, compact=True).replace("'", '"')
+        json_str = json.dumps(score_summary, indent=4)
         score_json_path = save_dir / "scores.json"
 
         with score_json_path.open("w") as score_json:
