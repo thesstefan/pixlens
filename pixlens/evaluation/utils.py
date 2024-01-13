@@ -381,12 +381,6 @@ def compute_mse_over_mask(
     return float(np.mean((input_image_masked - edited_image_masked) ** 2))
 
 
-def get_normalized_background_score(number: float) -> float:
-    if number is np.nan:
-        return -1
-    return np.clip((number - 0.9) * 10, 0, 1)  # type: float
-
-
 def compute_mask_intersection(
     whole: torch.Tensor,
     part: torch.Tensor,
