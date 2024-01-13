@@ -153,9 +153,11 @@ class Disentanglement:
                 json.dump(self.results, file, indent=4)
         if "Inter_attribute" not in self.results[self.model.get_model_name()]:
             logging.info("Doing inter attribute evaluation")
-            self.results[self.model.get_model_name()][
-                "Inter_attribute"
-            ] = self.inter_attribute()
+            acc, bal_acc = self.inter_attribute()
+            self.results[self.model.get_model_name()]["Inter_attribute"] = {
+                "Accuracy": acc,
+                "Balanced Accuracy": bal_acc,
+            }
             with self.results_path.open("w") as file:
                 json.dump(self.results, file, indent=4)
 
@@ -428,12 +430,13 @@ class Disentanglement:
             results[attribute_type]["Average Angle"] = np.mean(angles)
         return results
 
-    def inter_attribute(self) -> float:
+    def inter_attribute(self) -> tuple[float, float]:
         """Compute the inter attribute evaluation."""
         classifier = Classifier(self.dataset, self.final_dataset_path.parent)
         classifier.prepare_data()
         classifier.train_classifier(num_epochs=50)
         classifier.save_checkpoint(classifier.checkpoint_path)
         acc = classifier.evaluate_classifier()
+        bal_acc = classifier.evaluate_balanced_accuracy()
         classifier.plot_confusion_matrix()
-        return acc
+        return acc, bal_acc
