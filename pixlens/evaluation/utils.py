@@ -506,10 +506,6 @@ def unit_vector(vector: np.ndarray) -> np.ndarray:
     return vector / np.linalg.norm(vector)
 
 
-def unit_vector(vector: np.ndarray) -> np.ndarray:
-    return vector / np.linalg.norm(vector)
-
-
 def angle_between(v1: np.ndarray, v2: np.ndarray) -> float:
     v1_u = unit_vector(v1)
     v2_u = unit_vector(v2)
