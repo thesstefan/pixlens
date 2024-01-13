@@ -157,6 +157,13 @@ def evaluate_edits(
         for edit in edits:
             edit_dir = model_evaluation_dir / str(edit.edit_id)
 
+            if edit.edit_type not in operation_evaluators:
+                logging.warning(
+                    "No operation evaluator found for edit type: %s",
+                    edit.edit_type,
+                )
+                continue
+
             logging.info("Evaluating edit: %s", edit.edit_id)
             logging.info("Edit type: %s", edit.edit_type)
             logging.info("Image path: %s", edit.image_path)

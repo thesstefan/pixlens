@@ -5,4 +5,5 @@ params:
     text_guidance_scale: 25
     device: cuda
     latent_guidance_scale: 50
+    image_guidance_scale: 1.0
     seed: 0

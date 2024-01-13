@@ -116,6 +116,9 @@ class PreprocessingPipeline:
     def get_all_edits_ms_coco_class(self, ms_coco_class: str) -> pd.DataFrame:
         return self.edit_dataset[self.edit_dataset["class"] == ms_coco_class]
 
+    def get_all_edits(self) -> pd.DataFrame:
+        return self.edit_dataset
+
     def get_all_edits_edit_type(self, edit_type: str) -> pd.DataFrame:
         return self.edit_dataset[self.edit_dataset["edit_type"] == edit_type]
 

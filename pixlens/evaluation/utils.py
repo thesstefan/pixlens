@@ -508,6 +508,10 @@ def get_normalized_background_score(number: float) -> float:
     return np.clip((number - 0.9) * 10, 0, 1)  # type: float
 
 
+def unit_vector(vector: np.ndarray) -> np.ndarray:
+    return vector / np.linalg.norm(vector)
+
+
 def angle_between(v1: np.ndarray, v2: np.ndarray) -> float:
     v1_u = unit_vector(v1)
     v2_u = unit_vector(v2)

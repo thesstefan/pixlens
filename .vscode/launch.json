@@ -336,6 +336,24 @@
             "stopOnEntry": false,
             "jinja": false,
             "justMyCode": true
+        },
+        // run entire evaluation pipeline
+        {
+            "name": "Run PixLens Evaluation Pipeline",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
+            "args": [
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
+                "--run-evaluation-pipeline",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
         }
     ]
 }
