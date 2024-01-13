@@ -30,6 +30,8 @@ COLOR_RBG_ALIAS: dict[str, tuple[int, int, int]] = {
     "green": (0, 255, 0),
 }
 
+RNG_SEED = 0
+
 
 @dataclasses.dataclass
 class ColorEditArtifacts(EvaluationArtifacts):
@@ -70,8 +72,9 @@ class ColorEdit(OperationEvaluation):
     hist_cmp_method: utils.HistogramComparisonMethod
     category_input_resolution: MultiplicityResolution
     category_edited_resolution: MultiplicityResolution
+    rng: np.random.Generator
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         color_hist_bins: int = 32,
         hist_cmp_method: utils.HistogramComparisonMethod = (
@@ -83,11 +86,15 @@ class ColorEdit(OperationEvaluation):
         category_edited_resolution: MultiplicityResolution = (
             MultiplicityResolution.CLOSEST
         ),
+        synthetic_sigma: float = 75.0,
     ) -> None:
         self.color_hist_bins = color_hist_bins
         self.hist_cmp_method = hist_cmp_method
         self.category_input_resolution = category_input_resolution
         self.category_edited_resolution = category_edited_resolution
+        self.synthetic_sigma = synthetic_sigma
+
+        self.rng = np.random.default_rng(RNG_SEED)
 
     def evaluate_edit(
         self,
@@ -178,7 +185,18 @@ class ColorEdit(OperationEvaluation):
             target_color,
             ImageColor.getrgb(target_color),
         )
-        synthetic_image = Image.new("RGB", image.size, target_rgb)
+
+        synthetic_points = self.rng.multivariate_normal(
+            mean=target_rgb,
+            cov=np.eye(3, 3) * self.synthetic_sigma,
+            size=(image.height, image.width),
+        )
+
+        synthetic_points = np.clip(synthetic_points, 0, 255)
+        synthetic_image = Image.fromarray(
+            synthetic_points.astype(np.uint8),
+            "RGB",
+        )
 
         return utils.compare_color_histograms(
             image,

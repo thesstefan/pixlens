@@ -197,6 +197,7 @@ def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
             ColorEdit(
                 color_hist_bins=color_hist_bins,
                 hist_cmp_method=hist_cmp_method,
+                synthetic_sigma=75.0,
             ),
             subject_preservation,
             background_preservation,
