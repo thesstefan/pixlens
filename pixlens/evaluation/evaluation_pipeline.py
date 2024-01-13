@@ -306,8 +306,10 @@ class EvaluationPipeline:
                 raise NotImplementedError
 
     def save_evaluation_dataset(self) -> None:
-        pandas_path = Path(get_cache_dir(), "evaluation_results.csv")
-        self.evaluation_dataset.to_csv(pandas_path, index=False)
+        self.evaluation_dataset.to_csv(
+            Path(get_cache_dir(), "evaluation_results.csv"),
+            index=False,
+        )
 
     def get_aggregated_scores_for_model(
         self,
