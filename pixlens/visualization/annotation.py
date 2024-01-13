@@ -35,6 +35,8 @@ def annotate_mask(
     masks: torch.Tensor,
     image: Image.Image,
     mask_alpha: float = 0.8,
+    *,
+    color_mask: npt.NDArray[Any] | None = None,
 ) -> Image.Image:
     height, width = masks.shape[-2:]
 
@@ -44,6 +46,11 @@ def annotate_mask(
             [np.random.random(3), np.array([mask_alpha])],
             axis=0,
         )
+        if color_mask is not None:
+            color = np.concatenate(
+                [color_mask, np.array([mask_alpha])],
+                axis=0,
+            )
 
         mask_image = torch.max(
             mask_image,

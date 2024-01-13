@@ -1,7 +1,7 @@
 import dataclasses
+import json
 import logging
 import pathlib
-import pprint
 
 import cv2  # type: ignore[import]
 import numpy as np
@@ -63,7 +63,7 @@ class SubjectPreservationOutput(EvaluationOutput):
             "ssim_score": self.ssim_score,
             "aligned_iou": self.aligned_iou,
         }
-        json_str = pprint.pformat(score_summary, compact=True).replace("'", '"')
+        json_str = json.dumps(score_summary, indent=4)
         score_json_path = save_dir / "scores.json"
 
         with score_json_path.open("w") as score_json:
@@ -254,6 +254,10 @@ class SubjectPreservation(OperationEvaluation):
         )
 
         k = 2
+        if (
+            input_descriptors is None or edited_descriptors is None
+        ):  # Edit 535 has edited_descriptors as None
+            return 0.0, None
         matches = (
             self.flann_matcher.knnMatch(
                 input_descriptors,

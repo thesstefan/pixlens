@@ -2,6 +2,7 @@ import argparse
 import logging
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import torch
 
 from pixlens.detection import load_detect_segment_model_from_yaml
@@ -16,6 +17,9 @@ from pixlens.evaluation.interfaces import (
     OperationEvaluation,
 )
 from pixlens.evaluation.operations.alter_parts import AlterParts
+from pixlens.evaluation.operations.background_preservation import (
+    BackgroundPreservation,
+)
 from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.object_removal import ObjectRemoval
@@ -29,6 +33,7 @@ from pixlens.evaluation.operations.subject_preservation import (
     SubjectPreservation,
 )
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
+from pixlens.evaluation.utils import HistogramComparisonMethod
 from pixlens.utils.utils import get_cache_dir
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
@@ -178,20 +183,54 @@ def evaluate_edits(
 
 
 def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
-    subject_preservation = SubjectPreservation(sift_min_matches=5)
+    hist_cmp_method = HistogramComparisonMethod.CORRELATION
+    color_hist_bins = 32
 
+    subject_preservation = SubjectPreservation(
+        sift_min_matches=5,
+        color_hist_bins=color_hist_bins,
+        hist_cmp_method=hist_cmp_method,
+    )
+    background_preservation = BackgroundPreservation()
     return {
-        EditType.COLOR: [ColorEdit(), subject_preservation],
-        EditType.SIZE: [SizeEdit(), subject_preservation],
+        EditType.COLOR: [
+            ColorEdit(
+                color_hist_bins=color_hist_bins,
+                hist_cmp_method=hist_cmp_method,
+            ),
+            subject_preservation,
+            background_preservation,
+        ],
+        EditType.SIZE: [
+            SizeEdit(),
+            subject_preservation,
+            background_preservation,
+        ],
         EditType.POSITION_REPLACEMENT: [
             PositionReplacement(),
             subject_preservation,
+            background_preservation,
         ],
-        EditType.POSITIONAL_ADDITION: [PositionalAddition()],
-        EditType.OBJECT_ADDITION: [ObjectAddition()],
-        EditType.OBJECT_REMOVAL: [ObjectRemoval()],
-        EditType.OBJECT_REPLACEMENT: [ObjectReplacement()],
-        EditType.ALTER_PARTS: [AlterParts()],
+        EditType.POSITIONAL_ADDITION: [
+            PositionalAddition(),
+            background_preservation,
+        ],
+        EditType.OBJECT_ADDITION: [
+            ObjectAddition(),
+            background_preservation,
+        ],
+        EditType.OBJECT_REMOVAL: [
+            ObjectRemoval(),
+            background_preservation,
+        ],
+        EditType.OBJECT_REPLACEMENT: [
+            ObjectReplacement(),
+            background_preservation,
+        ],
+        EditType.ALTER_PARTS: [
+            AlterParts(),
+            background_preservation,
+        ],
     }
 
 
