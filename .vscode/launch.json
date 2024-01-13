@@ -199,9 +199,8 @@
                 "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
                 "--detection-model-yaml",
                 "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
-                "--edit-type",
-                "color",
-                "--do-all-edits",
+                "--edit-id",
+                "556",
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",

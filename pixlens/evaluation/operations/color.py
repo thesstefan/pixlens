@@ -22,12 +22,14 @@ from pixlens.evaluation.multiplicity_resolver import (
 
 COLOR_NAME_ALIAS: dict[str, str] = {
     "golden": "gold",
+    # "brown": "saddlebrown",
 }
 
 COLOR_RBG_ALIAS: dict[str, tuple[int, int, int]] = {
     # ImageColors.get("green") return (0, 128, 0) which skews results
     # quite badly
     "green": (0, 255, 0),
+    "brown": (64, 30, 9),  # mix between brown and saddlebrown
 }
 
 RNG_SEED = 0
@@ -106,7 +108,6 @@ class ColorEdit(OperationEvaluation):
         # Some prompts contain "golden", while "gold" is the equivalent color
         # provided by PIL.ImageColors
         target_color = COLOR_NAME_ALIAS.get(target_color, target_color)
-
         category_in_input = get_detection_segmentation_result_of_target(
             evaluation_input.input_detection_segmentation_result,
             category,
