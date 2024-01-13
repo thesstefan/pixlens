@@ -306,7 +306,6 @@ def postprocess_evaluation(
         "edit_type_aggregation"
     ] = evaluation_pipeline.get_aggregated_scores_for_edit_type()
 
-    # save the results to a json file in cache
     results_path = Path(get_cache_dir(), "evaluation_results.json")
     results_path.parent.mkdir(parents=True, exist_ok=True)
     with results_path.open("w") as results_file:

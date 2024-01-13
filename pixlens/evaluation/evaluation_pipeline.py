@@ -388,7 +388,7 @@ class EvaluationPipeline:
             "background_score"
         ].mean()
 
-        return {
+        results = {
             "edit_specific_score": edit_specific_score,
             "sift_score": sift_score,
             "color_score": color_score,
@@ -396,6 +396,11 @@ class EvaluationPipeline:
             "aligned_iou": aligned_iou,
             "background_score": background_score,
         }
+
+        for key, value in results.items():
+            if pd.isna(value):
+                results[key] = None
+        return results
 
     def get_mean_scores_for_model(
         self,
@@ -426,7 +431,7 @@ class EvaluationPipeline:
             "background_score"
         ].mean()
 
-        return {
+        results = {
             "edit_specific_score": edit_specific_score,
             "sift_score": sift_score,
             "color_score": color_score,
@@ -434,6 +439,11 @@ class EvaluationPipeline:
             "aligned_iou": aligned_iou,
             "background_score": background_score,
         }
+
+        for key, value in results.items():
+            if pd.isna(value):
+                results[key] = None
+        return results
 
     def get_mean_scores_for_edit_type(
         self,
@@ -464,7 +474,7 @@ class EvaluationPipeline:
             "background_score"
         ].mean()
 
-        return {
+        results = {
             "edit_specific_score": edit_specific_score,
             "sift_score": sift_score,
             "color_score": color_score,
@@ -472,3 +482,8 @@ class EvaluationPipeline:
             "aligned_iou": aligned_iou,
             "background_score": background_score,
         }
+
+        for key, value in results.items():
+            if pd.isna(value):
+                results[key] = None
+        return results
