@@ -4,12 +4,16 @@ import requests
 import torch
 from omegaconf import OmegaConf
 from PIL import Image
+from torch._tensor import Tensor
 
-from pixlens.editing import interfaces as editing_interfaces
-from pixlens.editing import utils as editing_utils
+from pixlens.editing import interfaces
 from pixlens.editing.impl.diffedit.diffedit import (
     diffedit,
     load_model_from_config,
+)
+from pixlens.editing.utils import (
+    generate_description_based_prompt,
+    log_model_if_not_in_cache,
 )
 from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
@@ -27,7 +31,7 @@ SUCCESS_CODE = 200
 TIMEOUT = 10
 
 
-class DiffEdit(editing_interfaces.PromptableImageEditingModel):
+class DiffEdit(interfaces.PromptableImageEditingModel):
     device: torch.device | None
 
     def __init__(
@@ -51,7 +55,7 @@ class DiffEdit(editing_interfaces.PromptableImageEditingModel):
             path_to_cache / "models--DiffEdit/v1-5-pruned-emaonly.ckpt"
         )
         config = OmegaConf.load(config_path)
-        need_to_download = editing_utils.log_model_if_not_in_cache(
+        need_to_download = log_model_if_not_in_cache(
             "DiffEdit",
             path_to_cache,
         )
@@ -90,3 +94,13 @@ class DiffEdit(editing_interfaces.PromptableImageEditingModel):
             seed=self.seed,
         )
         return images[0]
+
+    @property
+    def prompt_type(self) -> interfaces.ImageEditingPromptType:
+        return interfaces.ImageEditingPromptType.DESCRIPTION
+
+    def generate_prompt(self, edit: Edit) -> str:
+        return generate_description_based_prompt(edit)
+
+    def get_latent(self, prompt: str, image_path: str) -> Tensor:
+        raise NotImplementedError

@@ -20,13 +20,10 @@ import PIL
 import platformdirs
 import requests
 
-sys.path.append("./Diffedit")
+sys.path.append("./diffedit")
 
-from ldm.util import instantiate_from_config
-from ldm.models.diffusion.ddim import DDIMSampler
-from ldm.models.diffusion.plms import PLMSSampler
-from ldm.models.diffusion.dpm_solver import DPMSolverSampler
-from ldm.models.diffusion.dpm_solver import model_wrapper, NoiseScheduleVP, DPM_Solver
+from pixlens.editing.impl.diffedit.ldm.util import instantiate_from_config
+from pixlens.editing.impl.diffedit.ldm.models.diffusion.dpm_solver import model_wrapper, NoiseScheduleVP, DPM_Solver
 
 from diffusers import DDIMScheduler
 
