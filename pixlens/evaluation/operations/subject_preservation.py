@@ -17,6 +17,10 @@ from pixlens.evaluation.interfaces import (
     EvaluationOutput,
     OperationEvaluation,
 )
+from pixlens.evaluation.multiplicity_resolver import (
+    MultiplicityResolution,
+    select_one_2d,
+)
 from pixlens.evaluation.operations.visualization import plotting
 from pixlens.visualization import annotation
 from pixlens.visualization.plotting import figure_to_image
@@ -77,12 +81,18 @@ class SubjectPreservation(OperationEvaluation):
     sift: cv2.SIFT  # type: ignore[no-any-unimported]
     flann_matcher: cv2.FlannBasedMatcher  # type: ignore[no-any-unimported]
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         color_hist_bins: int = 32,
         sift_min_matches: int = 5,
         # See section 7.1 in SIFT paper (https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf)
         sift_distance_ratio: float = 0.75,
+        category_input_resolution: MultiplicityResolution = (
+            MultiplicityResolution.LARGEST
+        ),
+        category_edited_resolution: MultiplicityResolution = (
+            MultiplicityResolution.CLOSEST
+        ),
     ) -> None:
         self.color_hist_bins = color_hist_bins
         self.sift_min_matches = sift_min_matches
@@ -97,6 +107,9 @@ class SubjectPreservation(OperationEvaluation):
             {"checks": 50},
         )
 
+        self.category_input_resolution = category_input_resolution
+        self.category_edited_resolution = category_edited_resolution
+
     def evaluate_edit(
         self,
         evaluation_input: EvaluationInput,
@@ -108,17 +121,33 @@ class SubjectPreservation(OperationEvaluation):
             category,
         )
 
-        category_in_edited = get_detection_segmentation_result_of_target(
-            evaluation_input.edited_detection_segmentation_result,
-            category,
-        )
-
         if len(category_in_input.detection_output.phrases) == 0:
             logging.warning("No %s detected in the input image", category)
             return SubjectPreservationOutput(
                 edit_specific_score=0,
                 success=False,
             )
+
+        selected_category_idx_in_input = select_one_2d(
+            category_in_input.segmentation_output.masks.cpu().numpy(),
+            self.category_input_resolution,
+            confidences=category_in_input.detection_output.logits.cpu().numpy(),
+            relative_mask=None,
+        )
+        category_mask_input = np.squeeze(
+            (
+                category_in_input.segmentation_output.masks[
+                    selected_category_idx_in_input
+                ]
+            )
+            .cpu()
+            .numpy(),
+        )
+
+        category_in_edited = get_detection_segmentation_result_of_target(
+            evaluation_input.edited_detection_segmentation_result,
+            category,
+        )
 
         if len(category_in_edited.detection_output.phrases) == 0:
             logging.warning("No %s detected in edited image", category)
@@ -127,14 +156,24 @@ class SubjectPreservation(OperationEvaluation):
                 success=False,
             )
 
-        # TODO: Add multiplicity support
-        category_mask_input = np.squeeze(
-            category_in_input.segmentation_output.masks[0].cpu().numpy(),
+        selected_category_idx_in_edited_idx = select_one_2d(
+            category_in_edited.segmentation_output.masks.cpu().numpy(),
+            self.category_edited_resolution,
+            confidences=category_in_edited.detection_output.logits.cpu().numpy(),
+            relative_mask=category_mask_input,
         )
-        category_mask_edited = utils.pad_into_shape_2d(
-            np.squeeze(
-                category_in_edited.segmentation_output.masks[0].cpu().numpy(),
-            ),
+        category_mask_edited = np.squeeze(
+            (
+                category_in_edited.segmentation_output.masks[
+                    selected_category_idx_in_edited_idx
+                ]
+            )
+            .cpu()
+            .numpy(),
+        )
+
+        padded_category_mask_edited = utils.pad_into_shape_2d(
+            category_mask_edited,
             category_mask_input.shape,
         )
 
@@ -142,35 +181,32 @@ class SubjectPreservation(OperationEvaluation):
             evaluation_input.input_image,
             evaluation_input.edited_image,
             category_mask_input,
-            category_mask_edited,
+            padded_category_mask_edited,
         )
 
         color_score, color_histogram_visualization = self.compute_color_score(
             evaluation_input.input_image,
             evaluation_input.edited_image,
             category_mask_input,
-            # Color histogram require original size mask
-            np.squeeze(
-                category_in_edited.segmentation_output.masks[0].cpu().numpy(),
-            ),
+            category_mask_edited,
         )
 
         aligned_iou = utils.aligned_mask_iou(
             category_mask_input,
-            category_mask_edited,
+            padded_category_mask_edited,
         )
 
         position_score, position_visualization = self.compute_position_score(
             evaluation_input.input_image,
             category_mask_input,
-            category_mask_edited,
+            padded_category_mask_edited,
         )
 
         ssim_score = utils.compute_ssim_over_mask(
             evaluation_input.input_image,
             evaluation_input.edited_image,
             category_mask_input,
-            category_mask_edited,
+            padded_category_mask_edited,
         )
 
         return SubjectPreservationOutput(
