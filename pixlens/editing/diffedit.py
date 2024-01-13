@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from diffusers import (
     DDIMInverseScheduler,
@@ -60,11 +61,20 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
             "seed": self.seed,
         }
 
-    @property
-    def params_dict(self) -> dict[str, str | bool | int | float]:
-        return {
-            "device": str(self.device),
-        }
+    def resize_image(self, image: Image.Image) -> torch.Tensor:
+        # Editval is 512,512
+        w, h = image.size
+        w, h = (x - x % 8 for x in (w, h))  # resize to integer multiple of 8
+        image = image.resize((w, h), resample=Image.Resampling.LANCZOS)
+        np_image = np.array(image).astype(np.float32) / 255.0
+        np_image = np_image[None].transpose(0, 3, 1, 2)
+        image_torch = torch.from_numpy(np_image)
+        return 2.0 * image_torch - 1.0
+
+    def simple_resize_image(self, image: Image.Image) -> Image.Image:
+        w, h = image.size
+        w, h = (x - x % 8 for x in (w, h))  # resize to integer multiple of 8
+        return image.resize((w, h), resample=Image.Resampling.LANCZOS)
 
     def edit_image(
         self,
@@ -76,6 +86,7 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
 
         source_prompt, target_prompt = prompt.split("[SEP]")
         input_image = Image.open(image_path)
+        input_image = self.simple_resize_image(input_image)
         mask_image = self.model.generate_mask(  # type: ignore[attr-defined]
             image=input_image,
             source_prompt=source_prompt,

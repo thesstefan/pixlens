@@ -196,7 +196,7 @@
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
                 "--editing-model-yaml",
-                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "model_cfgs/diffedit.yaml", // Replace with the desired editing model name
                 "--detection-model-yaml",
                 "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
                 "--edit-type",
