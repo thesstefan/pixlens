@@ -154,7 +154,11 @@ def evaluate_edits(
             get_cache_dir() / editing_model.model_id / "evaluation"
         )
         logging.info("Evaluating model: %s", editing_model.model_id)
-        for edit in edits:
+        max_num_edits = 10  # TODO: remove later
+        for idx, edit in enumerate(edits):
+            if idx >= max_num_edits:
+                break
+
             edit_dir = model_evaluation_dir / str(edit.edit_id)
 
             if edit.edit_type not in operation_evaluators:
@@ -291,12 +295,12 @@ def postprocess_evaluation(
 
     results = {}
 
-    results["model_aggreagation"] = {}
+    results["model_aggregation"] = {}
     for editing_model in editing_models:
         model_results = evaluation_pipeline.get_aggregated_scores_for_model(
             editing_model.model_id,
         )
-        results["model_aggreagation"][editing_model.model_id] = model_results
+        results["model_aggregation"][editing_model.model_id] = model_results
 
     results[
         "edit_type_aggregation"

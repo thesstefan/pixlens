@@ -334,15 +334,11 @@ class EvaluationPipeline:
     def get_aggregated_scores_for_edit_type(
         self,
     ) -> dict[str, float]:
-        # extract all possible edit types
         edit_types = self.evaluation_dataset["edit_type"].unique()
-
-        # extract all possible model ids
         model_ids = self.evaluation_dataset["model_id"].unique()
 
         results = {}
         for edit_type in edit_types:
-            # initialize a dictionary to store the aggregated scores
             aggregated_scores = {}
             for model_id in model_ids:
                 aggregated_scores[
@@ -351,6 +347,11 @@ class EvaluationPipeline:
                     model_id,
                     edit_type,
                 )
+            aggregated_scores[
+                "overall_mean"
+            ] = self.get_mean_scores_for_edit_type(
+                edit_type,
+            )
             results[edit_type] = aggregated_scores
         return results
 
@@ -359,19 +360,15 @@ class EvaluationPipeline:
         model_id: str,
         edit_type: str,
     ) -> dict[str, float]:
-        # filter out the evaluation_dataset to only include evaluation_success = True
         filtered_evaluation_dataset = self.evaluation_dataset[
             (self.evaluation_dataset["model_id"] == model_id)
             & (self.evaluation_dataset["edit_type"] == edit_type)
             & (self.evaluation_dataset["evaluation_success"])
         ]
-        # compute the mean edit_specific_score
         edit_specific_score = filtered_evaluation_dataset[
             "edit_specific_score"
         ].mean()
 
-        # filter out the evaluation_dataset to only include
-        # subject_preservation_success = True
         filtered_evaluation_dataset = self.evaluation_dataset[
             (self.evaluation_dataset["model_id"] == model_id)
             & (self.evaluation_dataset["edit_type"] == edit_type)
@@ -382,8 +379,6 @@ class EvaluationPipeline:
         position_score = filtered_evaluation_dataset["position_score"].mean()
         aligned_iou = filtered_evaluation_dataset["aligned_iou"].mean()
 
-        # filter out the evaluation_dataset to only include
-        # background_preservation_success = True
         filtered_evaluation_dataset = self.evaluation_dataset[
             (self.evaluation_dataset["model_id"] == model_id)
             & (self.evaluation_dataset["edit_type"] == edit_type)
@@ -393,7 +388,6 @@ class EvaluationPipeline:
             "background_score"
         ].mean()
 
-        # return the aggregated scores
         return {
             "edit_specific_score": edit_specific_score,
             "sift_score": sift_score,
@@ -407,7 +401,6 @@ class EvaluationPipeline:
         self,
         model_id: str,
     ) -> dict[str, float]:
-        # filter out the evaluation_dataset to only include evaluation_success = True
         filtered_evaluation_dataset = self.evaluation_dataset[
             (self.evaluation_dataset["model_id"] == model_id)
             & (self.evaluation_dataset["evaluation_success"])
@@ -416,8 +409,6 @@ class EvaluationPipeline:
             "edit_specific_score"
         ].mean()
 
-        # filter out the evaluation_dataset to only include
-        # subject_preservation_success = True
         filtered_evaluation_dataset = self.evaluation_dataset[
             (self.evaluation_dataset["model_id"] == model_id)
             & (self.evaluation_dataset["subject_preservation_success"])
@@ -427,8 +418,6 @@ class EvaluationPipeline:
         position_score = filtered_evaluation_dataset["position_score"].mean()
         aligned_iou = filtered_evaluation_dataset["aligned_iou"].mean()
 
-        # filter out the evaluation_dataset to only include
-        # background_preservation_success = True
         filtered_evaluation_dataset = self.evaluation_dataset[
             (self.evaluation_dataset["model_id"] == model_id)
             & (self.evaluation_dataset["background_preservation_success"])
@@ -437,7 +426,44 @@ class EvaluationPipeline:
             "background_score"
         ].mean()
 
-        # return the aggregated scores
+        return {
+            "edit_specific_score": edit_specific_score,
+            "sift_score": sift_score,
+            "color_score": color_score,
+            "position_score": position_score,
+            "aligned_iou": aligned_iou,
+            "background_score": background_score,
+        }
+
+    def get_mean_scores_for_edit_type(
+        self,
+        edit_type: str,
+    ) -> dict[str, float]:
+        filtered_evaluation_dataset = self.evaluation_dataset[
+            (self.evaluation_dataset["edit_type"] == edit_type)
+            & (self.evaluation_dataset["evaluation_success"])
+        ]
+        edit_specific_score = filtered_evaluation_dataset[
+            "edit_specific_score"
+        ].mean()
+
+        filtered_evaluation_dataset = self.evaluation_dataset[
+            (self.evaluation_dataset["edit_type"] == edit_type)
+            & (self.evaluation_dataset["subject_preservation_success"])
+        ]
+        sift_score = filtered_evaluation_dataset["sift_score"].mean()
+        color_score = filtered_evaluation_dataset["color_score"].mean()
+        position_score = filtered_evaluation_dataset["position_score"].mean()
+        aligned_iou = filtered_evaluation_dataset["aligned_iou"].mean()
+
+        filtered_evaluation_dataset = self.evaluation_dataset[
+            (self.evaluation_dataset["edit_type"] == edit_type)
+            & (self.evaluation_dataset["background_preservation_success"])
+        ]
+        background_score = filtered_evaluation_dataset[
+            "background_score"
+        ].mean()
+
         return {
             "edit_specific_score": edit_specific_score,
             "sift_score": sift_score,
