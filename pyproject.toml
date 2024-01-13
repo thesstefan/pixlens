@@ -46,7 +46,7 @@ ignore = [
     "ANN101",
     "ANN102",
 ]
-exclude = ["pixlens/editing/impl/null_text_inversion"]
+exclude = ["pixlens/editing/impl/null_text_inversion", "pixlens/editing/impl/diffedit"]
 
 [tool.mypy]
 plugins = "numpy.typing.mypy_plugin"
