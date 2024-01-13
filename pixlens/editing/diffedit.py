@@ -72,8 +72,9 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
         return 2.0 * image_torch - 1.0
 
     def simple_resize_image(self, image: Image.Image) -> Image.Image:
-        w, h = image.size
-        w, h = (x - x % 8 for x in (w, h))  # resize to integer multiple of 8
+        # w, h = image.size
+        # w, h = (x - x % 8 for x in (w, h))  # resize to integer multiple of 8
+        w, h = 512, 512
         return image.resize((w, h), resample=Image.Resampling.LANCZOS)
 
     def edit_image(
@@ -95,6 +96,7 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
         inv_latents = self.model.invert(  # type: ignore[attr-defined]
             prompt=source_prompt,
             image=input_image,
+            num_inference_steps=100,
         ).latents
 
         return self.model(  # type: ignore[operator, no-any-return]
@@ -103,10 +105,13 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
             image_latents=inv_latents,
             negative_prompt=source_prompt,
             generator=torch.manual_seed(self.seed),
+            num_inference_steps=100,
         ).images[0]
 
     def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
         source_prompt, target_prompt = prompt.split("[SEP]")
+        source_prompt = source_prompt[13:]
+        target_prompt = target_prompt[13:]
         input_image = Image.open(image_path)
         mask_image = self.model.generate_mask(  # type: ignore[attr-defined]
             image=input_image,

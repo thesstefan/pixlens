@@ -225,7 +225,7 @@ def main() -> None:
     check_args(args)
 
     preprocessing_pipe = PreprocessingPipeline(
-        "./pixlens/editval/object.json",
+        "./pixlens/object.json",
         "./editval_instances/",
     )
     editing_model = load_editing_model_from_yaml(args.editing_model_yaml)
