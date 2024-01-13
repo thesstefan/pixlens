@@ -154,11 +154,7 @@ def evaluate_edits(
             get_cache_dir() / editing_model.model_id / "evaluation"
         )
         logging.info("Evaluating model: %s", editing_model.model_id)
-        max_num_edits = 10  # TODO: remove later
-        for idx, edit in enumerate(edits):
-            if idx >= max_num_edits:
-                break
-
+        for edit in edits:
             edit_dir = model_evaluation_dir / str(edit.edit_id)
 
             if edit.edit_type not in operation_evaluators:
@@ -224,6 +220,9 @@ def evaluate_edits(
                 logging.info("Evaluation failed")
 
             logging.info("")
+
+        # save CSV after each model, just in case
+        evaluation_pipeline.save_evaluation_dataset()
 
 
 def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
@@ -293,7 +292,7 @@ def postprocess_evaluation(
 ) -> None:
     evaluation_pipeline.save_evaluation_dataset()
 
-    results = {}
+    results: dict[str, dict] = {}
 
     results["model_aggregation"] = {}
     for editing_model in editing_models:
