@@ -39,6 +39,7 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
         device: torch.device | None = None,
         ddim_steps: int = 80,
         diffedit_type: DiffEditType = DiffEditType.BASE,
+        latent_guidance_scale=10,
         seed: int = 0,
         config_path: str = "pixlens/editing/impl/diffedit/configs/stable-diffusion/v1-inference.yaml",
     ) -> None:
@@ -48,6 +49,7 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
         self.ddim_steps = ddim_steps
         self.config_path = config_path
         self.load_model(config_path)
+        self.latent_guidance_scale = latent_guidance_scale
 
     def load_model(self, config_path: str) -> None:
         path_to_cache = utils.get_cache_dir()
@@ -74,6 +76,7 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
             "device": str(self.device),
             "ddim_steps": self.ddim_steps,
             "seed": self.seed,
+            "latent_guidance_scale": self.latent_guidance_scale,
         }
 
     def edit_image(
@@ -103,4 +106,14 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
         return generate_description_based_prompt(edit)
 
     def get_latent(self, prompt: str, image_path: str) -> Tensor:
-        raise NotImplementedError
+        source_prompt, target_prompt = prompt.split("[SEP]")
+        _, latent = diffedit(
+            self.model,
+            image_path,
+            src_prompt=source_prompt,
+            dst_prompt=target_prompt,
+            ddim_steps=self.ddim_steps,
+            scale=self.latent_guidance_scale,
+            seed=self.seed,
+        )
+        return latent[0]
