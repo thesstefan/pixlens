@@ -72,14 +72,15 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
             max_iou = 0.0
             max_iou_index = -1
 
-            iou = box_iou(
-                from_object_bbox.unsqueeze(0),
-                tos_in_edited.detection_output.bounding_boxes,
-            )[0]
+            if len(tos_in_edited.detection_output.bounding_boxes) > 0:
+                iou = box_iou(
+                    from_object_bbox.unsqueeze(0),
+                    tos_in_edited.detection_output.bounding_boxes,
+                )[0]
 
-            if iou.max() > max_iou:
-                max_iou = iou.max().item()
-                max_iou_index = iou.argmax().item()
+                if iou.max() > max_iou:
+                    max_iou = iou.max().item()
+                    max_iou_index = iou.argmax().item()
 
             # we could compare here iou with a threshold to make
             # it more robust but for the moment as max_iou
