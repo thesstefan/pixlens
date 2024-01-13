@@ -17,7 +17,8 @@ change_action_dict = {
 }
 
 
-def log_model_if_not_in_cache(model_name: str, cache_dir: Path) -> None:
+def log_model_if_not_in_cache(model_name: str, cache_dir: Path) -> bool:
+    """Return True if it needs to be downloaded, False otherwise."""
     model_dir = model_name.replace("/", "--")
     model_dir = "models--" + model_dir
     full_path = cache_dir / model_dir
@@ -26,6 +27,8 @@ def log_model_if_not_in_cache(model_name: str, cache_dir: Path) -> None:
             "Downloading model from %s ...",
             model_name,
         )
+        return True
+    return False
 
 
 def generate_description_based_prompt(edit: Edit) -> str:

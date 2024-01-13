@@ -31,7 +31,7 @@ def load_controlnet(
     device: torch.device | None = None,
 ) -> StableDiffusionControlNetPipeline:
     path_to_cache = utils.get_cache_dir()
-    log_model_if_not_in_cache(model_type, path_to_cache)
+    _ = log_model_if_not_in_cache(model_type, path_to_cache)
     controlnet = ControlNetModel.from_pretrained(
         model_type,
         torch_dtype=torch.float16,
