@@ -39,7 +39,6 @@ class EvaluationArtifacts(Persistable):
 class EvaluationOutput(Persistable):
     success: bool
     edit_specific_score: float
-    ssim_score: float | None = None
     artifacts: EvaluationArtifacts | None = None
 
     def persist(self, save_dir: pathlib.Path) -> None:

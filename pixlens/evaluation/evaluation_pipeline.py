@@ -48,11 +48,11 @@ class EvaluationPipeline:
                 "evaluation_success",
                 "edit_specific_score",
                 "subject_preservation_success",
-                "sift_score",
-                "color_score",
-                "position_score",
-                "aligned_iou",
-                "ssim_score",
+                "subject_sift_score",
+                "subject_color_score",
+                "subject_position_score",
+                "subject_ssim_score",
+                "subject_aligned_iou",
                 "background_preservation_success",
                 "background_score",
             ],
@@ -220,31 +220,6 @@ class EvaluationPipeline:
             ),
         )
 
-    def get_all_scores_for_edit(
-        self,
-        edit: interfaces.Edit,
-    ) -> dict[str, float]:
-        evaluation_input = self.get_all_inputs_for_edit(edit)
-        edit_type_dependent_scores = self.get_edit_dependent_scores_for_edit(
-            evaluation_input,
-        )
-        edit_type_indpendent_scores = self.get_edit_independent_scores_for_edit(
-            evaluation_input,
-        )
-        return {**edit_type_dependent_scores, **edit_type_indpendent_scores}
-
-    def get_edit_dependent_scores_for_edit(
-        self,
-        evaluation_input: interfaces.EvaluationInput,
-    ) -> dict[str, float]:
-        raise NotImplementedError
-
-    def get_edit_independent_scores_for_edit(
-        self,
-        evaluation_input: interfaces.EvaluationInput,
-    ) -> dict[str, float]:
-        raise NotImplementedError
-
     def update_evaluation_dataset(
         self,
         edit: interfaces.Edit,
@@ -263,19 +238,23 @@ class EvaluationPipeline:
                 ] = evaluation_output.success
                 self.evaluation_dataset.loc[
                     last_row_index,
-                    "sift_score",
+                    "subject_sift_score",
                 ] = evaluation_output.sift_score
                 self.evaluation_dataset.loc[
                     last_row_index,
-                    "color_score",
+                    "subject_color_score",
                 ] = evaluation_output.color_score
                 self.evaluation_dataset.loc[
                     last_row_index,
-                    "position_score",
+                    "subject_position_score",
                 ] = evaluation_output.position_score
                 self.evaluation_dataset.loc[
                     last_row_index,
-                    "aligned_iou",
+                    "subject_ssim_score",
+                ] = evaluation_output.ssim_score
+                self.evaluation_dataset.loc[
+                    last_row_index,
+                    "subject_aligned_iou",
                 ] = evaluation_output.aligned_iou
             elif isinstance(
                 evaluation_output,
@@ -300,7 +279,6 @@ class EvaluationPipeline:
                     "model_id": model_id,
                     "evaluation_success": evaluation_output.success,
                     "edit_specific_score": evaluation_output.edit_specific_score,  # noqa: E501
-                    "ssim_score": evaluation_output.ssim_score,
                 }
             else:
                 raise NotImplementedError
@@ -314,7 +292,7 @@ class EvaluationPipeline:
     def get_aggregated_scores_for_model(
         self,
         model_id: str,
-    ) -> dict[str, float]:
+    ) -> dict[str, dict[str, float]]:
         # extract all possible edit types
         edit_types = self.evaluation_dataset["edit_type"].unique()
 
@@ -335,7 +313,7 @@ class EvaluationPipeline:
 
     def get_aggregated_scores_for_edit_type(
         self,
-    ) -> dict[str, float]:
+    ) -> dict[str, dict[str, float]]:
         edit_types = self.evaluation_dataset["edit_type"].unique()
         model_ids = self.evaluation_dataset["model_id"].unique()
 
@@ -376,10 +354,12 @@ class EvaluationPipeline:
             & (self.evaluation_dataset["edit_type"] == edit_type)
             & (self.evaluation_dataset["subject_preservation_success"])
         ]
-        sift_score = filtered_evaluation_dataset["sift_score"].mean()
-        color_score = filtered_evaluation_dataset["color_score"].mean()
-        position_score = filtered_evaluation_dataset["position_score"].mean()
-        aligned_iou = filtered_evaluation_dataset["aligned_iou"].mean()
+        sift_score = filtered_evaluation_dataset["subject_sift_score"].mean()
+        color_score = filtered_evaluation_dataset["subject_color_score"].mean()
+        position_score = filtered_evaluation_dataset[
+            "subject_position_score"
+        ].mean()
+        aligned_iou = filtered_evaluation_dataset["subject_aligned_iou"].mean()
 
         filtered_evaluation_dataset = self.evaluation_dataset[
             (self.evaluation_dataset["model_id"] == model_id)
@@ -392,10 +372,10 @@ class EvaluationPipeline:
 
         results = {
             "edit_specific_score": edit_specific_score,
-            "sift_score": sift_score,
-            "color_score": color_score,
-            "position_score": position_score,
-            "aligned_iou": aligned_iou,
+            "subject_sift_score": sift_score,
+            "subject_color_score": color_score,
+            "subject_position_score": position_score,
+            "subject_aligned_iou": aligned_iou,
             "background_score": background_score,
         }
 
@@ -420,10 +400,12 @@ class EvaluationPipeline:
             (self.evaluation_dataset["model_id"] == model_id)
             & (self.evaluation_dataset["subject_preservation_success"])
         ]
-        sift_score = filtered_evaluation_dataset["sift_score"].mean()
-        color_score = filtered_evaluation_dataset["color_score"].mean()
-        position_score = filtered_evaluation_dataset["position_score"].mean()
-        aligned_iou = filtered_evaluation_dataset["aligned_iou"].mean()
+        sift_score = filtered_evaluation_dataset["subject_sift_score"].mean()
+        color_score = filtered_evaluation_dataset["subject_color_score"].mean()
+        position_score = filtered_evaluation_dataset[
+            "subject_position_score"
+        ].mean()
+        aligned_iou = filtered_evaluation_dataset["subject_aligned_iou"].mean()
 
         filtered_evaluation_dataset = self.evaluation_dataset[
             (self.evaluation_dataset["model_id"] == model_id)
@@ -435,10 +417,10 @@ class EvaluationPipeline:
 
         results = {
             "edit_specific_score": edit_specific_score,
-            "sift_score": sift_score,
-            "color_score": color_score,
-            "position_score": position_score,
-            "aligned_iou": aligned_iou,
+            "subject_sift_score": sift_score,
+            "subject_color_score": color_score,
+            "subject_position_score": position_score,
+            "subject_aligned_iou": aligned_iou,
             "background_score": background_score,
         }
 
@@ -463,10 +445,12 @@ class EvaluationPipeline:
             (self.evaluation_dataset["edit_type"] == edit_type)
             & (self.evaluation_dataset["subject_preservation_success"])
         ]
-        sift_score = filtered_evaluation_dataset["sift_score"].mean()
-        color_score = filtered_evaluation_dataset["color_score"].mean()
-        position_score = filtered_evaluation_dataset["position_score"].mean()
-        aligned_iou = filtered_evaluation_dataset["aligned_iou"].mean()
+        sift_score = filtered_evaluation_dataset["subject_sift_score"].mean()
+        color_score = filtered_evaluation_dataset["subject_color_score"].mean()
+        position_score = filtered_evaluation_dataset[
+            "subject_position_score"
+        ].mean()
+        aligned_iou = filtered_evaluation_dataset["subject_aligned_iou"].mean()
 
         filtered_evaluation_dataset = self.evaluation_dataset[
             (self.evaluation_dataset["edit_type"] == edit_type)
@@ -478,10 +462,10 @@ class EvaluationPipeline:
 
         results = {
             "edit_specific_score": edit_specific_score,
-            "sift_score": sift_score,
-            "color_score": color_score,
-            "position_score": position_score,
-            "aligned_iou": aligned_iou,
+            "subject_sift_score": sift_score,
+            "subject_color_score": color_score,
+            "subject_position_score": position_score,
+            "subject_aligned_iou": aligned_iou,
             "background_score": background_score,
         }
 
