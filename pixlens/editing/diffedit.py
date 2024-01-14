@@ -97,7 +97,8 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
             seed=self.seed,
             device=self.device,
         )
-        return images[0]
+        target_size = Image.open(image_path).size
+        return Image.fromarray(images[0]).resize(target_size, Image.LANCZOS)
 
     @property
     def prompt_type(self) -> interfaces.ImageEditingPromptType:

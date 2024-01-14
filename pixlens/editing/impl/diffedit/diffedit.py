@@ -502,7 +502,8 @@ def diffedit(
     # assert os.path.isfile(opt.origin_image)
     init_image = load_img(init_image).to(device)
     init_image = repeat(init_image, "1 ... -> b ...", b=1)
-    model.cuda()
+    if device != torch.device("cpu"):
+        model.cuda()
     with torch.no_grad():
         with precision_scope(device.type):
             with model.ema_scope():
