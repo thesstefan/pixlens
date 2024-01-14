@@ -46,7 +46,7 @@ ignore = [
     "ANN101",
     "ANN102",
 ]
-exclude = ["pixlens/editing/impl/null_text_inversion"]
+exclude = ["pixlens/editing/impl/null_text_inversion", "pixlens/editing/impl/diffedit"]
 
 [tool.mypy]
 plugins = "numpy.typing.mypy_plugin"
@@ -57,4 +57,4 @@ check_untyped_defs = true
 warn_return_any = true
 show_error_codes = true
 mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
-exclude = ["pixlens/editing/impl/null_text_inversion"]
+exclude = ["pixlens/editing/impl/null_text_inversion","pixlens/editing/impl/diffedit"]

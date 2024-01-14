@@ -1,3 +1,4 @@
-[submodule "pixlens/editval"]
-	path = pixlens/editval
-	url = https://github.com/deep-ml-research/editval_code.git
+[submodule "diffedit"]
+    path = pixlens/editing/impl/diffedit
+    url = https://github.com/Xiang-cd/DiffEdit-stable-diffusion.git
+    branch = master

@@ -25,7 +25,7 @@ def load_instruct_pix2pix(
     device: torch.device | None = None,
 ) -> StableDiffusionInstructPix2PixPipeline:
     path_to_cache = utils.get_cache_dir()
-    log_model_if_not_in_cache(model_type, path_to_cache)
+    _ = log_model_if_not_in_cache(model_type, path_to_cache)
     pipe = StableDiffusionInstructPix2PixPipeline.from_pretrained(
         model_type,
         torch_dtype=torch.float16,

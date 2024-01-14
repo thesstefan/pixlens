@@ -66,7 +66,7 @@ def main() -> None:
         in_path = args.input
         prompt = args.prompt
 
-    output = model.edit(prompt, in_path, edit_info)
+    output = model.edit_image(prompt, in_path, edit_info)
     if args.input is None:
         Path(in_path).unlink()
 

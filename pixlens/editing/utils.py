@@ -17,7 +17,8 @@ change_action_dict = {
 }
 
 
-def log_model_if_not_in_cache(model_name: str, cache_dir: Path) -> None:
+def log_model_if_not_in_cache(model_name: str, cache_dir: Path) -> bool:
+    """Return True if it needs to be downloaded, False otherwise."""
     model_dir = model_name.replace("/", "--")
     model_dir = "models--" + model_dir
     full_path = cache_dir / model_dir
@@ -26,6 +27,8 @@ def log_model_if_not_in_cache(model_name: str, cache_dir: Path) -> None:
             "Downloading model from %s ...",
             model_name,
         )
+        return True
+    return False
 
 
 def generate_description_based_prompt(edit: Edit) -> str:
@@ -94,11 +97,15 @@ def generate_description_based_prompt(edit: Edit) -> str:
             f"A photo of a {category} {change_action_dict[from_attribute]}"
             f"{PROMPT_SEP}A photo of a "
             f"{category} {change_action_dict[to_attribute]}"
-            if from_attribute is not None and not pd.isna(from_attribute)
+            if to_attribute in change_action_dict
+            and from_attribute is not None
+            and not pd.isna(from_attribute)
             else (
                 f"A photo of a {category}"
                 f"{PROMPT_SEP}A photo of a "
                 f"{category} {change_action_dict[to_attribute]}"
+                if to_attribute in change_action_dict
+                else ""
             )
         ),
         EditType.VIEWPOINT: (

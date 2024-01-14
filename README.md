@@ -33,3 +33,7 @@ conda activate $ENVNAME
 # Install in editable mode
 pip install --no-build-isolation --no-deps -e .
 ```
+
+## Installation
+
+Once your environment is set up, you will need modify the `taming.modules.vqvae.quantize` module. This integration is crucial for the proper functioning of diffedit. The detailed instructions for this integration are also available in this [issue](https://github.com/CompVis/stable-diffusion/issues/72#issuecomment-1224675757).
