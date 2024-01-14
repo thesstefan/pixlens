@@ -262,7 +262,6 @@ def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
         ],
         EditType.ALTER_PARTS: [
             AlterParts(),
-            subject_preservation,
             background_preservation,
         ],
     }
