@@ -165,7 +165,7 @@ def evaluate_edits(
                 continue
 
             if (
-                edit.edit_type != EditType.POSITIONAL_ADDITION
+                edit.edit_type != EditType.POSITION_REPLACEMENT
             ):  # TODO: remove this later
                 continue
 
