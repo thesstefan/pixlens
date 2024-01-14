@@ -164,7 +164,9 @@ def evaluate_edits(
                 )
                 continue
 
-            if edit.edit_type != EditType.SIZE:
+            if (
+                edit.edit_type != EditType.POSITIONAL_ADDITION
+            ):  # TODO: remove this later
                 continue
 
             logging.info("Evaluating edit: %s", edit.edit_id)
