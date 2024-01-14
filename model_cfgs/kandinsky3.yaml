@@ -1,0 +1,5 @@
+class: Kandinsky3
+params:
+    num_inference_steps: 25
+    device: cuda
+    seed: 0

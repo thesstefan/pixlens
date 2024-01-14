@@ -105,6 +105,19 @@
             ]
         },
         {
+            "name": "Pixlens Edit CLI - Kandinsky3",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_editing_cli.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--output",
+                "${workspaceFolder}/results/edit_output_kandinsky3.png",
+                "--model_params_yaml",
+                "model_cfgs/kandinsky3.yaml",
+            ]
+        },
+        {
             "name": "Debug BLIP1 Caption CLI",
             "type": "python",
             "request": "launch",
