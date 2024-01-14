@@ -10,6 +10,10 @@ from pixlens.evaluation.interfaces import (
     EvaluationOutput,
     OperationEvaluation,
 )
+from pixlens.evaluation.multiplicity_resolver import (
+    MultiplicityResolution,
+    select_one_2d,
+)
 from pixlens.evaluation.utils import (
     angle_between,
     center_of_mass,
@@ -18,10 +22,16 @@ from pixlens.visualization.annotation import draw_center_of_masses
 
 
 class PositionalAddition(OperationEvaluation):
+    def __init__(self) -> None:
+        self.category_input_resolution = MultiplicityResolution.LARGEST
+        self.category_edited_resolution = MultiplicityResolution.LARGEST
+
     def evaluate_edit(
         self,
         evaluation_input: EvaluationInput,
     ) -> EvaluationOutput:
+        # [Note]: to_attribute looks like "X to left of"
+        # and to_attribute_for_detection looks like "X"
         to_attribute = evaluation_input.edit.to_attribute
         to_attribute_for_detection = (
             evaluation_input.updated_strings.to_attribute
@@ -46,6 +56,11 @@ class PositionalAddition(OperationEvaluation):
                 " When evaluating a positional addition operation.",
             )
 
+        category_in_edited = self.get_category_in_input(
+            evaluation_input.updated_strings.category,
+            evaluation_input.edited_detection_segmentation_result,
+        )
+
         tos_in_edited = self.get_tos_in_edited(
             to_attribute_for_detection
             if to_attribute_for_detection is not None
@@ -63,18 +78,30 @@ class PositionalAddition(OperationEvaluation):
             warning_msg = f"More than one '{to_attribute}' in the edited image."
             logging.warning(warning_msg)
 
+        selected_category_idx_in_input = select_one_2d(
+            category_in_input.segmentation_output.masks.cpu().numpy(),
+            self.category_input_resolution,
+            confidences=category_in_input.detection_output.logits.cpu().numpy(),
+            relative_mask=None,
+        )
+        category_mask_input = category_in_input.segmentation_output.masks[
+            selected_category_idx_in_input
+        ]
+
+        selected_to_idx_in_edited_idx = select_one_2d(
+            tos_in_edited.segmentation_output.masks.cpu().numpy(),
+            self.category_edited_resolution,
+            confidences=tos_in_edited.detection_output.logits.cpu().numpy(),
+        )
+        to_mask_edited = tos_in_edited.segmentation_output.masks[
+            selected_to_idx_in_edited_idx
+        ]
+
         category_center_of_mass = center_of_mass(
-            category_in_input.segmentation_output.masks[0],
+            category_mask_input,
         )
-
-        biggest_object_index = int(
-            torch.argmax(
-                tos_in_edited.segmentation_output.masks.sum(dim=(2, 3)),
-            ).item(),
-        )
-
         to_center_of_mass = center_of_mass(
-            tos_in_edited.segmentation_output.masks[biggest_object_index],
+            to_mask_edited,
         )
 
         draw_center_of_masses(
@@ -95,9 +122,24 @@ class PositionalAddition(OperationEvaluation):
             evaluation_input.input_image.size,
         )
 
-        return self.compute_score(
+        to_in_edited_score = self.compute_score(
             direction_of_movement,
             intended_relative_position,
+        ).edit_specific_score
+
+        category_in_edited_score = float(
+            len(category_in_edited.detection_output.bounding_boxes) > 0,
+        )
+
+        final_score = (
+            ((to_in_edited_score + category_in_edited_score) / 2)
+            if to_in_edited_score > 0
+            else 0
+        )
+
+        return EvaluationOutput(
+            edit_specific_score=final_score,
+            success=True,
         )
 
     def get_intended_relative_position(

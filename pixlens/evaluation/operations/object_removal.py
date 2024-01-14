@@ -1,6 +1,5 @@
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
 from pixlens.evaluation import interfaces as evaluation_interfaces
-from pixlens.evaluation.utils import compute_ssim
 
 
 class ObjectRemoval(evaluation_interfaces.OperationEvaluation):

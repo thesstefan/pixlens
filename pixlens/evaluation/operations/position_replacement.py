@@ -11,6 +11,10 @@ from pixlens.evaluation.interfaces import (
     EvaluationOutput,
     OperationEvaluation,
 )
+from pixlens.evaluation.multiplicity_resolver import (
+    MultiplicityResolution,
+    select_one_2d,
+)
 from pixlens.evaluation.utils import (
     angle_between,
     center_of_mass,
@@ -19,6 +23,10 @@ from pixlens.visualization.annotation import draw_center_of_masses
 
 
 class PositionReplacement(OperationEvaluation):
+    def __init__(self) -> None:
+        self.category_input_resolution = MultiplicityResolution.LARGEST
+        self.category_edited_resolution = MultiplicityResolution.LARGEST
+
     def evaluate_edit(
         self,
         evaluation_input: EvaluationInput,
@@ -55,22 +63,30 @@ class PositionReplacement(OperationEvaluation):
         if len(category_in_edited.detection_output.phrases) == 0:
             return self.handle_no_category_in_edited()
 
-        category_pos_initial = center_of_mass(
-            category_in_input.segmentation_output.masks[0],
+        selected_category_idx_in_input = select_one_2d(
+            category_in_input.segmentation_output.masks.cpu().numpy(),
+            self.category_input_resolution,
+            confidences=category_in_input.detection_output.logits.cpu().numpy(),
+            relative_mask=None,
         )
 
-        edited_idx = 0
-        if len(category_in_edited.detection_output.bounding_boxes) > 1:
-            largest_object = torch.argmax(
-                category_in_edited.segmentation_output.masks.sum(
-                    dim=(2, 3),
-                ),
-            )
-            edited_idx = int(largest_object.item())
+        category_mask_input = category_in_input.segmentation_output.masks[
+            selected_category_idx_in_input
+        ]
 
-        category_pos_end = center_of_mass(
-            category_in_edited.segmentation_output.masks[edited_idx],
+        category_pos_initial = center_of_mass(category_mask_input)
+
+        selected_category_idx_in_edited = select_one_2d(
+            category_in_edited.segmentation_output.masks.cpu().numpy(),
+            self.category_edited_resolution,
+            confidences=category_in_edited.detection_output.logits.cpu().numpy(),
+            relative_mask=None,
         )
+        category_mask_edited = category_in_edited.segmentation_output.masks[
+            selected_category_idx_in_edited
+        ]
+
+        category_pos_end = center_of_mass(category_mask_edited)
 
         draw_center_of_masses(
             evaluation_input.annotated_input_image,

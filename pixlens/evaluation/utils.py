@@ -1,9 +1,9 @@
 from collections import Counter
-import cv2
 
+import cv2
 import numpy as np
-import torch
 import numpy.typing as npt
+import torch
 import torch.nn.functional as F  # noqa: N812
 from numpy.typing import NDArray
 from PIL import Image, ImageColor
@@ -67,14 +67,13 @@ def get_clean_to_attribute_for_detection(edit: Edit) -> str | None:
     return None
 
 
-def compute_area(tensor1: torch.Tensor) -> float:
-    area1 = torch.sum(tensor1)
-    return area1.item()
+def compute_area(mask: npt.NDArray[np.bool_]) -> float:
+    return float(np.sum(mask))
 
 
 def compute_area_ratio(
-    numerator: torch.Tensor,
-    denominator: torch.Tensor,
+    numerator: npt.NDArray[np.bool_],
+    denominator: npt.NDArray[np.bool_],
 ) -> float:
     area1 = compute_area(numerator)
     area2 = compute_area(denominator)
@@ -84,29 +83,21 @@ def compute_area_ratio(
 
 
 def is_small_area_within_big_area(
-    input_mask: torch.Tensor,
-    edited_mask: torch.Tensor,
+    input_mask: npt.NDArray[np.bool_],
+    edited_mask: npt.NDArray[np.bool_],
     confidence_threshold: float = 0.9,
 ) -> bool:
-    # infer small and big area from input and edited masks
-    # SD doesn't preserve sizes, rounds up to multiples of 2^n for a given n.
-    if input_mask.size(1) > edited_mask.size(1):
-        height_pad = input_mask.size(1) - edited_mask.size(1)
-        # Pad the bottom of the mask
-        edited_mask = F.pad(edited_mask, (0, 0, 0, height_pad), value=False)
-
-    if input_mask.size(2) > edited_mask.size(2):
-        width_pad = input_mask.size(2) - edited_mask.size(2)
-        # Pad the right side of the mask
-        edited_mask = F.pad(edited_mask, (0, width_pad, 0, 0), value=False)
     if compute_area(input_mask) > compute_area(edited_mask):
         small_area = edited_mask
         big_area = input_mask
     else:
         small_area = input_mask
         big_area = edited_mask
-    intersection = torch.logical_and(small_area, big_area).sum()
-    return intersection.item() / compute_area(small_area) > confidence_threshold
+    intersection = np.logical_and(small_area, big_area).sum()
+    result: bool = (
+        intersection / compute_area(small_area)
+    ) > confidence_threshold
+    return result
 
 
 def get_colors_in_masked_area(
@@ -235,21 +226,6 @@ def compute_ssim_over_mask(
             )
         ) / 2
     return float(ssim(input_image_masked, edited_image_masked, channel_axis=2))
-
-
-def compute_ssim(
-    evaluation_input: EvaluationInput,
-) -> float:
-    input_image_np = np.array(evaluation_input.input_image)
-    edited_image_np = np.array(evaluation_input.edited_image)
-    if edited_image_np.shape != input_image_np.shape:
-        edited_image_resized = evaluation_input.edited_image.resize(
-            evaluation_input.input_image.size,
-            Image.Resampling.LANCZOS,
-        )
-        edited_image_np = np.array(edited_image_resized)
-
-    return float(ssim(input_image_np, edited_image_np, channel_axis=2))
 
 
 def resize_mask(
