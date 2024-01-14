@@ -5,7 +5,7 @@ import torch
 from omegaconf import OmegaConf
 from PIL import Image
 from torch._tensor import Tensor
-
+import torch.nn as nn
 from pixlens.editing import interfaces
 from pixlens.editing.impl.diffedit.diffedit import (
     diffedit,
@@ -39,7 +39,7 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
         device: torch.device | None = None,
         ddim_steps: int = 80,
         diffedit_type: DiffEditType = DiffEditType.BASE,
-        latent_guidance_scale=10,
+        latent_guidance_scale: int = 10,
         seed: int = 0,
         config_path: str = "pixlens/editing/impl/diffedit/configs/stable-diffusion/v1-inference.yaml",
     ) -> None:
@@ -73,7 +73,7 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
     @property
     def params_dict(self) -> dict[str, str | bool | int | float]:
         return {
-            "device": str(self.device),
+            "device": torch.device(str(self.device)),
             "ddim_steps": self.ddim_steps,
             "seed": self.seed,
             "latent_guidance_scale": self.latent_guidance_scale,
@@ -86,7 +86,7 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
         edit_info: Edit | None = None,
     ) -> Image.Image:
         del edit_info
-
+        self.device = torch.device("cuda")
         source_prompt, target_prompt = prompt.split("[SEP]")
         images, _ = diffedit(
             self.model,
@@ -95,6 +95,7 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
             dst_prompt=target_prompt,
             ddim_steps=self.ddim_steps,
             seed=self.seed,
+            device=self.device,
         )
         return images[0]
 
@@ -115,5 +116,6 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
             ddim_steps=self.ddim_steps,
             scale=self.latent_guidance_scale,
             seed=self.seed,
+            device=self.device,
         )
         return latent[0]

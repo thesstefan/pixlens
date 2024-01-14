@@ -21,3 +21,4 @@ pytorch-lightning==1.6.5
 einops==0.7.0
 taming-transformers==0.0.1
 clip==0.2.0
+kornia==0.7.1

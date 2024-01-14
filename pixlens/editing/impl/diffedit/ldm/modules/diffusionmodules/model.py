@@ -8,7 +8,6 @@ from einops import rearrange
 from pixlens.editing.impl.diffedit.ldm.util import instantiate_from_config
 from pixlens.editing.impl.diffedit.ldm.modules.attention import LinearAttention
 
-
 def get_timestep_embedding(timesteps, embedding_dim):
     """
     This matches the implementation in Denoising Diffusion Probabilistic Models:
@@ -384,7 +383,8 @@ class Encoder(nn.Module):
                                        self.ch,
                                        kernel_size=3,
                                        stride=1,
-                                       padding=1)
+                                       padding=1,
+                                       ).half().cuda() #added half lluis
 
         curr_res = resolution
         in_ch_mult = (1,)+tuple(ch_mult)
@@ -434,7 +434,6 @@ class Encoder(nn.Module):
     def forward(self, x):
         # timestep embedding
         temb = None
-
         # downsampling
         hs = [self.conv_in(x)]
         for i_level in range(self.num_resolutions):

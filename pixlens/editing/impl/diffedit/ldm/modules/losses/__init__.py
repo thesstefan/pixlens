@@ -1,1 +1,1 @@
-from ldm.modules.losses.contperceptual import LPIPSWithDiscriminator
+from pixlens.editing.impl.diffedit.ldm.modules.losses.contperceptual import LPIPSWithDiscriminator

@@ -7,8 +7,8 @@ from tqdm import trange
 from omegaconf import OmegaConf
 from PIL import Image
 
-from ldm.models.diffusion.ddim import DDIMSampler
-from ldm.util import instantiate_from_config
+from pixlens.editing.impl.diffedit.ldm.models.diffusion.ddim import DDIMSampler
+from pixlens.editing.impl.diffedit.ldm.util import instantiate_from_config
 
 rescale = lambda x: (x + 1.) / 2.
 

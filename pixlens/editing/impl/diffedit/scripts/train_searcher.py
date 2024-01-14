@@ -6,7 +6,7 @@ import glob
 from multiprocessing import cpu_count
 from tqdm import tqdm
 
-from ldm.util import parallel_data_prefetch
+from pixlens.editing.impl.diffedit.ldm.util import parallel_data_prefetch
 
 
 def search_bruteforce(searcher):

@@ -11,7 +11,7 @@ from numpy import asarray
 import random
 from PIL import Image
 from einops import rearrange, repeat
-
+import torch.nn as nn
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 import math
@@ -156,12 +156,12 @@ def set_args():
     return model, opt
 
 
-def load_img(path, opt):
+def load_img(path):
     image = Image.open(path).convert("RGB")
     # If I uncomment it crushes, either CUDA error or h, w should be same size
     # w, h = image.size
     # w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
-    image = image.resize((opt.W, opt.H), resample=Image.Resampling.LANCZOS)
+    image = image.resize((512,512), resample=Image.Resampling.LANCZOS)
     image = np.array(image).astype(np.float32) / 255.0
     image = image[None].transpose(0, 3, 1, 2)
     image = torch.from_numpy(image)
@@ -481,7 +481,7 @@ def diffedit(
     seed: int = 42,
     scale: float = 7.5,
     precision="autocast",
-    opt=None,
+    device=torch.device("cpu"),
 ):
     """
     :param init_image: image to be edit
@@ -497,17 +497,12 @@ def diffedit(
     if seed is None:
         seed = random.randrange(2**32 - 1)
     seed_everything(seed)
-    device = model.device
-    if opt.prompt is not None:
-        src_prompt = opt.prompt
-    if opt.prompt_edit is not None:
-        dst_prompt = opt.prompt_edit
     model.cond_stage_model = model.cond_stage_model.to(device)
     precision_scope = autocast if precision == "autocast" else nullcontext
     # assert os.path.isfile(opt.origin_image)
-    init_image = load_img(init_image, opt).to(device)
+    init_image = load_img(init_image).to(device)
     init_image = repeat(init_image, "1 ... -> b ...", b=1)
-
+    model.cuda()
     with torch.no_grad():
         with precision_scope(device.type):
             with model.ema_scope():

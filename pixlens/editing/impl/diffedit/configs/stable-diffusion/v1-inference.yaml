@@ -42,6 +42,7 @@ model:
         context_dim: 768
         use_checkpoint: True
         legacy: False
+        use_fp16: False
 
     first_stage_config:
       target: pixlens.editing.impl.diffedit.ldm.models.autoencoder.AutoencoderKL

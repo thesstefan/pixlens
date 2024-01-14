@@ -6,7 +6,7 @@ from einops import rearrange, repeat
 from transformers import CLIPTokenizer, CLIPTextModel
 import kornia
 
-from ldm.modules.x_transformer import Encoder, TransformerWrapper  # TODO: can we directly rely on lucidrains code and simply add this as a reuirement? --> test
+from pixlens.editing.impl.diffedit.ldm.modules.x_transformer import Encoder, TransformerWrapper  # TODO: can we directly rely on lucidrains code and simply add this as a reuirement? --> test
 
 
 class AbstractEncoder(nn.Module):
@@ -229,6 +229,6 @@ class FrozenClipImageEmbedder(nn.Module):
 
 
 if __name__ == "__main__":
-    from ldm.util import count_params
+    from pixlens.editing.impl.diffedit.ldm.util import count_params
     model = FrozenCLIPEmbedder()
     count_params(model, verbose=True)

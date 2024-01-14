@@ -4,8 +4,8 @@ from PIL import Image
 from tqdm import tqdm
 import numpy as np
 import torch
-from main import instantiate_from_config
-from ldm.models.diffusion.ddim import DDIMSampler
+from pixlens.editing.impl.diffedit.main import instantiate_from_config
+from pixlens.editing.impl.diffedit.ldm.models.diffusion.ddim import DDIMSampler
 
 
 def make_batch(image, mask, device):
