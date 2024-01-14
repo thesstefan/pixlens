@@ -33,15 +33,17 @@ class ObjectAddition(evaluation_interfaces.OperationEvaluation):
             != torch.Size([0])
             else 0
         )
-        is_category_in_input = bool(
-            get_detection_segmentation_result_of_target(
+        is_category_in_input = (
+            1
+            if get_detection_segmentation_result_of_target(
                 evaluation_input.input_detection_segmentation_result,
                 evaluation_input.updated_strings.category,
             ).detection_output.logits.size()
-            != torch.Size([0]),
+            != torch.Size([0])
+            else 0
         )
         score = is_to_in_edited * (is_to_in_edited + is_category_in_edited) / 2
         return evaluation_interfaces.EvaluationOutput(
             edit_specific_score=score,
-            success=is_category_in_input,
+            success=bool(is_category_in_input),
         )

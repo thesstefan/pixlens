@@ -164,6 +164,9 @@ def evaluate_edits(
                 )
                 continue
 
+            if edit.edit_type != EditType.SIZE:
+                continue
+
             logging.info("Evaluating edit: %s", edit.edit_id)
             logging.info("Edit type: %s", edit.edit_type)
             logging.info("Image path: %s", edit.image_path)
