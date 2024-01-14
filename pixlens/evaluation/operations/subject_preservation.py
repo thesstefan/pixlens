@@ -75,8 +75,10 @@ class SubjectPreservationOutput(EvaluationOutput):
 
 class SubjectPreservation(OperationEvaluation):
     color_hist_bins: int
+    color_smoothing_sigma: float
     hist_cmp_method: utils.HistogramComparisonMethod
     sift_min_matches: int
+
     sift: cv2.SIFT  # type: ignore[no-any-unimported]
     flann_matcher: cv2.FlannBasedMatcher  # type: ignore[no-any-unimported]
 
@@ -95,11 +97,13 @@ class SubjectPreservation(OperationEvaluation):
         category_edited_resolution: MultiplicityResolution = (
             MultiplicityResolution.CLOSEST
         ),
+        color_smoothing_sigma: float = 5.0,
     ) -> None:
         self.color_hist_bins = color_hist_bins
         self.hist_cmp_method = hist_cmp_method
         self.sift_min_matches = sift_min_matches
         self.sift_distance_ratio = sift_distance_ratio
+        self.color_smoothing_sigma = color_smoothing_sigma
 
         self.sift = cv2.SIFT_create()
         self.flann_matcher = cv2.FlannBasedMatcher(
@@ -187,11 +191,17 @@ class SubjectPreservation(OperationEvaluation):
             padded_category_mask_edited,
         )
 
-        color_score, color_histogram_visualization = self.compute_color_score(
+        (
+            color_score,
+            color_histogram_visualization,
+        ) = utils.compare_color_histograms(
             evaluation_input.input_image,
-            evaluation_input.edited_image,
             category_mask_input,
+            evaluation_input.edited_image,
             category_mask_edited,
+            method=self.hist_cmp_method,
+            num_bins=self.color_hist_bins,
+            smoothing_sigma=self.color_smoothing_sigma,
         )
 
         aligned_iou = utils.aligned_mask_iou(
@@ -291,22 +301,6 @@ class SubjectPreservation(OperationEvaluation):
         )
 
         return score, match_visualization
-
-    def compute_color_score(
-        self,
-        input_image: Image.Image,
-        edited_image: Image.Image,
-        input_mask: npt.NDArray[np.bool_],
-        edited_mask: npt.NDArray[np.bool_],
-    ) -> tuple[float, Image.Image]:
-        return utils.compare_color_histograms(
-            input_image,
-            input_mask,
-            edited_image,
-            edited_mask,
-            method=self.hist_cmp_method,
-            num_bins=self.color_hist_bins,
-        )
 
     def compute_position_score(
         self,

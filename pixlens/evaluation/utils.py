@@ -8,6 +8,7 @@ import torch
 import torch.nn.functional as F  # noqa: N812
 from numpy.typing import NDArray
 from PIL import Image
+from scipy.ndimage import gaussian_filter1d
 from scipy.signal import convolve
 
 # import delta e color similarity function
@@ -457,7 +458,8 @@ def angle_between(v1: np.ndarray, v2: np.ndarray) -> float:
 
 
 def cosine_similarity(a: npt.ArrayLike, b: npt.ArrayLike) -> float:
-    return (np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))).item()  # type: ignore[no-any-return]
+    # type: ignore[no-any-return]
+    return (np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))).item()
 
 
 def mask_iou(mask_1: npt.NDArray, mask_2: npt.NDArray) -> float:
@@ -529,7 +531,8 @@ def compute_normalized_rgb_hist_1d(
         cv2.normalize(hist, hist) for hist in bgr_histograms
     ]
 
-    return np.concatenate(normalized_bgr_histograms, axis=0).reshape(-1)  # type: ignore[no-any-return]
+    # type: ignore[no-any-return]
+    return np.concatenate(normalized_bgr_histograms, axis=0).reshape(-1)
 
 
 def compute_normalized_rgb_hist_3d(
@@ -567,106 +570,35 @@ def compare_color_histograms(  # noqa: PLR0913
     mask_2: npt.NDArray[np.bool_],
     method: HistogramComparisonMethod = HistogramComparisonMethod.CORRELATION,
     num_bins: int = 32,
-    *,
-    generate_plots: bool = False,
+    smoothing_sigma: float = 5,
 ) -> tuple[float, Image.Image]:
-    hist_1_3d = compute_normalized_rgb_hist_3d(
+    hist_1 = compute_normalized_rgb_hist_1d(
         img_1,
         mask=mask_1,
         num_bins=num_bins,
     )
-    hist_2_3d = compute_normalized_rgb_hist_3d(
+    hist_2 = compute_normalized_rgb_hist_1d(
         img_2,
         mask=mask_2,
         num_bins=num_bins,
     )
-    input_red_plot, input_green_plot, input_blue_plot = get_plots(hist_1_3d)
-    for plot in [input_red_plot, input_green_plot, input_blue_plot]:
-        plot /= np.max(plot)  # or sum
-    # score = cv2.compareHist(hist_1_3d, hist_2_3d, method)
-    red_plot, green_plot, blue_plot = get_plots(hist_2_3d)
-    red_plot_smoothed = apply_gaussian_filter_to_plot(red_plot)
-    green_plot_smoothed = apply_gaussian_filter_to_plot(green_plot)
-    blue_plot_smoothed = apply_gaussian_filter_to_plot(blue_plot)
-    if generate_plots:
-        plot_signals(
-            [input_red_plot, red_plot, red_plot_smoothed],
-            ["Input", "Raw", "Smoothed"],
-            title="Red",
+    smooth_hist_1 = gaussian_filter1d(hist_1, smoothing_sigma)
+    smooth_hist_2 = gaussian_filter1d(hist_2, smoothing_sigma)
+
+    channels = 3
+    similarities = [
+        cv2.compareHist(channel_hist_1, channel_hist_2, method)
+        for channel_hist_1, channel_hist_2 in zip(
+            np.split(smooth_hist_1, channels),
+            np.split(smooth_hist_2, channels),
+            strict=True,
         )
-        plot_signals(
-            [input_green_plot, green_plot, green_plot_smoothed],
-            ["Input", "Raw", "Smoothed"],
-            title="Green",
-        )
-        plot_signals(
-            [input_blue_plot, blue_plot, blue_plot_smoothed],
-            ["Input", "Raw", "Smoothed"],
-            title="Blue",
-        )
-    red_value = cv2.compareHist(red_plot_smoothed, input_red_plot, method)
-    green_value = cv2.compareHist(green_plot_smoothed, input_green_plot, method)
-    blue_value = cv2.compareHist(blue_plot_smoothed, input_blue_plot, method)
-    mean_value = (red_value + green_value + blue_value) / 3
-    hist_1_1d = compute_normalized_rgb_hist_1d(
-        img_1,
-        mask=mask_1,
-        num_bins=256,
-    )
-    hist_2_1d = compute_normalized_rgb_hist_1d(
-        img_2,
-        mask=mask_2,
-        num_bins=256,
-    )
+    ]
+
+    score = np.mean(similarities)
 
     color_histogram_figure = plotting.plot_rgb_histograms(
-        np.stack([hist_1_1d, hist_2_1d]),
+        np.stack([smooth_hist_1, smooth_hist_2]),
     )
 
-    return mean_value, figure_to_image(color_histogram_figure)
-
-
-def get_plots(histogram: NDArray) -> tuple[NDArray, NDArray, NDArray]:
-    red_plot = np.zeros([histogram.shape[0]], dtype=np.float32)
-    green_plot = np.zeros([histogram.shape[0]], dtype=np.float32)
-    blue_plot = np.zeros([histogram.shape[0]], dtype=np.float32)
-    for i in range(histogram.shape[0]):
-        for j in range(histogram.shape[0]):
-            for k in range(histogram.shape[0]):
-                red_plot[i] += histogram[i, j, k]
-                green_plot[i] += histogram[j, i, k]
-                blue_plot[i] += histogram[j, k, i]
-
-    return red_plot, green_plot, blue_plot
-
-
-def apply_gaussian_filter_to_plot(plot: NDArray) -> NDArray:
-    std_dev = 5
-    kernel_size = 30
-    gaussian_kernel = np.exp(
-        -(np.linspace(-kernel_size // 2, kernel_size // 2, kernel_size) ** 2)
-        / (2 * std_dev**2),
-    )
-    gaussian_kernel /= np.sum(gaussian_kernel)
-
-    smoothed_signal = convolve(plot, gaussian_kernel, mode="same")
-    maximum = np.max(smoothed_signal)
-    smoothed_signal = smoothed_signal / maximum
-    return smoothed_signal.astype(np.float32)
-
-
-def plot_signals(
-    signals: list[NDArray],
-    labels: list[str],
-    title: str = "Raw vs Smooth",
-    ylabel: str = "Values",
-    xlabel: str = "Points",
-) -> None:
-    plt.figure(figsize=(10, 6))
-    for signal, label in zip(signals, labels, strict=True):
-        plt.plot(signal, label=label)
-    plt.legend()
-    plt.title(title)
-    plt.ylabel(ylabel)
-    plt.xlabel(xlabel)
-    plt.show()
+    return score, figure_to_image(color_histogram_figure)

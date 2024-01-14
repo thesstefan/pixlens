@@ -185,11 +185,13 @@ def evaluate_edits(
 def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
     hist_cmp_method = HistogramComparisonMethod.CORRELATION
     color_hist_bins = 32
+    color_smoothing_sigma = 5.0
 
     subject_preservation = SubjectPreservation(
         sift_min_matches=5,
         color_hist_bins=color_hist_bins,
         hist_cmp_method=hist_cmp_method,
+        color_smoothing_sigma=color_smoothing_sigma,
     )
     background_preservation = BackgroundPreservation()
     return {
@@ -198,6 +200,7 @@ def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
                 color_hist_bins=color_hist_bins,
                 hist_cmp_method=hist_cmp_method,
                 synthetic_sigma=75.0,
+                smoothing_sigma=color_smoothing_sigma,
             ),
             subject_preservation,
             background_preservation,

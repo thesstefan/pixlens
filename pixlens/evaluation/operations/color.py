@@ -89,12 +89,14 @@ class ColorEdit(OperationEvaluation):
             MultiplicityResolution.CLOSEST
         ),
         synthetic_sigma: float = 75.0,
+        smoothing_sigma: float = 5.0,
     ) -> None:
         self.color_hist_bins = color_hist_bins
         self.hist_cmp_method = hist_cmp_method
         self.category_input_resolution = category_input_resolution
         self.category_edited_resolution = category_edited_resolution
         self.synthetic_sigma = synthetic_sigma
+        self.smoothing_sigma = smoothing_sigma
 
         self.rng = np.random.default_rng(RNG_SEED)
 
@@ -206,4 +208,5 @@ class ColorEdit(OperationEvaluation):
             mask,
             method=self.hist_cmp_method,
             num_bins=self.color_hist_bins,
+            smoothing_sigma=self.smoothing_sigma,
         )
