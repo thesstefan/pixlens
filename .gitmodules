@@ -1,3 +1,6 @@
 [submodule "pixlens/editval"]
 	path = pixlens/editval
 	url = https://github.com/deep-ml-research/editval_code.git
+[submodule "pixlens/editing/impl/kandinsky"]
+	path = pixlens/editing/impl/kandinsky
+	url = https://github.com/ai-forever/Kandinsky-3.git
