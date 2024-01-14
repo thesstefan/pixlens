@@ -113,7 +113,7 @@ class BackgroundPreservation(evaluation_interfaces.OperationEvaluation):
             artifacts=BackgroundPreservationArtifacts(
                 union_mask_input=annotation.annotate_mask(
                     masks=torch.tensor(union_mask).view(
-                        [1, 1, union_mask.shape[1], union_mask.shape[0]],
+                        [1, 1, union_mask.shape[0], union_mask.shape[1]],
                     ),
                     image=input_image,
                     mask_alpha=1,
@@ -121,7 +121,7 @@ class BackgroundPreservation(evaluation_interfaces.OperationEvaluation):
                 ),
                 union_mask_edited=annotation.annotate_mask(
                     masks=torch.tensor(union_mask).view(
-                        [1, 1, union_mask.shape[1], union_mask.shape[0]],
+                        [1, 1, union_mask.shape[0], union_mask.shape[1]],
                     ),
                     image=edited_image,
                     mask_alpha=1,
@@ -150,7 +150,7 @@ class BackgroundPreservation(evaluation_interfaces.OperationEvaluation):
             edit_type_class.VIEWPOINT,
             edit_type_class.OBJECT_REMOVAL,
         ]
-        masks = [torch.zeros(evaluation_input.input_image.size)]
+        masks = [torch.zeros(evaluation_input.input_image.size).T]
         if edit_type in add_type:
             indices = image_utils.find_word_indices(
                 evaluation_input.edited_detection_segmentation_result.detection_output.phrases,
