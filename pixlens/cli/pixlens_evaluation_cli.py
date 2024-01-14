@@ -159,7 +159,7 @@ def evaluate_edits(
 
             if edit.edit_type not in operation_evaluators:
                 logging.warning(
-                    "No operation evaluator found for edit type: %s",
+                    "No operation evaluator implemented for edit type: %s",
                     edit.edit_type,
                 )
                 continue
@@ -274,10 +274,10 @@ def load_editing_models(
 
     if args.run_evaluation_pipeline:
         all_models = [
+            "model_cfgs/lcm.yaml",
             "model_cfgs/controlnet.yaml",
             # "model_cfgs/diffedit.yaml",
             "model_cfgs/instruct_pix2pix.yaml",
-            "model_cfgs/lcm.yaml",
             # "model_cfgs/null_text_inversion.yaml",
         ]
 
