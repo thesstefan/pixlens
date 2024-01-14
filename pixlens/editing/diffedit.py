@@ -91,8 +91,6 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
         del edit_info
         self.device = torch.device("cuda")  # to delete
         source_prompt, target_prompt = prompt.split("[SEP]")
-        source_prompt = source_prompt[13:]
-        target_prompt = target_prompt[13:]
         images, _ = diffedit(
             self.model,
             image_path,
