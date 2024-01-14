@@ -174,7 +174,7 @@ class ColorEdit(OperationEvaluation):
 
         return ColorEditOutput(
             success=True,
-            edit_specific_score=color_score,
+            edit_specific_score=max(color_score, 0),
             artifacts=ColorEditArtifacts(color_histogram_image),
         )
 
