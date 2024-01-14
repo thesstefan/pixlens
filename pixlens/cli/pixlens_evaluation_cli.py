@@ -164,13 +164,13 @@ def evaluate_edits(
                 )
                 continue
 
-            # if (
-            #     edit.edit_type != EditType.OBJECT_REMOVAL
-            # ):  # TODO: remove this later
-            #     continue
-
-            if edit.edit_id != 595:
+            if (
+                edit.edit_type != EditType.ALTER_PARTS
+            ):  # TODO: remove this later
                 continue
+
+            # if edit.edit_id != 195:
+            #     continue
 
             logging.info("Evaluating edit: %s", edit.edit_id)
             logging.info("Edit type: %s", edit.edit_type)
@@ -283,9 +283,9 @@ def load_editing_models(
     if args.run_evaluation_pipeline:
         all_models = [
             "model_cfgs/lcm.yaml",
+            "model_cfgs/instruct_pix2pix.yaml",
             "model_cfgs/controlnet.yaml",
             # "model_cfgs/diffedit.yaml",
-            "model_cfgs/instruct_pix2pix.yaml",
             # "model_cfgs/null_text_inversion.yaml",
         ]
 

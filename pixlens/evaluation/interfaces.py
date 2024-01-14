@@ -51,6 +51,9 @@ class EvaluationOutput(Persistable):
         json_str = json.dumps(edit_specific_summary, indent=4)
         score_json_path = save_dir / "edit_specific_scores.json"
 
+        # guarantee that the parent directory exists
+        score_json_path.parent.mkdir(parents=True, exist_ok=True)
+
         with score_json_path.open("w") as score_json:
             score_json.write(json_str)
 
