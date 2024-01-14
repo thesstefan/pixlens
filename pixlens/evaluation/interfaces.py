@@ -1,7 +1,8 @@
 import dataclasses
 import enum
-from typing import Protocol
+import json
 import pathlib
+from typing import Protocol
 
 from PIL import Image
 
@@ -39,10 +40,20 @@ class EvaluationArtifacts(Persistable):
 class EvaluationOutput(Persistable):
     success: bool
     edit_specific_score: float
-    ssim_score: float | None = None
     artifacts: EvaluationArtifacts | None = None
 
     def persist(self, save_dir: pathlib.Path) -> None:
+        edit_specific_summary = {
+            "success": self.success,
+            "edit_specific_score": self.edit_specific_score,
+        }
+
+        json_str = json.dumps(edit_specific_summary, indent=4)
+        score_json_path = save_dir / "edit_specific_scores.json"
+
+        with score_json_path.open("w") as score_json:
+            score_json.write(json_str)
+
         if self.artifacts:
             self.artifacts.persist(save_dir)
 

@@ -41,21 +41,17 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
             to_attribute,
         )
 
-        if len(froms_in_input.detection_output.phrases) == 0:
+        if len(froms_in_input.detection_output.bounding_boxes) == 0:
             return evaluation_interfaces.EvaluationOutput(
                 edit_specific_score=0,
                 success=False,
             )
 
-        # For the moment we don't consider the following:
-        # froms_in_edited = get_detection_segmentation_result_of_target(
-        #     evaluation_input.edited_detection_segmentation_result,
-        #     from_attribute,
-        # )
-        # tos_in_input = get_detection_segmentation_result_of_target(
-        #     evaluation_input.input_detection_segmentation_result,
-        #     to_attribute,
-        # )
+        if len(tos_in_edited.detection_output.bounding_boxes) == 0:
+            return evaluation_interfaces.EvaluationOutput(
+                edit_specific_score=0,
+                success=True,
+            )
 
         used_tos_in_edited = set()
         true_positives = 0
