@@ -164,14 +164,6 @@ def evaluate_edits(
                 )
                 continue
 
-            if (
-                edit.edit_type != EditType.ALTER_PARTS
-            ):  # TODO: remove this later
-                continue
-
-            # if edit.edit_id != 195:
-            #     continue
-
             logging.info("Evaluating edit: %s", edit.edit_id)
             logging.info("Edit type: %s", edit.edit_type)
             logging.info("Image path: %s", edit.image_path)
@@ -238,6 +230,7 @@ def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
     background_preservation = BackgroundPreservation()
     return {
         EditType.COLOR: [
+            ColorEdit(),
             subject_preservation,
             background_preservation,
         ],
