@@ -41,6 +41,7 @@ class NullTextInversion(interfaces.PromptableImageEditingModel):
     cross_replace_steps: float
     self_replace_steps: float
     subject_amplification: float
+    latent_guidance_scale: float
 
     def __init__(  # noqa: PLR0913
         self,
@@ -52,6 +53,7 @@ class NullTextInversion(interfaces.PromptableImageEditingModel):
         self_replace_steps: float = 0.5,
         subject_amplification: float = 2.0,
         device: torch.device | None = None,
+        latent_guidance_scale: float = 25,
     ) -> None:
         self.device = device
 
@@ -60,6 +62,7 @@ class NullTextInversion(interfaces.PromptableImageEditingModel):
 
         self.num_ddim_steps = num_ddim_steps
         self.guidance_scale = guidance_scale
+        self.latent_guidance_scale = latent_guidance_scale
 
         self.cross_replace_steps = cross_replace_steps
         self.self_replace_steps = self_replace_steps
@@ -197,7 +200,46 @@ class NullTextInversion(interfaces.PromptableImageEditingModel):
         return Image.fromarray(images[1]).resize(original_size)
 
     def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
-        raise NotImplementedError
+        tmp_path = "tmp.png"
+        original_size = None
+        with Image.open(image_path) as img:
+            original_size = img.size
+            resized = img.resize((512, 512))
+            resized.save(tmp_path)
+        image_path = tmp_path
+        src, dst = editing_utils.split_description_based_prompt(prompt)
+        x_t, uncond_embeddings = self.get_inversion_latent(image_path, src)
+        equalizer_params = {
+            "words": (word for word in dst.split(" ") if word != ""),
+            "values": (
+                self.subject_amplification for _ in dst.split(" ") if _ != ""
+            ),
+        }
+        blend_words = ("White", "Image")
+
+        controller = controllers.make_controller(
+            [src, dst],
+            self.ldm_stable.tokenizer,  # type: ignore[attr-defined]
+            False,
+            {"default_": self.cross_replace_steps},
+            self.self_replace_steps,
+            num_ddim_steps=50,
+            blend_words=blend_words,
+            equalizer_params=equalizer_params,
+        )
+
+        latents, _ = ptp_utils.text2image_ldm_stable(
+            self.ldm_stable,
+            [src, dst],
+            controller,
+            latent=x_t,
+            uncond_embeddings=uncond_embeddings,
+            num_inference_steps=self.num_ddim_steps,
+            guidance_scale=self.latent_guidance_scale,
+            return_type="latent",
+        )
+
+        return latents[0]
 
     @property
     def prompt_type(self) -> interfaces.ImageEditingPromptType:
