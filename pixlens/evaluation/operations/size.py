@@ -2,7 +2,6 @@ import logging
 
 import numpy as np
 import numpy.typing as npt
-import torch
 
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
 from pixlens.evaluation import interfaces as evaluation_interfaces
@@ -11,7 +10,6 @@ from pixlens.evaluation.multiplicity_resolver import (
     select_one_2d,
 )
 from pixlens.evaluation.utils import (
-    center_of_mass,
     compute_area_ratio,
     is_small_area_within_big_area,
     pad_into_shape_2d,
@@ -39,7 +37,7 @@ def size_change_applied_correctly(
 
 
 class SizeEdit(evaluation_interfaces.OperationEvaluation):
-    def init(self) -> None:
+    def __init__(self) -> None:
         self.category_input_resolution: MultiplicityResolution = (
             MultiplicityResolution.LARGEST
         )
