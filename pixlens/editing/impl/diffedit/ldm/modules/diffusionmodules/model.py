@@ -384,7 +384,7 @@ class Encoder(nn.Module):
                                        kernel_size=3,
                                        stride=1,
                                        padding=1,
-                                       ).half().cuda() #added half lluis
+                                       )#.half().cuda() #added half lluis
 
         curr_res = resolution
         in_ch_mult = (1,)+tuple(ch_mult)

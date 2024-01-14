@@ -39,7 +39,8 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
         device: torch.device | None = None,
         ddim_steps: int = 80,
         diffedit_type: DiffEditType = DiffEditType.BASE,
-        latent_guidance_scale: int = 10,
+        latent_guidance_scale: float = 10.0,
+        scale: float = 10.0,
         seed: int = 0,
         config_path: str = "pixlens/editing/impl/diffedit/configs/stable-diffusion/v1-inference.yaml",
     ) -> None:
@@ -50,6 +51,7 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
         self.config_path = config_path
         self.load_model(config_path)
         self.latent_guidance_scale = latent_guidance_scale
+        self.scale = scale
 
     def load_model(self, config_path: str) -> None:
         path_to_cache = utils.get_cache_dir()
@@ -77,6 +79,7 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
             "ddim_steps": self.ddim_steps,
             "seed": self.seed,
             "latent_guidance_scale": self.latent_guidance_scale,
+            "scale": self.scale,
         }
 
     def edit_image(
@@ -86,11 +89,14 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
         edit_info: Edit | None = None,
     ) -> Image.Image:
         del edit_info
-        self.device = torch.device("cuda")
+        self.device = torch.device("cuda")  # to delete
         source_prompt, target_prompt = prompt.split("[SEP]")
+        source_prompt = source_prompt[13:]
+        target_prompt = target_prompt[13:]
         images, _ = diffedit(
             self.model,
             image_path,
+            scale=self.scale,
             src_prompt=source_prompt,
             dst_prompt=target_prompt,
             ddim_steps=self.ddim_steps,
@@ -98,7 +104,10 @@ class DiffEdit(interfaces.PromptableImageEditingModel):
             device=self.device,
         )
         target_size = Image.open(image_path).size
-        return Image.fromarray(images[0]).resize(target_size, Image.LANCZOS)
+        return Image.fromarray(images[0]).resize(
+            target_size,
+            Image.Resampling.LANCZOS,
+        )
 
     @property
     def prompt_type(self) -> interfaces.ImageEditingPromptType:
