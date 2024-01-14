@@ -165,9 +165,6 @@ def evaluate_edits(
                 )
                 continue
 
-            if edit.edit_type != EditType.SIZE:
-                continue
-
             logging.info("Evaluating edit: %s", edit.edit_id)
             logging.info("Edit type: %s", edit.edit_type)
             logging.info("Image path: %s", edit.image_path)
@@ -280,7 +277,6 @@ def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
         ],
         EditType.ALTER_PARTS: [
             AlterParts(),
-            subject_preservation,
             background_preservation,
         ],
     }
@@ -294,9 +290,9 @@ def load_editing_models(
     if args.run_evaluation_pipeline:
         all_models = [
             "model_cfgs/lcm.yaml",
+            "model_cfgs/instruct_pix2pix.yaml",
             "model_cfgs/controlnet.yaml",
             # "model_cfgs/diffedit.yaml",
-            "model_cfgs/instruct_pix2pix.yaml",
             # "model_cfgs/null_text_inversion.yaml",
         ]
 

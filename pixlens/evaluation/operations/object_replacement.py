@@ -84,6 +84,9 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
             # the {to} object covers the {from} object
 
             if max_iou_index != -1:
+                if max_iou_index in used_tos_in_edited:
+                    false_negatives += 1
+                    continue
                 # detected a corresponding to object that
                 # "covers" and replaces the from object
                 true_positives += 1

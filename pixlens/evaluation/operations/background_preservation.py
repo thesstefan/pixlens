@@ -159,7 +159,7 @@ class BackgroundPreservation(evaluation_interfaces.OperationEvaluation):
             masks += [
                 evaluation_input.edited_detection_segmentation_result.segmentation_output.masks[
                     index
-                ].reshape(evaluation_input.edited_image.size)
+                ][0]  # .reshape(evaluation_input.edited_image.size)
                 for index in indices
             ]
         elif edit_type in only_category_type:
@@ -170,7 +170,7 @@ class BackgroundPreservation(evaluation_interfaces.OperationEvaluation):
             masks += [
                 evaluation_input.input_detection_segmentation_result.segmentation_output.masks[
                     index
-                ].reshape(evaluation_input.input_image.size)
+                ][0]  # .reshape(evaluation_input.input_image.size)
                 for index in indices
             ]
         else:
