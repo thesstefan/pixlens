@@ -1,5 +1,6 @@
 from PIL import Image
 import torch
+from torch._tensor import Tensor
 
 from pixlens.editing import interfaces
 from pixlens.editing.impl.kandinsky.kandinsky3 import get_inpainting_pipeline
@@ -47,6 +48,9 @@ class Kandinsky3(interfaces.PromptableImageEditingModel):
             generator=torch.manual_seed(self.seed),
         )
         return images[0]
+
+    def get_latent(self, prompt: str, image_path: str) -> Tensor:
+        raise NotImplementedError
 
     @property
     def prompt_type(self) -> interfaces.ImageEditingPromptType:
