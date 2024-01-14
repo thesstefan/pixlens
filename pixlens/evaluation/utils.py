@@ -228,21 +228,6 @@ def compute_ssim_over_mask(
     return float(ssim(input_image_masked, edited_image_masked, channel_axis=2))
 
 
-def compute_ssim(
-    evaluation_input: EvaluationInput,
-) -> float:
-    input_image_np = np.array(evaluation_input.input_image)
-    edited_image_np = np.array(evaluation_input.edited_image)
-    if edited_image_np.shape != input_image_np.shape:
-        edited_image_resized = evaluation_input.edited_image.resize(
-            evaluation_input.input_image.size,
-            Image.Resampling.LANCZOS,
-        )
-        edited_image_np = np.array(edited_image_resized)
-
-    return float(ssim(input_image_np, edited_image_np, channel_axis=2))
-
-
 def resize_mask(
     mask_to_be_resized: NDArray,
     target_mask: NDArray,

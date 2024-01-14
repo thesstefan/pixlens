@@ -165,7 +165,7 @@ def evaluate_edits(
                 continue
 
             if (
-                edit.edit_type != EditType.POSITION_REPLACEMENT
+                edit.edit_type != EditType.OBJECT_REMOVAL
             ):  # TODO: remove this later
                 continue
 
