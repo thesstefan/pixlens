@@ -164,9 +164,12 @@ def evaluate_edits(
                 )
                 continue
 
-            if (
-                edit.edit_type != EditType.OBJECT_REMOVAL
-            ):  # TODO: remove this later
+            # if (
+            #     edit.edit_type != EditType.OBJECT_REMOVAL
+            # ):  # TODO: remove this later
+            #     continue
+
+            if edit.edit_id != 595:
                 continue
 
             logging.info("Evaluating edit: %s", edit.edit_id)
