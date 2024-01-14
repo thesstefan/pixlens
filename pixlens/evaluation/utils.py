@@ -563,6 +563,14 @@ class HistogramComparisonMethod(enum.IntEnum):
     KL_DIVERGENCE = cv2.HISTCMP_KL_DIV
 
 
+def smooth_and_normalize(
+    signal: npt.NDArray,
+    smoothing_sigma: float,
+) -> npt.NDArray:
+    smoothed = gaussian_filter1d(signal, smoothing_sigma, mode="nearest")
+    return smoothed / np.sum(smoothed)  # type: ignore[no-any-return]
+
+
 def compare_color_histograms(  # noqa: PLR0913
     img_1: Image.Image,
     mask_1: npt.NDArray[np.bool_],
@@ -584,15 +592,16 @@ def compare_color_histograms(  # noqa: PLR0913
     )
 
     channels = 3
+
     smooth_hist_1 = np.concatenate(
         [
-            gaussian_filter1d(channel_hist, smoothing_sigma, mode="nearest")
+            smooth_and_normalize(channel_hist, smoothing_sigma)
             for channel_hist in np.split(hist_1, channels)
         ],
     )
     smooth_hist_2 = np.concatenate(
         [
-            gaussian_filter1d(channel_hist, smoothing_sigma, mode="nearest")
+            smooth_and_normalize(channel_hist, smoothing_sigma)
             for channel_hist in np.split(hist_2, channels)
         ],
     )
