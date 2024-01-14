@@ -582,10 +582,21 @@ def compare_color_histograms(  # noqa: PLR0913
         mask=mask_2,
         num_bins=num_bins,
     )
-    smooth_hist_1 = gaussian_filter1d(hist_1, smoothing_sigma)
-    smooth_hist_2 = gaussian_filter1d(hist_2, smoothing_sigma)
 
     channels = 3
+    smooth_hist_1 = np.concatenate(
+        [
+            gaussian_filter1d(channel_hist, smoothing_sigma, mode="nearest")
+            for channel_hist in np.split(hist_1, channels)
+        ],
+    )
+    smooth_hist_2 = np.concatenate(
+        [
+            gaussian_filter1d(channel_hist, smoothing_sigma, mode="nearest")
+            for channel_hist in np.split(hist_2, channels)
+        ],
+    )
+
     similarities = [
         cv2.compareHist(channel_hist_1, channel_hist_2, method)
         for channel_hist_1, channel_hist_2 in zip(
