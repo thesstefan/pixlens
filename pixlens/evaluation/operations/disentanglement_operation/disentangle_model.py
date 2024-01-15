@@ -190,7 +190,6 @@ class Classifier:
         self.model.eval()
         class_correct = defaultdict(int)
         class_total = defaultdict(int)
-
         with torch.no_grad():
             for inputs, labels in self.test_loader:
                 outputs = self.model(inputs)
@@ -225,11 +224,19 @@ class Classifier:
         annotations = np.array(
             [
                 [
-                    "{0} \n ({1:.2%})".format(raw, normalized)
-                    for raw, normalized in zip(cm_row, cm_normalized_row)
+                    f"{raw} \n ({normalized:.2%})"
+                    for raw, normalized in zip(
+                        cm_row,
+                        cm_normalized_row,
+                        strict=True,
+                    )
                 ]
-                for cm_row, cm_normalized_row in zip(cm, cm_normalized)
-            ]
+                for cm_row, cm_normalized_row in zip(
+                    cm,
+                    cm_normalized,
+                    strict=True,
+                )
+            ],
         )
 
         # Get class names from LabelEncoder
