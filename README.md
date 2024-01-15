@@ -109,7 +109,22 @@ The results will be available in the mentioned cache directory under `evaluation
 Similarly, there are other CLI scripts provided for debugging intermediary steps, like [`pixlens_editing`](https://github.com/thesstefan/pixlens/blob/main/pixlens/cli/pixlens_editing_cli.py),
 [`pixlens_detection`](https://github.com/thesstefan/pixlens/blob/main/pixlens/cli/pixlens_detection_cli.py), or [`pixlens_caption`](https://github.com/thesstefan/pixlens/blob/main/pixlens/cli/pixlens_caption_cli.py).
 
-## Benchmarking Custom Models
+## Disentanglement Pipeline
+
+To execute the disentanglement pipeline, use the following command:
+
+```shell
+pixlens-eval --model-params-yaml ${DETECTION_MODEL_YAML}
+```
+Upon completion of the pipeline, a folder titled 'disentanglement' will be created within the model's cache directory. This folder contains critical outputs of the evaluation:
+
+- `results.json`: A file that details the most significant findings of the evaluation.
+- **Confusion Matrix Plot**: A visual representation to help understand the performance of the model.
+
+In case you prefer not to rerun the entire process, you have the option to delete the `.pkl` files. These files store essential data required for the evaluation.
+
+
+### Benchmarking Custom Models
 
 You can also benchmark your own model by defining an adapter class similar to the ones in [`editing`](https://github.com/thesstefan/pixlens/tree/main/pixlens/editing), implementing
 the [`PrompatbleImageEditingModel`](https://github.com/thesstefan/pixlens/blob/main/pixlens/editing/interfaces.py#L16) protocol.
