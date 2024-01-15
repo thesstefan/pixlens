@@ -12,8 +12,8 @@ git clone https://github.com/thesstefan/pixlens && cd pixlens
 
 # Download EditVal selected images and unzip them in "editval_instances"
 # You can do this manually or by running gdown:
-$ wget --no-check-certificate -r "https://drive.google.com/uc?export=download&id=1q_V2oxtGUCPE2vkQi88NvnGurg2Swf9N" -O editval_instances.zip
-$ unzip editval_instances.zip && rm edit_val_instances.zip && cd ..
+wget --no-check-certificate -r "https://drive.google.com/uc?export=download&id=1q_V2oxtGUCPE2vkQi88NvnGurg2Swf9N" -O editval_instances.zip
+unzip editval_instances.zip && rm editval_instances.zip
 
 # Create conda env
 conda create -n $ENVNAME "python>=3.11" --file requirements.txt -c pytorch -c nvidia -c conda-forge
@@ -31,6 +31,8 @@ pip install xformers==0.0.23
 # Install pixlens in editable mode
 pip install --no-build-isolation --no-deps -e .
 ```
+
+The `editval_instances.zip` can also be downloaded from [here](https://drive.google.com/uc?export=download&id=1q_V2oxtGUCPE2vkQi88NvnGurg2Swf9N).
 
 > **NOTICE 1**: The NullTextInversion model is available only when `diffusers=10.0.0` due to 
 > issues when using newer versions ([#1](https://github.com/google/prompt-to-prompt/issues/57), 
@@ -78,15 +80,15 @@ in PixLens's cache directory (`~/.cache/pixlens` on UNIX, `C:\Users\{USER}\AppDa
 
 To run the whole evaluation pipeline (for InstructPix2Pix, ControlNet and LCM), run 
 ```shell
-$ pixlens-eval --detection_model_yaml ${DETECTION_MODEL_YAML} --run-pipeline
+pixlens-eval --detection_model_yaml ${DETECTION_MODEL_YAML} --run-pipeline
 ```
 
 To run a more specific evaluation (for one specific model & operation type), run
 ```shell
-$ pixlens-eval --detection_model_yaml ${DETECTION_MODEL_YAML} 
-               --editing_model_yaml ${EDITING_MODEL_YAML}
-               --edit_type ${EDIT_TYPE}
-               --do-all
+pixlens-eval --detection_model_yaml ${DETECTION_MODEL_YAML} 
+             --editing_model_yaml ${EDITING_MODEL_YAML}
+             --edit_type ${EDIT_TYPE}
+             --do-all
 ```
 
 The results will be available in the mentioned cache directory under `evaluation_results.json` (aggregated) and
