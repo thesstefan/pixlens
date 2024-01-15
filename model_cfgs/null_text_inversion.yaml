@@ -2,4 +2,7 @@ class: NullTextInversion
 params:
     seed: 0
     sd_type: "CompVis/stable-diffusion-v1-4"
+    cross_replace_steps: 0.8
+    self_replace_steps: 0.6
+    subject_amplification: 8.0
     device: "cuda"

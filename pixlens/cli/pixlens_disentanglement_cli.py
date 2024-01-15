@@ -10,7 +10,7 @@ from pixlens.evaluation.operations.disentanglement_operation.disentanglement imp
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
 parser.add_argument(
-    "--model_params_yaml",
+    "--model-params-yaml",
     type=str,
     help=("Path to YAML containing the model configuration"),
     required=True,
