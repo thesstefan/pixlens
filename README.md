@@ -99,6 +99,14 @@ The results will be available in the mentioned cache directory under `evaluation
 Similarly, there are other CLI scripts provided for debugging intermediary steps, like [`pixlens_editing`](https://github.com/thesstefan/pixlens/blob/main/pixlens/cli/pixlens_editing_cli.py),
 [`pixlens_detection`](https://github.com/thesstefan/pixlens/blob/main/pixlens/cli/pixlens_detection_cli.py), or [`pixlens_caption`](https://github.com/thesstefan/pixlens/blob/main/pixlens/cli/pixlens_caption_cli.py).
 
+## Benchmarking Custom Models
+
+You can also benchmark your own model by defining an adapter class similar to the ones in [`editing`](https://github.com/thesstefan/pixlens/tree/main/pixlens/editing), implementing
+the [`PrompatbleImageEditingModel`](https://github.com/thesstefan/pixlens/blob/main/pixlens/editing/interfaces.py#L16) protocol.
+
+Afterwards, define a YAML configuration file similar to the ones in [`model_cfgs`](https://github.com/thesstefan/pixlens/tree/main/model_cfgs) and use this file as the
+parameter for the `--editing_model_yaml` flag of `pixlens-eval`.
+
 # Acknowledgements
 
 The [NullTextInversion](https://arxiv.org/abs/2211.09794) implementation is from [google/prompt-to-prompt](https://github.com/google/prompt-to-prompt). Otherwise,
