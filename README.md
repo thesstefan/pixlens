@@ -130,7 +130,7 @@ You can also benchmark your own model by defining an adapter class similar to th
 the [`PrompatbleImageEditingModel`](https://github.com/thesstefan/pixlens/blob/main/pixlens/editing/interfaces.py#L16) protocol.
 
 Afterwards, define a YAML configuration file similar to the ones in [`model_cfgs`](https://github.com/thesstefan/pixlens/tree/main/model_cfgs) and use this file as the
-parameter for the `--editing_model_yaml` flag of `pixlens-eval`.
+parameter for the `--editing_model_yaml` flag of `pixlens-eval` and `pixlens-disentanglement`.
 
 # Acknowledgements
 
