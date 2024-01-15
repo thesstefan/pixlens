@@ -26,6 +26,8 @@ where = ["."]
 pixlens-detect = "pixlens.cli.pixlens_detection_cli:main"
 pixlens-edit = "pixlens.cli.pixlens_editing_cli:main"
 pixlens-eval = "pixlens.cli.pixlens_evaluation_cli:main"
+pixlens-caption = "pixlens.cli.pixlens_caption_cli:main"
+pixlens-disentanglement = "pixlens.cli.pixlens_disentanglement_cli:main"
 
 [tool.ruff]
 line-length = 80
