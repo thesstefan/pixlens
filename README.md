@@ -7,6 +7,14 @@ Evaluate & understand image editing models!
 To set up the required Python 3.11 conda environment, run the following commands:
 
 ```shell
+# Clone repository & cd into it
+git clone https://github.com/thesstefan/pixlens && cd pixlens
+
+# Download EditVal selected images and unzip them in "editval_instances"
+# You can do this manually or by running gdown:
+$ wget --no-check-certificate -r "https://drive.google.com/uc?export=download&id=1q_V2oxtGUCPE2vkQi88NvnGurg2Swf9N" -O editval_instances.zip
+$ unzip editval_instances.zip && rm edit_val_instances.zip && cd ..
+
 # Create conda env
 conda create -n $ENVNAME "python>=3.11" --file requirements.txt -c pytorch -c nvidia -c conda-forge
 
