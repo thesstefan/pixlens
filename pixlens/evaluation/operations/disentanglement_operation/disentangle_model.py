@@ -74,13 +74,14 @@ class LinearClassifier(nn.Module):
 
 
 class Classifier:
+    model: nn.Module
+
     def __init__(self, dataset: pd.DataFrame, save_data: Path) -> None:
         self.dataset = dataset
         self.label_encoder = LabelEncoder()
         self.save_data = save_data
         self.checkpoint_path = save_data / "model_checkpoint.pth"
         self.classifier_type = ClassifierType.LINEAR
-        self.model: nn.Module
 
     def save_checkpoint(self, filename: Path | None = None) -> None:
         if filename is None:
@@ -121,20 +122,16 @@ class Classifier:
 
                 label = self.dataset.loc[i, "attribute_type"]
                 labels_list.append(label)
-
-        # Stack all tensors in the list into a single tensor
         inputs = torch.stack(inputs_list)
-
-        # Transform labels to numerical values
         labels = self.label_encoder.fit_transform(labels_list)
         labels = torch.tensor(labels, dtype=torch.long)
 
-        # Reshape inputs if necessary for CNN
-        inputs = inputs.view(inputs.size(0), -1, 45, 45)
+        if self.classifier_type == ClassifierType.CNN:
+            inputs = inputs.view(inputs.size(0), -1, 45, 45)
         x_train, x_test, y_train, y_test = train_test_split(
             inputs,
             labels,
-            test_size=0.2,
+            test_size=0.3,
             random_state=42,
         )
         self.train_loader = DataLoader(
@@ -160,23 +157,23 @@ class Classifier:
             raise ValueError(msg)
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
-
-        for epoch in range(num_epochs):
-            self.model.train()
-            running_loss = 0.0
-            for inputs, labels in tqdm(
-                self.train_loader,
-                desc=f"Epoch {epoch + 1}/{num_epochs}",
-            ):
-                self.optimizer.zero_grad()
-                outputs = self.model(inputs)
-                loss = self.criterion(outputs, labels)
-                loss.backward()
-                self.optimizer.step()
-                running_loss += loss.item()
-
-        # Optionally save the model after training
-        self.save_checkpoint(self.checkpoint_path)
+        if self.checkpoint_path.exists():
+            self.load_checkpoint(self.checkpoint_path)
+        else:
+            for epoch in range(num_epochs):
+                self.model.train()
+                running_loss = 0.0
+                for inputs, labels in tqdm(
+                    self.train_loader,
+                    desc=f"Epoch {epoch + 1}/{num_epochs}",
+                ):
+                    self.optimizer.zero_grad()
+                    outputs = self.model(inputs)
+                    loss = self.criterion(outputs, labels)
+                    loss.backward()
+                    self.optimizer.step()
+                    running_loss += loss.item()
+            self.save_checkpoint(self.checkpoint_path)
 
     def evaluate_classifier(self) -> float:
         self.model.eval()
@@ -222,22 +219,37 @@ class Classifier:
 
         cm = confusion_matrix(all_labels, all_preds)
         plt.figure(figsize=(10, 10))
+        cm_normalized = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
+
+        # Create an array for annotations (raw and percent)
+        annotations = np.array(
+            [
+                [
+                    "{0} \n ({1:.2%})".format(raw, normalized)
+                    for raw, normalized in zip(cm_row, cm_normalized_row)
+                ]
+                for cm_row, cm_normalized_row in zip(cm, cm_normalized)
+            ]
+        )
 
         # Get class names from LabelEncoder
         class_names = self.label_encoder.inverse_transform(
             sorted(set(all_labels)),
         )
 
-        # Plotting the confusion matrix
+        # Plotting the confusion matrix with raw data for heatmap coloring
         sns.heatmap(
             cm,
-            annot=True,
-            fmt="d",
+            annot=annotations,
+            fmt="",
             cmap="Blues",
             xticklabels=class_names,
             yticklabels=class_names,
+            annot_kws={"size": 20},
         )
-        plt.ylabel("Actual Labels")
-        plt.xlabel("Predicted Labels")
-        plt.title("Confusion Matrix")
+        plt.ylabel("Actual Labels", fontsize=20)
+        plt.xlabel("Predicted Labels", fontsize=20)
+        plt.title("Confusion Matrix", fontsize=20)
+        plt.xticks(fontsize=20)
+        plt.yticks(fontsize=20)
         plt.savefig(self.save_data / "confusion_matrix.png")
