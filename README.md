@@ -114,7 +114,7 @@ Similarly, there are other CLI scripts provided for debugging intermediary steps
 To execute the disentanglement pipeline, use the following command:
 
 ```shell
-pixlens-eval --model-params-yaml ${DETECTION_MODEL_YAML}
+pixlens-eval --model-params-yaml ${EDITING_MODEL_YAML}
 ```
 Upon completion of the pipeline, a folder titled 'disentanglement' will be created within the model's cache directory. This folder contains critical outputs of the evaluation:
 
