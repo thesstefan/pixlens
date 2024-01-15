@@ -94,11 +94,15 @@ def generate_description_based_prompt(edit: Edit) -> str:
             f"A photo of a {category} {change_action_dict[from_attribute]}"
             f"{PROMPT_SEP}A photo of a "
             f"{category} {change_action_dict[to_attribute]}"
-            if from_attribute is not None and not pd.isna(from_attribute)
+            if to_attribute in change_action_dict
+            and from_attribute is not None
+            and not pd.isna(from_attribute)
             else (
                 f"A photo of a {category}"
                 f"{PROMPT_SEP}A photo of a "
                 f"{category} {change_action_dict[to_attribute]}"
+                if to_attribute in change_action_dict
+                else ""
             )
         ),
         EditType.VIEWPOINT: (

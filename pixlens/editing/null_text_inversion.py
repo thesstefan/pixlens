@@ -64,6 +64,7 @@ class NullTextInversion(interfaces.PromptableImageEditingModel):
         self.cross_replace_steps = cross_replace_steps
         self.self_replace_steps = self_replace_steps
         self.subject_amplification = subject_amplification
+        self.sd_type = sd_type
 
         self.ldm_stable = load_stable_diffusion(sd_type, device)
 
@@ -123,24 +124,27 @@ class NullTextInversion(interfaces.PromptableImageEditingModel):
             msg = "edit_info is required for Null-Text Inversion edit"
             raise utils.GotNoneError(msg)
 
+        tmp_path = "tmp.png"
+        original_size = None
+        with Image.open(image_path) as img:
+            original_size = img.size
+            resized = img.resize((512, 512))
+            resized.save(tmp_path)
+        image_path = tmp_path
+
         src, dst = editing_utils.split_description_based_prompt(prompt)
+
         x_t, uncond_embeddings = self.get_inversion_latent(image_path, src)
 
         # TODO(thesstefan): Play more with these parameters and see what
         #                   can be achieved with them. May need to make them
         #                   more operation specific!
+
         equalizer_params = {
             "words": (edit_info.to_attribute,),
             "values": (self.subject_amplification,),
         }
-        blend_words = (
-            (edit_info.to_attribute,),
-            (
-                edit_info.to_attribute
-                if edit_info.edit_type == EditType.OBJECT_REPLACEMENT
-                else edit_info.from_attribute,
-            ),
-        )
+        blend_words = ((edit_info.category), (edit_info.category,))
 
         # FIXME(thesstefan): Using the blend_words parameter
         # makes the implementation code raise a KeyError. This
@@ -170,7 +174,9 @@ class NullTextInversion(interfaces.PromptableImageEditingModel):
         controller = controllers.make_controller(
             [src, dst],
             self.ldm_stable.tokenizer,  # type: ignore[attr-defined]
-            edit_info.edit_type == EditType.OBJECT_REPLACEMENT,
+            # TODO: This doesn't work with different length prompts
+            #   edit_info.edit_type == EditType.OBJECT_REPLACEMENT,
+            False,
             {"default_": self.cross_replace_steps},
             self.self_replace_steps,
             num_ddim_steps=50,
@@ -188,7 +194,10 @@ class NullTextInversion(interfaces.PromptableImageEditingModel):
             guidance_scale=self.guidance_scale,
         )
 
-        return Image.fromarray(images[1])
+        return Image.fromarray(images[1]).resize(original_size)
+
+    def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
+        raise NotImplementedError
 
     @property
     def prompt_type(self) -> interfaces.ImageEditingPromptType:
