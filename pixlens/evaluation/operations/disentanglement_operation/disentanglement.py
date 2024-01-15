@@ -15,12 +15,12 @@ from pixlens.evaluation.operations.disentanglement_operation.disentangle_model i
 )
 from pixlens.utils.utils import get_cache_dir
 
-more_than_1_prompt = ["DiffEdit"]
+more_than_1_prompt = ["NullTextInversion"]
 
 
 def get_composite_prompt(model_name: str, outdated_prompt: str) -> str:
-    if model_name == "DiffEdit":
-        return outdated_prompt + "[SEP]" + outdated_prompt
+    if model_name == "NullTextInversion":
+        return "White image" + "[SEP]" + outdated_prompt
     raise NotImplementedError
 
 
@@ -437,3 +437,12 @@ class Disentanglement:
         acc = classifier.evaluate_classifier()
         classifier.plot_confusion_matrix()
         return acc
+
+
+from pixlens.editing import load_editing_model_from_yaml
+
+disentanglement = Disentanglement()
+disentanglement.evaluate_model(
+    model=load_editing_model_from_yaml("model_cfgs/null_text_inversion.yaml"),
+    generate_images=True,
+)
