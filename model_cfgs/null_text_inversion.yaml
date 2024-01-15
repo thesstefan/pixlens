@@ -5,7 +5,7 @@ params:
     cross_replace_steps: 0.8
     self_replace_steps: 0.6
     subject_amplification: 8.0
-    device: "cuda"
+    device: "cpu"
     guidance_scale: 7.5
     latent_guidance_scale: 25.
     num_ddim_steps: 50
