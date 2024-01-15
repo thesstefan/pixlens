@@ -80,14 +80,14 @@ in PixLens's cache directory (`~/.cache/pixlens` on UNIX, `C:\Users\{USER}\AppDa
 
 To run the whole evaluation pipeline (for InstructPix2Pix, ControlNet and LCM), run 
 ```shell
-pixlens-eval --detection_model_yaml ${DETECTION_MODEL_YAML} --run-evaluation-pipeline
+pixlens-eval --detection-model-yaml ${DETECTION_MODEL_YAML} --run-evaluation-pipeline
 ```
 
 To run a more specific evaluation (for one specific model & operation type), run
 ```shell
-pixlens-eval --detection_model_yaml ${DETECTION_MODEL_YAML} 
-             --editing_model_yaml ${EDITING_MODEL_YAML}
-             --edit_type ${EDIT_TYPE}
+pixlens-eval --detection-model-yaml ${DETECTION_MODEL_YAML} 
+             --editing-model-yaml ${EDITING_MODEL_YAML}
+             --edit-type ${EDIT_TYPE}
              --do-all
 ```
 
@@ -95,13 +95,13 @@ The results will be available in the mentioned cache directory under `evaluation
 `evaluation_results.csv` (individual edits).
 
 >Currently, here are the possible parameterizations:
->- `DETECTION_MODEL_YAML` values: 
+>- `EDITING_MODEL_YAML` values: 
 >[`model_cfgs/lcm.yaml`](https://github.com/thesstefan/pixlens/blob/main/model_cfgs/lcm.yaml),
 >[`model_cfgs/instruct_pix2pix.yaml`](https://github.com/thesstefan/pixlens/blob/main/model_cfgs/instruct_pix2pix.yaml),
 >[`model_cfgs/controlnet.yaml`](https://github.com/thesstefan/pixlens/blob/main/model_cfgs/controlnet.yaml),
 >[`model_cfgs/null_text_inversion.yaml`](https://github.com/thesstefan/pixlens/blob/main/model_cfgs/null_text_inversion.yaml),
 >[`model_cfgs/diffedit.yaml`](https://github.com/thesstefan/pixlens/blob/main/model_cfgs/diffedit.yaml),
->- `EDITING_MODEL_YAML` values: [`model_cfgs/grounded_sam.yaml`](https://github.com/thesstefan/pixlens/blob/main/model_cfgs/grounded_sam.yaml)
+>- `DETECTION_MODEL_YAML` values: [`model_cfgs/grounded_sam.yaml`](https://github.com/thesstefan/pixlens/blob/main/model_cfgs/grounded_sam.yaml)
 >[`model_cfgs/owlvit_sam.yaml`](https://github.com/thesstefan/pixlens/blob/main/model_cfgs/owlvit_sam.yaml)
 >- `EDIT_TYPE` values: `object_addition`, `object_replacement`, `object_removal`, `alter_parts`, 
 >`position_replacement`, `positional_addition`, `size`, `color`
