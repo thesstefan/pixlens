@@ -80,7 +80,7 @@ in PixLens's cache directory (`~/.cache/pixlens` on UNIX, `C:\Users\{USER}\AppDa
 
 To run the whole evaluation pipeline (for InstructPix2Pix, ControlNet and LCM), run 
 ```shell
-pixlens-eval --detection_model_yaml ${DETECTION_MODEL_YAML} --run-pipeline
+pixlens-eval --detection_model_yaml ${DETECTION_MODEL_YAML} --run-evaluation-pipeline
 ```
 
 To run a more specific evaluation (for one specific model & operation type), run
