@@ -289,9 +289,9 @@ def load_editing_models(
 
     if args.run_evaluation_pipeline:
         all_models = [
+            "model_cfgs/controlnet.yaml",
             "model_cfgs/lcm.yaml",
             "model_cfgs/instruct_pix2pix.yaml",
-            "model_cfgs/controlnet.yaml",
             # "model_cfgs/diffedit.yaml",
             # "model_cfgs/null_text_inversion.yaml",
         ]
@@ -361,6 +361,7 @@ def main() -> None:
         evaluation_pipeline,
     )
 
+    # evaluation_pipeline.load_evaluation_dataset()
     postprocess_evaluation(editing_models, evaluation_pipeline)
 
 

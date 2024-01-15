@@ -10,6 +10,7 @@ from pixlens.detection import interfaces as detection_interfaces
 from pixlens.detection.utils import get_separator
 from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation import interfaces
+from pixlens.evaluation.interfaces import EditType
 from pixlens.evaluation.operations.background_preservation import (
     BackgroundPreservationOutput,
 )
@@ -289,6 +290,11 @@ class EvaluationPipeline:
             index=False,
         )
 
+    def load_evaluation_dataset(self) -> None:
+        self.evaluation_dataset = pd.read_csv(
+            Path(get_cache_dir(), "evaluation_results.csv"),
+        )
+
     def get_aggregated_scores_for_model(
         self,
         model_id: str,
@@ -401,11 +407,34 @@ class EvaluationPipeline:
             & (self.evaluation_dataset["subject_preservation_success"])
         ]
         sift_score = filtered_evaluation_dataset["subject_sift_score"].mean()
-        color_score = filtered_evaluation_dataset["subject_color_score"].mean()
-        position_score = filtered_evaluation_dataset[
+
+        # before computing the color mean score,
+        # filter out the rows with edit_type == "color"
+        color_filtered_evaluation_dataset = filtered_evaluation_dataset[
+            filtered_evaluation_dataset["edit_type"] != EditType.COLOR
+        ]
+        color_score = color_filtered_evaluation_dataset[
+            "subject_color_score"
+        ].mean()
+
+        # before computing the position mean score,
+        # filter out the rows with edit_type == "position_replacement"
+        position_filtered_evaluation_dataset = filtered_evaluation_dataset[
+            filtered_evaluation_dataset["edit_type"]
+            != EditType.POSITION_REPLACEMENT
+        ]
+        position_score = position_filtered_evaluation_dataset[
             "subject_position_score"
         ].mean()
-        aligned_iou = filtered_evaluation_dataset["subject_aligned_iou"].mean()
+
+        # before computing the aligned_iou mean score,
+        # filter out the rows with edit_type == "size"
+        aligned_iou_filtered_evaluation_dataset = filtered_evaluation_dataset[
+            filtered_evaluation_dataset["edit_type"] != EditType.SIZE
+        ]
+        aligned_iou = aligned_iou_filtered_evaluation_dataset[
+            "subject_aligned_iou"
+        ].mean()
 
         filtered_evaluation_dataset = self.evaluation_dataset[
             (self.evaluation_dataset["model_id"] == model_id)

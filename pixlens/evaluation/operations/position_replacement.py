@@ -120,23 +120,6 @@ class PositionReplacement(OperationEvaluation):
                 image_width=evaluation_input.edited_image.size[0],
             )
 
-            if absolute_position_change_score == -1:
-                # This should never happen, as it means that the
-                # position change is in the opposite direction, however
-                # the relative position change is positive, which means
-                # that the position change is in the correct direction
-                # this should be investigated
-                critical_msg = (
-                    "Absolute position change is in the opposite direction"
-                    " of the relative position change. When evaluating a"
-                    " position replacement operation."
-                )
-                logging.critical(critical_msg)
-                return EvaluationOutput(
-                    edit_specific_score=0,
-                    success=False,
-                )
-
             return EvaluationOutput(
                 edit_specific_score=max(
                     (
@@ -336,4 +319,4 @@ class PositionReplacement(OperationEvaluation):
             return 0.5
         if intended_position == real_final_position:  # correct position
             return 1
-        return -1  # absolute position change is in the opposite direction
+        return 0  # absolute position change is in the opposite direction
