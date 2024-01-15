@@ -1,3 +1,4 @@
+from collections import defaultdict
 from enum import Enum, auto
 from pathlib import Path
 
@@ -187,6 +188,25 @@ class Classifier:
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
         return correct / total
+
+    def evaluate_balanced_accuracy(self) -> float:
+        self.model.eval()
+        class_correct = defaultdict(int)
+        class_total = defaultdict(int)
+
+        with torch.no_grad():
+            for inputs, labels in self.test_loader:
+                outputs = self.model(inputs)
+                _, predicted = torch.max(outputs, 1)
+                for label, prediction in zip(labels, predicted):  # noqa: B905
+                    if label == prediction:
+                        class_correct[label.item()] += 1
+                    class_total[label.item()] += 1
+        class_accuracies = [
+            class_correct[i] / class_total[i] for i in class_correct
+        ]
+        # Calculate balanced accuracy
+        return sum(class_accuracies) / len(class_accuracies)
 
     def plot_confusion_matrix(self) -> None:
         self.model.eval()

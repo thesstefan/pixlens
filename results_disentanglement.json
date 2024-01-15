@@ -1,0 +1,86 @@
+{
+    "InstructPix2Pix": {
+        "Avg_norm": 156.42912259615386,
+        "Avg_norm_per_attribute": {
+            "texture": 163.6125,
+            "color": 142.44536830357143,
+            "style": 148.89895833333333,
+            "pattern": 167.8020138888889
+        },
+        "Inter_sample_and_intra_attribute": {
+            "texture": {
+                "Average Cosine Similarity": 0.11478029874266772,
+                "Average Angle": 1.4521572887591199
+            },
+            "color": {
+                "Average Cosine Similarity": 0.4216657676394025,
+                "Average Angle": 1.1135371265334988
+            },
+            "style": {
+                "Average Cosine Similarity": 0.10600087624273183,
+                "Average Angle": 1.4625212528809155
+            },
+            "pattern": {
+                "Average Cosine Similarity": 0.11787478343940079,
+                "Average Angle": 1.4467172155566832
+            }
+        },
+        "Inter_attribute": 0.8980912476722532
+    },
+    "ControlNet": {
+        "Avg_norm": 205.01951923076922,
+        "Avg_norm_per_attribute": {
+            "texture": 187.9422619047619,
+            "color": 203.32857142857142,
+            "style": 208.4126736111111,
+            "pattern": 211.32652777777778
+        },
+        "Inter_sample_and_intra_attribute": {
+            "texture": {
+                "Average Cosine Similarity": 0.014841017079731773,
+                "Average Angle": 1.5558832937639504
+            },
+            "color": {
+                "Average Cosine Similarity": 0.0963389892899801,
+                "Average Angle": 1.4736192246163238
+            },
+            "style": {
+                "Average Cosine Similarity": 0.013812130947171907,
+                "Average Angle": 1.556921617298765
+            },
+            "pattern": {
+                "Average Cosine Similarity": 0.013189775119593112,
+                "Average Angle": 1.5575767524957567
+            }
+        },
+        "Inter_attribute": 0.9085195530726257
+    },
+    "LCM": {
+        "Avg_norm": 82.91908653846154,
+        "Avg_norm_per_attribute": {
+            "texture": 78.6733630952381,
+            "color": 84.70301339285714,
+            "style": 88.34175347222222,
+            "pattern": 79.45229166666667
+        },
+        "Inter_sample_and_intra_attribute": {
+            "texture": {
+                "Average Cosine Similarity": 0.03509012378712811,
+                "Average Angle": 1.5355806397537606
+            },
+            "color": {
+                "Average Cosine Similarity": 0.0736645085471017,
+                "Average Angle": 1.4967978986348478
+            },
+            "style": {
+                "Average Cosine Similarity": 0.018557488329616595,
+                "Average Angle": 1.552197039043462
+            },
+            "pattern": {
+                "Average Cosine Similarity": 0.04130099682160366,
+                "Average Angle": 1.5293504184672577
+            }
+        },
+        "Inter_attribute": 0.9083798882681564
+    }
+}
