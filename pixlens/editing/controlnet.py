@@ -91,16 +91,6 @@ class ControlNet(interfaces.PromptableImageEditingModel):
             "seed": self.seed,
         }
 
-    @property
-    def params_dict(self) -> dict[str, str | bool | int | float]:
-        return {
-            "device": str(self.device),
-            "controlnet_type": str(self.controlnet_type),
-            "num_inference_steps": self.num_inference_steps,
-            "image_guidance_scale": self.image_guidance_scale,
-            "text_guidance_scale": self.text_guidance_scale,
-        }
-
     def prepare_image(self, image_path: str) -> Image.Image:
         image = Image.open(image_path)
         image_array = np.array(image)
