@@ -5,6 +5,7 @@ import torch
 from PIL import Image
 from torchvision import transforms
 
+from pixlens.editing import interfaces
 from pixlens.editing.impl.open_edit.options.train_options import TrainOptions
 from pixlens.editing.impl.open_edit.trainers.OpenEdit_optimizer import (
     OpenEditOptimizer,
@@ -12,8 +13,14 @@ from pixlens.editing.impl.open_edit.trainers.OpenEdit_optimizer import (
 from pixlens.editing.impl.open_edit.util.visualizer import Visualizer
 
 
-class OpenEditEditingModel:
-    def __init__(self) -> None:
+class OpenEditEditingModel(interfaces.PromptableImageEditingModel):
+    device: torch.device | None
+
+    def __init__(
+        self,
+        device: torch.device | None = None,
+    ) -> None:
+        self.device = device
         opt = TrainOptions().parse()
         opt.gpu = 0
         self.global_edit = False
@@ -37,16 +44,18 @@ class OpenEditEditingModel:
     def image_loader(self, image_path: str) -> torch.Tensor:
         transforms_list = []
         transforms_list.append(
-            transforms.Resize((self.opt.img_size, self.opt.img_size))
+            transforms.Resize((self.opt.img_size, self.opt.img_size)),
         )
         transforms_list += [transforms.ToTensor()]
         transforms_list += [
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ]
         transform = transforms.Compose(transforms_list)
         image = Image.open(image_path).convert("RGB")
         image_tensor = transform(image)
-        return image_tensor.unsqueeze(0).cuda()  # type: torch.Tensor
+        if self.device == torch.device("cuda"):
+            return image_tensor.unsqueeze(0).cuda()  # type: torch.Tensor
+        return image_tensor.unsqueeze(0)
 
     def text_loader(
         self,
@@ -69,15 +78,19 @@ class OpenEditEditingModel:
             + [vocab(word) for word in ori_cap]
             + [vocab("<end>")]
         )
-        ori_txt_tensor = torch.LongTensor(ori_txt).unsqueeze(0).cuda()
 
         new_txt = (
             [vocab("<start>")]
             + [vocab(word) for word in new_cap]
             + [vocab("<end>")]
         )
-        new_txt_tensor = torch.LongTensor(new_txt).unsqueeze(0).cuda()
-        return ori_txt_tensor, new_txt_tensor
+        if self.device == torch.device("cuda"):
+            ori_txt_tensor = torch.LongTensor(ori_txt).unsqueeze(0).cuda()
+            new_txt_tensor = torch.LongTensor(new_txt).unsqueeze(0).cuda()
+            return ori_txt_tensor, new_txt_tensor
+        return torch.LongTensor(ori_txt).unsqueeze(0), torch.LongTensor(
+            new_txt,
+        ).unsqueeze(0)
 
     def edit_image_with_optimized_perturbations(
         self,
