@@ -30,6 +30,9 @@ class OpenEditEditingModel:
         self.open_edit_optimizer = OpenEditOptimizer(opt)
         self.open_edit_optimizer.open_edit_model.netG.eval()
         self.visualizer = Visualizer(opt, rank=0)
+        self.str_path_to_impl = (
+            "pixlens/editing/impl/open_edit/OpenEditEditingModel"
+        )
 
     def image_loader(self, image_path: str) -> torch.Tensor:
         transforms_list = []
@@ -43,15 +46,23 @@ class OpenEditEditingModel:
         transform = transforms.Compose(transforms_list)
         image = Image.open(image_path).convert("RGB")
         image_tensor = transform(image)
-        return image_tensor.unsqueeze(0).cuda()
+        return image_tensor.unsqueeze(0).cuda()  # type: torch.Tensor
 
     def text_loader(
-        self, ori_cap_str: str, new_cap_str: str
+        self,
+        ori_cap_str: str,
+        new_cap_str: str,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         ori_cap = ori_cap_str.split()
         new_cap = new_cap_str.split()
         vocab = pickle.load(  # noqa: S301
-            Path.open("vocab/" + self.opt.dataset_mode + "_vocab.pkl", "rb"),
+            Path.open(
+                self.str_path_to_impl
+                + "vocab/"
+                + self.opt.dataset_mode
+                + "_vocab.pkl",
+                "rb",
+            ),
         )
         ori_txt = (
             [vocab("<start>")]
