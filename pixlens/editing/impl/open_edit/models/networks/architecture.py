@@ -19,7 +19,7 @@ from pixlens.editing.impl.open_edit.models.networks.normalization import SPADE
 ## VGG architecter, used for the perceptual loss using a pretrained VGG network
 class VGG19(torch.nn.Module):
     def __init__(
-        self, requires_grad=False, local_pretrained_path="checkpoints/vgg19.pth"
+        self, requires_grad=False, local_pretrained_path="pixlens/editing/impl/open_edit/checkpoints/vgg19.pth"
     ):
         super().__init__()
         # if we have network access

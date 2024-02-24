@@ -336,12 +336,12 @@ def main() -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     check_args(args)
-
     preprocessing_pipe = PreprocessingPipeline(
         "./pixlens/editval/object.json",
         "./editval_instances/",
     )
     editing_models = load_editing_models(args)
+
     preprocessing_pipe.execute_pipeline(models=editing_models)
 
     evaluation_pipeline = EvaluationPipeline(device=device)

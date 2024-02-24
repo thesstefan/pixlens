@@ -66,7 +66,7 @@ def build_vocab(data_path, data_name, jsons, threshold):
 
 def main(data_path, data_name):
     vocab = build_vocab(data_path, data_name, jsons=annotations, threshold=0)
-    with open('./vocab/%s_vocab.pkl' % data_name, 'wb') as f:
+    with open('./pixlens/editing/impl/open_edit/vocab/%s_vocab.pkl' % data_name, 'wb') as f:
         pickle.dump(vocab, f, pickle.HIGHEST_PROTOCOL)
     print("Saved vocabulary file to ", './vocab/%s_vocab.pkl' % data_name)
 

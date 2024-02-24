@@ -35,5 +35,9 @@ class TrainOptions(BaseOptions):
         parser.add_argument('--no_TTUR', action='store_true', help='Use TTUR training scheme')
         parser.add_argument('--no_disc', action='store_true', help='no discriminator')
 
+        # #TODO: remove these last:
+        # parser.add_argument('--detection-model-yaml', type=str, default='configs/detection_model.yaml', help='path to detection model yaml file')
+        # parser.add_argument('--editing-model-yaml', type=str, default='detection_model.pth', help='path to detection model weights file')
+        # parser.add_argument('--edit-id', type=int, default='detection_model.pth', help='path to detection model weights file')
         self.isTrain = True
         return parser

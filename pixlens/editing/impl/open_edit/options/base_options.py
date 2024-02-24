@@ -1,10 +1,10 @@
 import sys
 import argparse
 import os
-from util import util
+from pixlens.editing.impl.open_edit.util import util
 import torch
-import models
-import data
+import pixlens.editing.impl.open_edit.models
+import pixlens.editing.impl.open_edit.data
 import pickle
 import pdb
 
@@ -18,10 +18,10 @@ class BaseOptions():
         parser.add_argument('--num_gpu', type=int, default=8, help='num of gpus for cluter training')
         parser.add_argument('--name', type=str, default='open-edit', help='name of the experiment. It decides where to store samples and models')
 
-        parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
-        parser.add_argument('--vocab_path', type=str, default='vocab/conceptual_vocab.pkl', help='path to vocabulary') 
-        parser.add_argument('--vse_enc_path', type=str, default='checkpoints/conceptual_model_best.pth.tar', help='path to the pretrained text encoder')
-        parser.add_argument('--edge_model_path', type=str, default='checkpoints/bdcn_pretrained_on_bsds500.pth', help='path to the pretrained edge extractor')
+        parser.add_argument('--checkpoints_dir', type=str, default='./pixlens/editing/impl/open_edit/checkpoints', help='models are saved here')
+        parser.add_argument('--vocab_path', type=str, default='./pixlens/editing/impl/open_edit/vocab/conceptual_vocab.pkl', help='path to vocabulary') 
+        parser.add_argument('--vse_enc_path', type=str, default='./pixlens/editing/impl/open_edit/checkpoints/conceptual_model_best.pth.tar', help='path to the pretrained text encoder')
+        parser.add_argument('--edge_model_path', type=str, default='./pixlens/editing/impl/open_edit/checkpoints/bdcn_pretrained_on_bsds500.pth', help='path to the pretrained edge extractor')
         parser.add_argument('--model', type=str, default='OpenEdit', help='which model to use')
         parser.add_argument('--norm_G', type=str, default='spectralsync_batch', help='instance normalization or batch normalization')
         parser.add_argument('--norm_D', type=str, default='spectralinstance', help='instance normalization or batch normalization')

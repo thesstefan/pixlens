@@ -6,26 +6,36 @@ from PIL import Image
 from torchvision import transforms
 
 from pixlens.editing import interfaces
-from pixlens.editing.impl.open_edit.options.train_options import TrainOptions
+from pixlens.editing.impl.open_edit.options.opt import Config
 from pixlens.editing.impl.open_edit.trainers.OpenEdit_optimizer import (
     OpenEditOptimizer,
 )
 from pixlens.editing.impl.open_edit.util.visualizer import Visualizer
+from pixlens.editing.impl.open_edit.util.vocab import Vocabulary  # noqa: F401
+from pixlens.editing.utils import (
+    generate_original_description,
+    generate_simplified_description_based_prompt,
+)
+from pixlens.evaluation.interfaces import Edit
+from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
 
 
-class OpenEditEditingModel(interfaces.PromptableImageEditingModel):
+class OpenEdit(interfaces.PromptableImageEditingModel):
     device: torch.device | None
 
     def __init__(
         self,
+        alpha: float = 5,
+        optimize_iter: int = 10,
         device: torch.device | None = None,
     ) -> None:
         self.device = device
-        opt = TrainOptions().parse()
+
+        opt = Config()
         opt.gpu = 0
-        self.global_edit = False
-        self.alpha = 5
-        self.optimize_iter = 10
+        self.global_edit = True
+        self.alpha = alpha
+        self.optimize_iter = optimize_iter
         opt.world_size = 1
         opt.rank = 0
         opt.mpdist = False
@@ -37,9 +47,15 @@ class OpenEditEditingModel(interfaces.PromptableImageEditingModel):
         self.open_edit_optimizer = OpenEditOptimizer(opt)
         self.open_edit_optimizer.open_edit_model.netG.eval()
         self.visualizer = Visualizer(opt, rank=0)
-        self.str_path_to_impl = (
-            "pixlens/editing/impl/open_edit/OpenEditEditingModel"
-        )
+        self.str_path_to_impl = "pixlens/editing/impl/open_edit/"
+
+    @property
+    def params_dict(self) -> dict[str, str | bool | int | float]:
+        return {
+            "device": str(self.device),
+            "alpha": self.alpha,
+            "optimize_iter": self.optimize_iter,
+        }
 
     def image_loader(self, image_path: str) -> torch.Tensor:
         transforms_list = []
@@ -123,14 +139,35 @@ class OpenEditEditingModel(interfaces.PromptableImageEditingModel):
         self,
         prompt: str,
         image_path: str,
-        # edit_info: Edit | None = None,)
-        ori_cap: str,  # it would be the category
+        edit_info: Edit | None = None,
     ) -> Image.Image:
         input_image = self.image_loader(image_path)
-        ori_tensor, new_tensor = self.text_loader(ori_cap, prompt)
+        ori_tensor, new_tensor = self.text_loader(
+            generate_original_description(edit_info),
+            prompt,
+        )
         data = {"image": input_image, "caption": new_tensor, "length": [4]}
         return self.edit_image_with_optimized_perturbations(
             data,
             ori_tensor,
             new_tensor,
         )
+
+    @property
+    def prompt_type(self) -> interfaces.ImageEditingPromptType:
+        return interfaces.ImageEditingPromptType.DESCRIPTION
+
+    def generate_prompt(self, edit: Edit) -> str:
+        return generate_simplified_description_based_prompt(edit)
+
+    def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
+        raise NotImplementedError
+
+
+if __name__ == "__main__":
+    model = OpenEdit(device=torch.device("cuda"), alpha=30, optimize_iter=10)
+    preprocessing_pipe = PreprocessingPipeline(
+        "./pixlens/editval/object.json",
+        "./editval_instances/",
+    )
+    preprocessing_pipe.execute_pipeline([model])

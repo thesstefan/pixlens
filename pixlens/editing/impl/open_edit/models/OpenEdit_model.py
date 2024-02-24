@@ -1,10 +1,11 @@
 import torch
 import torch.nn.functional as F
-import models.networks as networks
-import util.util as util
+import pixlens.editing.impl.open_edit.models.networks as networks
+import pixlens.editing.impl.open_edit.util.util as util
+#from pixlens.editing.impl.open_edit.util.vocab import Vocabulary
 import pickle
-from models.networks.txt_enc import EncoderText
-from models.networks.perturbation import PerturbationNet
+from pixlens.editing.impl.open_edit.models.networks.txt_enc import EncoderText
+from pixlens.editing.impl.open_edit.models.networks.perturbation import PerturbationNet
 import random
 
 def l2norm(x, norm_dim=1):

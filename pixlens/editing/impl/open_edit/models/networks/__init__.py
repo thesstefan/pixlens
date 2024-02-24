@@ -5,17 +5,17 @@ import functools
 from torch.autograd import Variable
 import numpy as np
 import torch.nn.functional as F
-from models.networks.base_network import BaseNetwork
-from models.networks.loss import *
-from models.networks.discriminator import *
-from models.networks.generator import *
-from models.networks.encoder import *
-import util.util as util
+from pixlens.editing.impl.open_edit.models.networks.base_network import BaseNetwork
+from pixlens.editing.impl.open_edit.models.networks.loss import *
+from pixlens.editing.impl.open_edit.models.networks.discriminator import *
+from pixlens.editing.impl.open_edit.models.networks.generator import *
+from pixlens.editing.impl.open_edit.models.networks.encoder import *
+import pixlens.editing.impl.open_edit.util.util as util
 
 
 def find_network_using_name(target_network_name, filename):
     target_class_name = target_network_name + filename
-    module_name = 'models.networks.' + filename
+    module_name = 'pixlens.editing.impl.open_edit.models.networks.' + filename
     network = util.find_class_in_module(target_class_name, module_name)
 
     assert issubclass(network, BaseNetwork), \
