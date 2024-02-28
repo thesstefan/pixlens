@@ -4,6 +4,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import dacite
+import numpy as np
 import pandas as pd
 import pandera as pa
 from pandera.typing import Series
@@ -61,7 +62,7 @@ class EditDataset(abc.ABC):
         if edits_path.exists():
             try:
                 raw_df = pd.read_csv(edits_path, dtype={"image_id": str})
-                raw_df = raw_df.where(raw_df.notna(), None)
+                raw_df = raw_df.replace({np.nan: None})
 
                 # TODO: Fix weird typing error
                 self.edits_df = EditSchema.validate(raw_df, lazy=True)  # type: ignore[assignment]

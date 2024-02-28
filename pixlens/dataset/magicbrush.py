@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from pixlens.dataset.edit_dataset import EditDataset, EditSchema
@@ -72,7 +73,10 @@ class MagicBrushDataset(EditDataset):
                 edit_id += 1
 
         # TODO: Fix weird typing error
-        self.edits_df = EditSchema.validate(pd.DataFrame(edit_records))  # type: ignore[assignment]
+        raw_df = pd.DataFrame(edit_records)
+        raw_df = raw_df.replace({np.nan: None})
+
+        self.edits_df = EditSchema.validate(raw_df)  # type: ignore[assignment]
         self.edits_df.to_csv(edits_path, index=False)
 
     @property
