@@ -62,7 +62,7 @@ class EditDataset(abc.ABC):
             try:
                 # TODO: Fix weird typing error
                 self.edits_df = EditSchema.validate(  # type: ignore[assignment]
-                    pd.read_csv(edits_path),
+                    pd.read_csv(edits_path, dtype={"image_id": str}),
                     lazy=True,
                 )
             except pa.errors.SchemaErrors as err:
