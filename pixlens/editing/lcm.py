@@ -6,10 +6,6 @@ from PIL import Image
 from torch._tensor import Tensor
 
 from pixlens.editing import interfaces
-from pixlens.editing.utils import (
-    generate_instruction_based_prompt,
-    log_model_if_not_in_cache,
-)
 from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
 
@@ -22,13 +18,13 @@ def load_lcm(
     model_type: LCMType = LCMType.BASE,
     device: torch.device | None = None,
 ) -> AutoPipelineForImage2Image:
-    path_to_cache = utils.get_cache_dir()
-    log_model_if_not_in_cache(model_type, path_to_cache)
+    cache_dir = utils.get_cache_dir()
+    utils.log_if_hugging_face_model_not_in_cache(model_type, cache_dir)
     pipe = AutoPipelineForImage2Image.from_pretrained(
         model_type,
         torch_dtype=torch.float16,
         safety_checker=None,
-        cache_dir=path_to_cache,
+        cache_dir=cache_dir,
     )
 
     pipe.to(device)
@@ -75,16 +71,6 @@ class LCM(interfaces.PromptableImageEditingModel):
             "latent_guidance_scale": self.latent_guidance_scale,
         }
 
-    @property
-    def params_dict(self) -> dict[str, str | bool | int | float]:
-        return {
-            "device": str(self.device),
-            "lcm_type": str(self.lcm_type),
-            "num_inference_steps": self.num_inference_steps,
-            "image_guidance_scale": self.image_guidance_scale,
-            "text_guidance_scale": self.text_guidance_scale,
-        }
-
     def edit_image(
         self,
         prompt: str,
@@ -121,6 +107,3 @@ class LCM(interfaces.PromptableImageEditingModel):
     @property
     def prompt_type(self) -> interfaces.ImageEditingPromptType:
         return interfaces.ImageEditingPromptType.INSTRUCTION
-
-    def generate_prompt(self, edit: Edit) -> str:
-        return generate_instruction_based_prompt(edit)

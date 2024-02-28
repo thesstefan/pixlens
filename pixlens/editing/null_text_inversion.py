@@ -10,7 +10,7 @@ from pixlens.editing.impl.null_text_inversion import (
     ptp_utils,
 )
 from pixlens.editing.stable_diffusion import StableDiffusionType
-from pixlens.evaluation.interfaces import Edit, EditType
+from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
 
 
@@ -202,6 +202,3 @@ class NullTextInversion(interfaces.PromptableImageEditingModel):
     @property
     def prompt_type(self) -> interfaces.ImageEditingPromptType:
         return interfaces.ImageEditingPromptType.DESCRIPTION
-
-    def generate_prompt(self, edit: Edit) -> str:
-        return editing_utils.generate_description_based_prompt(edit)
