@@ -69,6 +69,7 @@ class MagicBrushDataset(EditDataset):
                         else "",
                     },
                 )
+                edit_id += 1
 
         # TODO: Fix weird typing error
         self.edits_df = EditSchema.validate(pd.DataFrame(edit_records))  # type: ignore[assignment]
