@@ -60,11 +60,11 @@ class EditDataset(abc.ABC):
 
         if edits_path.exists():
             try:
+                raw_df = pd.read_csv(edits_path, dtype={"image_id": str})
+                raw_df = raw_df.where(raw_df.notna(), None)
+
                 # TODO: Fix weird typing error
-                self.edits_df = EditSchema.validate(  # type: ignore[assignment]
-                    pd.read_csv(edits_path, dtype={"image_id": str}),
-                    lazy=True,
-                )
+                self.edits_df = EditSchema.validate(raw_df, lazy=True)  # type: ignore[assignment]
             except pa.errors.SchemaErrors as err:
                 logging.warning("Schema errors and failure cases:")
                 logging.warning(err)
