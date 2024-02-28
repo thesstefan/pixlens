@@ -1,14 +1,18 @@
-import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import torch
+import pandera as pa
+from pandera.typing import Series
 from PIL import Image
 
+from pixlens.dataset.edit_dataset import EditDataset
 from pixlens.detection import interfaces as detection_interfaces
 from pixlens.detection.utils import get_separator
-from pixlens.editing.interfaces import PromptableImageEditingModel
+from pixlens.editing.interfaces import (
+    ImageEditingPromptType,
+    PromptableImageEditingModel,
+)
 from pixlens.evaluation import interfaces
 from pixlens.evaluation.interfaces import EditType
 from pixlens.evaluation.operations.background_preservation import (
@@ -22,23 +26,34 @@ from pixlens.utils.utils import get_cache_dir, get_image_extension
 from pixlens.visualization import annotation
 
 
+class EvaluationSchema(pa.DataFrameModel):
+    edit_id: Series[int] = pa.Field(ge=0)
+    edit_type: Series[str] = pa.Field(
+        isin=[edit_type.value for edit_type in EditType],
+    )
+    model_id: Series[str]
+    evaluation_success: Series[bool]
+    edit_specific_score: Series[float]
+    subject_preservation_success: Series[float]
+    subject_sift_score: Series[float]
+    subject_color_score: Series[float]
+    subject_position_score: Series[float]
+    subject_ssim_score: Series[float]
+    subject_aligned_iou: Series[float]
+    background_preservation_success: Series[bool]
+    background_score: Series[float]
+
+
 class EvaluationPipeline:
-    def __init__(self, device: torch.device) -> None:
-        self.device = "cpu"  # original was cuda
-        self.edit_dataset: pd.DataFrame
-        self.get_edit_dataset()
+    def __init__(
+        self,
+        edit_dataset: EditDataset,
+    ) -> None:
+        self.edit_dataset = edit_dataset
         self.detection_model: detection_interfaces.PromptDetectAndBBoxSegmentModel  # noqa: E501
         self.editing_models: list[PromptableImageEditingModel]
-        self.evaluation_dataset: pd.DataFrame
+        self.evaluation_dataset: pa.typing.DataFrame[EvaluationSchema]
         self.initialize_evaluation_dataset()
-
-    def get_edit_dataset(self) -> None:
-        pandas_path = Path(get_cache_dir(), "edit_dataset.csv")
-        if pandas_path.exists():
-            self.edit_dataset = pd.read_csv(pandas_path)
-        else:
-            logging.error(f"Edit dataset ({pandas_path}) not cached")  # noqa: G004
-            raise FileNotFoundError
 
     def initialize_evaluation_dataset(self) -> None:
         self.evaluation_dataset = pd.DataFrame(
@@ -60,8 +75,7 @@ class EvaluationPipeline:
         )
 
     def get_input_image_from_edit_id(self, edit_id: int) -> Image.Image:
-        image_path = self.edit_dataset.iloc[edit_id]["input_image_path"]
-        image_path = Path(image_path)
+        image_path = Path(self.edit_dataset.get_edit(edit_id).image_path)
         image_extension = get_image_extension(image_path)
         if image_extension:
             return Image.open(image_path.with_suffix(image_extension))
@@ -70,15 +84,16 @@ class EvaluationPipeline:
     def get_edited_image_from_edit(
         self,
         edit: interfaces.Edit,
+        prompt: str,
         model: PromptableImageEditingModel,
     ) -> Image.Image:
-        prompt = model.generate_prompt(edit)
-        edit_path = Path(
-            get_cache_dir(),
-            model.model_id,
-            f"000000{edit.image_id!s:>06}",
-            prompt,
+        edit_path = (
+            get_cache_dir()
+            / model.model_id
+            / Path(edit.image_path).stem
+            / prompt
         )
+
         extension = get_image_extension(edit_path)
         if extension:
             return Image.open(edit_path.with_suffix(extension))
@@ -115,9 +130,17 @@ class EvaluationPipeline:
         edit: interfaces.Edit,
         editing_model: PromptableImageEditingModel,
     ) -> interfaces.EvaluationInput:
+        prompt = (
+            edit.instruction_prompt
+            if editing_model.prompt_type == ImageEditingPromptType.INSTRUCTION
+            else edit.description_prompt
+        )
         input_image = self.get_input_image_from_edit_id(edit.edit_id)
-        edited_image = self.get_edited_image_from_edit(edit, editing_model)
-        prompt = editing_model.generate_prompt(edit)
+        edited_image = self.get_edited_image_from_edit(
+            edit,
+            prompt,
+            editing_model,
+        )
         from_attribute = (
             None if pd.isna(edit.from_attribute) else edit.from_attribute
         )
@@ -291,8 +314,8 @@ class EvaluationPipeline:
         )
 
     def load_evaluation_dataset(self) -> None:
-        self.evaluation_dataset = pd.read_csv(
-            Path(get_cache_dir(), "evaluation_results.csv"),
+        self.evaluation_dataset = EvaluationSchema.validate(
+            pd.read_csv(get_cache_dir() / "evaluation_results.csv"),
         )
 
     def get_aggregated_scores_for_model(

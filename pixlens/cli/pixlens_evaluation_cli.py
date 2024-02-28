@@ -338,7 +338,7 @@ def main() -> None:
     editing_models = load_editing_models(args)
     preprocessing_pipe.execute_pipeline(models=editing_models)
 
-    evaluation_pipeline = EvaluationPipeline(device=device)
+    evaluation_pipeline = EvaluationPipeline(edit_dataset)
     detection_model = load_detect_segment_model_from_yaml(
         args.detection_model_yaml,
     )

@@ -52,8 +52,8 @@ class PreprocessingPipeline:
         logging.info("Editing image...")
 
         edited_image_path.parent.mkdir(parents=True, exist_ok=True)
-        #        edited_image = editing_model.edit_image(prompt, edit.image_path, edit)
-        #        edited_image.save(edited_image_path)
+        edited_image = editing_model.edit_image(prompt, edit.image_path, edit)
+        edited_image.save(edited_image_path)
 
         logging.info("Image saved to %s", edited_image_path)
 
