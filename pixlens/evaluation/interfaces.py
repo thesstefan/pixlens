@@ -70,6 +70,8 @@ class Edit:
     edit_type: EditType
     from_attribute: str | None
     to_attribute: str | None
+    instruction_prompt: str
+    description_prompt: str
 
 
 @dataclasses.dataclass

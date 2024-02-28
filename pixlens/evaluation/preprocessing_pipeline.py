@@ -2,7 +2,10 @@ import logging
 from pathlib import Path
 
 from pixlens.dataset.edit_dataset import EditDataset
-from pixlens.editing.interfaces import PromptableImageEditingModel
+from pixlens.editing.interfaces import (
+    ImageEditingPromptType,
+    PromptableImageEditingModel,
+)
 from pixlens.evaluation.interfaces import Edit
 from pixlens.utils.utils import get_cache_dir
 
@@ -49,8 +52,8 @@ class PreprocessingPipeline:
         logging.info("Editing image...")
 
         edited_image_path.parent.mkdir(parents=True, exist_ok=True)
-        edited_image = editing_model.edit_image(prompt, edit.image_path, edit)
-        edited_image.save(edited_image_path)
+        #        edited_image = editing_model.edit_image(prompt, edit.image_path, edit)
+        #        edited_image.save(edited_image_path)
 
         logging.info("Image saved to %s", edited_image_path)
 
@@ -72,9 +75,13 @@ class PreprocessingPipeline:
             self.init_model_dir(model)
 
             for edit in self.edit_dataset:
-                prompt = model.generate_prompt(edit)
+                prompt = (
+                    edit.instruction_prompt
+                    if model.prompt_type == ImageEditingPromptType.INSTRUCTION
+                    else edit.description_prompt
+                )
 
-                logging.info("prompt: %s", prompt)
+                logging.info("Prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)
 
                 self.save_edited_image(edit, prompt, model)

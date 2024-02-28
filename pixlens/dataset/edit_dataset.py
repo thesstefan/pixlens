@@ -37,6 +37,8 @@ class EditSchema(pa.DataFrameModel):
     from_attribute: Series[str] = pa.Field(nullable=True)
     to_attribute: Series[str] = pa.Field(nullable=True)
     image_path: Series[str]
+    instruction_prompt: Series[str]
+    description_prompt: Series[str]
 
 
 class EditDataset(abc.ABC):

@@ -1,11 +1,9 @@
-import logging
-from pathlib import Path
-
 import pandas as pd
 
-from pixlens.evaluation.interfaces import Edit, EditType
+from pixlens.evaluation.interfaces import EditType
 
 PROMPT_SEP = "[SEP]"
+
 
 change_action_dict = {
     "sit": "sitting",
@@ -17,43 +15,30 @@ change_action_dict = {
 }
 
 
-def log_model_if_not_in_cache(model_name: str, cache_dir: Path) -> None:
-    model_dir = model_name.replace("/", "--")
-    model_dir = "models--" + model_dir
-    full_path = cache_dir / model_dir
-    if not full_path.is_dir():
-        logging.info(
-            "Downloading model from %s ...",
-            model_name,
-        )
-
-
-def generate_description_based_prompt(edit: Edit) -> str:
-    edit_type = edit.edit_type
-    from_attribute = edit.from_attribute
-    to_attribute = edit.to_attribute
-    category = edit.category
-
+def generate_description_based_prompt(
+    edit_type: EditType,
+    from_attribute: str | None,
+    to_attribute: str | None,
+    category: str,
+) -> str:
     category = "".join(
-        char if char.isalpha() or char.isspace() else " "
-        for char in edit.category
+        char if char.isalpha() or char.isspace() else " " for char in category
     )
 
-    if not pd.isna(edit.to_attribute):
+    if to_attribute:
         to_attribute = "".join(
             char if char.isalpha() or char.isspace() else " "
-            for char in edit.to_attribute
+            for char in to_attribute or ""
         )
 
-    if not pd.isna(edit.from_attribute):
+    if from_attribute:
         from_attribute = "".join(
             char if char.isalpha() or char.isspace() else " "
-            for char in edit.from_attribute
+            for char in from_attribute or ""
         )
 
     prompt_templates: dict[EditType, str] = {
-        # TODO: add prompts in a description based way
-        # e.g. instead of "Add a red apple to the image", "A red apple".
+        # TODO: Remove redundant "A photo of" prefix
         EditType.COLOR: (
             f"A photo of a {category}"
             f"{PROMPT_SEP}A photo of a {to_attribute} {category}"
@@ -95,8 +80,7 @@ def generate_description_based_prompt(edit: Edit) -> str:
             f"{PROMPT_SEP}A photo of a "
             f"{category} {change_action_dict[to_attribute]}"
             if to_attribute in change_action_dict
-            and from_attribute is not None
-            and not pd.isna(from_attribute)
+            and from_attribute in change_action_dict
             else (
                 f"A photo of a {category}"
                 f"{PROMPT_SEP}A photo of a "
@@ -114,11 +98,6 @@ def generate_description_based_prompt(edit: Edit) -> str:
                 f"{PROMPT_SEP}A photo of a {category} from {to_attribute}"
             )
         ),
-        # also it could be (according to EDITVAL):
-        # EditType.VIEWPOINT: (
-        #    f"A photo of a {from_attribute} view of a {category}"
-        #    f"{PROMPT_SEP}A photo of a {to_attribute} view of a {category}"
-        # )
         EditType.BACKGROUND: (
             f"A photo of a {category} in the {from_attribute}"
             f"{PROMPT_SEP}A photo of a {category} in the {to_attribute}"
@@ -139,10 +118,6 @@ def generate_description_based_prompt(edit: Edit) -> str:
             f"{category} in the shape of a {to_attribute}"
         ),
         EditType.ALTER_PARTS: (
-            # THIS IS ABSOLUTE BS. Fuck you EDITVAL. for "alter parts" there
-            # is no way to write a description based prompt as basically
-            # "to_attribute" is always something like:
-            # "add tomato toppings to...", which is instruction based.
             f"A photo of a {category}"
             f"{PROMPT_SEP}{to_attribute} to the {category}"
         ),
@@ -154,34 +129,33 @@ def generate_description_based_prompt(edit: Edit) -> str:
     raise ValueError(error_msg)
 
 
-def generate_instruction_based_prompt(edit: Edit) -> str:
-    edit_type = edit.edit_type
-    from_attribute = edit.from_attribute
-    to_attribute = edit.to_attribute
-    category = edit.category
-
+def generate_instruction_based_prompt(
+    edit_type: EditType,
+    from_attribute: str | None,
+    to_attribute: str | None,
+    category: str,
+) -> str:
     category = "".join(
-        char if char.isalpha() or char.isspace() else " "
-        for char in edit.category
+        char if char.isalpha() or char.isspace() else " " for char in category
     )
 
-    if not pd.isna(edit.to_attribute):
+    if not pd.isna(to_attribute):
         to_attribute = "".join(
             char if char.isalpha() or char.isspace() else " "
-            for char in edit.to_attribute
+            for char in to_attribute or ""
         )
 
-    if not pd.isna(edit.from_attribute):
+    if not pd.isna(from_attribute):
         from_attribute = "".join(
             char if char.isalpha() or char.isspace() else " "
-            for char in edit.from_attribute
+            for char in from_attribute or ""
         )
 
     prompt_templates = {
         EditType.COLOR: f"Change the color of the {category} to {to_attribute}",
         EditType.SIZE: f"Change the size of the {category} to {to_attribute}",
         EditType.OBJECT_ADDITION: f"Add a {to_attribute} to the image",
-        EditType.POSITIONAL_ADDITION: f"Add a {to_attribute} of the {category}",  # it was without the of
+        EditType.POSITIONAL_ADDITION: f"Add a {to_attribute} of the {category}",
         EditType.OBJECT_REMOVAL: f"Remove the {category}",
         EditType.OBJECT_REPLACEMENT: (
             f"Replace the {from_attribute} with a {to_attribute}"

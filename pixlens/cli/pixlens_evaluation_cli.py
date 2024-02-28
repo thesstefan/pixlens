@@ -8,7 +8,10 @@ import torch
 from pixlens.dataset.editval import EditDataset, EditValDataset
 from pixlens.detection import load_detect_segment_model_from_yaml
 from pixlens.editing import load_editing_model_from_yaml
-from pixlens.editing.interfaces import PromptableImageEditingModel
+from pixlens.editing.interfaces import (
+    PromptableImageEditingModel,
+    ImageEditingPromptType,
+)
 from pixlens.evaluation.evaluation_pipeline import (
     EvaluationPipeline,
 )
@@ -145,7 +148,13 @@ def evaluate_edits(
             logging.info("Category: %s", edit.category)
             logging.info("From attribute: %s", edit.from_attribute)
             logging.info("To attribute: %s", edit.to_attribute)
-            logging.info("Prompt: %s", editing_model.generate_prompt(edit))
+            prompt = (
+                edit.instruction_prompt
+                if editing_model.prompt_type
+                == ImageEditingPromptType.INSTRUCTION
+                else edit.description_prompt
+            )
+            logging.info("Prompt: %s", prompt)
 
             evaluation_input = evaluation_pipeline.get_all_inputs_for_edit(
                 edit,
