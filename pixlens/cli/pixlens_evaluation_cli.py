@@ -125,12 +125,16 @@ def get_edits(
 def evaluate_edits(
     edits: list[Edit],
     editing_models: list[PromptableImageEditingModel],
+    dataset_name: str,
     operation_evaluators: dict[EditType, list[OperationEvaluation]],
     evaluation_pipeline: EvaluationPipeline,
 ) -> None:
     for editing_model in editing_models:
         model_evaluation_dir = (
-            get_cache_dir() / editing_model.model_id / "evaluation"
+            get_cache_dir()
+            / editing_model.model_id
+            / dataset_name
+            / "evaluation"
         )
         logging.info("Evaluating model: %s", editing_model.model_id)
         for edit in edits:
@@ -351,6 +355,7 @@ def main() -> None:
     evaluate_edits(
         edits,
         editing_models,
+        edit_dataset.name,
         operation_evaluations,
         evaluation_pipeline,
     )

@@ -20,11 +20,13 @@ class PreprocessingPipeline:
         self,
         input_image_path: Path,
         prompt: str,
+        dataset_name: str,
         editing_model: PromptableImageEditingModel,
     ) -> Path:
         return (
             get_cache_dir()
             / editing_model.model_id
+            / dataset_name
             / input_image_path.stem
             / prompt
         ).with_suffix(".png")
@@ -33,11 +35,13 @@ class PreprocessingPipeline:
         self,
         edit: Edit,
         prompt: str,
+        dataset_name: str,
         editing_model: PromptableImageEditingModel,
     ) -> None:
         edited_image_path = self.get_edited_image_path(
             Path(edit.image_path),
             prompt,
+            dataset_name,
             editing_model,
         )
 
@@ -84,6 +88,8 @@ class PreprocessingPipeline:
                 logging.info("Prompt: %s", prompt)
                 logging.info("image_path: %s", edit.image_path)
 
-                self.save_edited_image(edit, prompt, model)
+                self.save_edited_image(
+                    edit, prompt, self.edit_dataset.name, model
+                )
 
                 logging.info("")
