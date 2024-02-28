@@ -38,18 +38,19 @@ class MagicBrushDataset(EditDataset):
 
             if image in prompt_info:
                 info = prompt_info[edit["input"]]
+                image_id = image.partition("-")[0]
 
                 edit_records.append(
                     {
                         "edit_id": edit_id,
                         # Format of image paths is {COCO_ID}-{STUFF}.png
-                        "image_id": image.partition("-")[0],
+                        "image_id": image_id,
                         "edit_type": info["edit_type"],
                         "category": info["category"],
                         "from_attribute": info["from_attribute"],
                         "to_attribute": info["to_attribute"],
                         "image_path": str(
-                            self.magicbrush_dir / "images" / image,
+                            self.magicbrush_dir / "images" / image_id / image,
                         ),
                         "instruction_prompt": edit["instruction"],
                         # TODO: Find a better way to handle this. What will
