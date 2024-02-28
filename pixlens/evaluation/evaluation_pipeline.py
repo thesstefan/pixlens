@@ -90,6 +90,7 @@ class EvaluationPipeline:
         edit_path = (
             get_cache_dir()
             / model.model_id
+            / self.edit_dataset.name
             / Path(edit.image_path).stem
             / prompt
         )
