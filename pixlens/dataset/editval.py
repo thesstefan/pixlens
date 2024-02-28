@@ -9,9 +9,7 @@ from pixlens.dataset.prompt_utils import (
     generate_description_based_prompt,
     generate_instruction_based_prompt,
 )
-from pixlens.evaluation.interfaces import (
-    EditType,
-)
+from pixlens.evaluation.interfaces import EditType
 
 
 class EditValDataset(EditDataset):
@@ -102,7 +100,7 @@ class EditValDataset(EditDataset):
 
         # TODO: Fix weird typing error
         self.edits_df = EditSchema.validate(pd.DataFrame(edit_records))  # type: ignore[assignment]
-        self.edits_df.to_csv(edits_path)
+        self.edits_df.to_csv(edits_path, index=False)
 
     @property
     def name(self) -> str:

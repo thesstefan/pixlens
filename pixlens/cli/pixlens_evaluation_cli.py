@@ -5,12 +5,13 @@ from pathlib import Path
 
 import torch
 
-from pixlens.dataset.editval import EditDataset, EditValDataset
+from pixlens.dataset.edit_dataset import EditDataset
+from pixlens.dataset.magicbrush import MagicBrushDataset
 from pixlens.detection import load_detect_segment_model_from_yaml
 from pixlens.editing import load_editing_model_from_yaml
 from pixlens.editing.interfaces import (
-    PromptableImageEditingModel,
     ImageEditingPromptType,
+    PromptableImageEditingModel,
 )
 from pixlens.evaluation.evaluation_pipeline import (
     EvaluationPipeline,
@@ -314,16 +315,25 @@ def postprocess_evaluation(
         json.dump(results, results_file, indent=4)
 
 
+def get_edit_dataset() -> EditDataset:
+    # edit_dataset = EditValDataset(
+    #    Path("./pixlens/editval/object.json"),
+    #    Path("./editval_instances/"),
+    # )
+    return MagicBrushDataset(
+        Path("./magicbrush_dev"),
+        Path("./magicbrush_dev/prompt_info.json"),
+    )
+
+
 def main() -> None:
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     check_args(args)
 
-    edit_dataset = EditValDataset(
-        Path("./pixlens/editval/object.json"),
-        Path("./editval_instances/"),
-    )
+    edit_dataset = get_edit_dataset()
+
     preprocessing_pipe = PreprocessingPipeline(edit_dataset)
     editing_models = load_editing_models(args)
     preprocessing_pipe.execute_pipeline(models=editing_models)
