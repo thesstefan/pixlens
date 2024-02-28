@@ -65,11 +65,11 @@ class EvaluationOutput(Persistable):
 class Edit:
     edit_id: int
     image_path: str
-    image_id: int
+    image_id: str
     category: str
     edit_type: EditType
-    from_attribute: str
-    to_attribute: str
+    from_attribute: str | None
+    to_attribute: str | None
 
 
 @dataclasses.dataclass

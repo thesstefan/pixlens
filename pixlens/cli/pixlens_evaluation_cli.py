@@ -3,9 +3,9 @@ import json
 import logging
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import torch
 
+from pixlens.dataset.editval import EditDataset, EditValDataset
 from pixlens.detection import load_detect_segment_model_from_yaml
 from pixlens.editing import load_editing_model_from_yaml
 from pixlens.editing.interfaces import PromptableImageEditingModel
@@ -99,49 +99,23 @@ def check_args(args: argparse.Namespace) -> None:
 
 def get_edits(
     args: argparse.Namespace,
-    preprocessing_pipe: PreprocessingPipeline,
-    evaluation_pipeline: EvaluationPipeline,
+    edit_dataset: EditDataset,
 ) -> list[Edit]:
     if args.run_evaluation_pipeline:
-        all_edits = preprocessing_pipe.get_all_edits()
-        edits = []
-        for i in range(len(all_edits)):
-            random_edit_record = all_edits.iloc[[i]]
-            edit = preprocessing_pipe.get_edit(
-                random_edit_record["edit_id"].astype(int).to_numpy()[0],
-                evaluation_pipeline.edit_dataset,
-            )
-            edits.append(edit)
-    elif args.edit_id is None:
+        return edit_dataset.get_all_edits()
+
+    if args.edit_id is None:
         if args.edit_type is None:
             error_msg = "Either edit id or edit type must be provided"
             raise ValueError(error_msg)
-        all_edits_by_type = preprocessing_pipe.get_all_edits_edit_type(
+
+        edits_with_type = edit_dataset.get_all_edits_with_type(
             args.edit_type,
         )
-        if not args.do_all_edits:
-            random_edit_record = all_edits_by_type.iloc[[1]]
-            edit = preprocessing_pipe.get_edit(
-                random_edit_record["edit_id"].astype(int).to_numpy()[0],
-                evaluation_pipeline.edit_dataset,
-            )
-            edits = [edit]
-        else:
-            edits = []
-            for i in range(len(all_edits_by_type)):
-                random_edit_record = all_edits_by_type.iloc[[i]]
-                edit = preprocessing_pipe.get_edit(
-                    random_edit_record["edit_id"].astype(int).to_numpy()[0],
-                    evaluation_pipeline.edit_dataset,
-                )
-                edits.append(edit)
-    else:
-        edit = preprocessing_pipe.get_edit(
-            args.edit_id,
-            evaluation_pipeline.edit_dataset,
-        )
-        edits = [edit]
-    return edits
+
+        return edits_with_type if args.do_all_edits else [edits_with_type[0]]
+
+    return [edit_dataset.get_edit(args.edit_id)]
 
 
 def evaluate_edits(
@@ -337,10 +311,11 @@ def main() -> None:
 
     check_args(args)
 
-    preprocessing_pipe = PreprocessingPipeline(
-        "./pixlens/editval/object.json",
-        "./editval_instances/",
+    edit_dataset = EditValDataset(
+        Path("./pixlens/editval/object.json"),
+        Path("./editval_instances/"),
     )
+    preprocessing_pipe = PreprocessingPipeline(edit_dataset)
     editing_models = load_editing_models(args)
     preprocessing_pipe.execute_pipeline(models=editing_models)
 
@@ -351,7 +326,7 @@ def main() -> None:
     evaluation_pipeline.init_editing_models(editing_models)
     evaluation_pipeline.init_detection_model(detection_model)
 
-    edits = get_edits(args, preprocessing_pipe, evaluation_pipeline)
+    edits = get_edits(args, edit_dataset)
     operation_evaluations = init_operation_evaluations()
 
     evaluate_edits(
