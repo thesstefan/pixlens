@@ -55,7 +55,10 @@ class EditDataset(abc.ABC):
         raise NotImplementedError
 
     def __init__(self, edits_path: Path | None) -> None:
-        if edits_path and edits_path.exists():
+        if not edits_path:
+            edits_path = get_cache_dir() / (self.name + "_edits.csv")
+
+        if edits_path.exists():
             try:
                 # TODO: Fix weird typing error
                 self.edits_df = EditSchema.validate(  # type: ignore[assignment]
@@ -72,9 +75,6 @@ class EditDataset(abc.ABC):
                 edits_path.unlink()
             else:
                 return
-
-        if not edits_path:
-            edits_path = get_cache_dir() / (self.name + "_edits.csv")
 
         self._init_df(edits_path)
 
