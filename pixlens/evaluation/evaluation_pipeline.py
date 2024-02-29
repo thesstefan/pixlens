@@ -244,7 +244,7 @@ class EvaluationPipeline:
     def update_evaluation_dataset(
         self,
         edit: interfaces.Edit,
-        edited_image_dir: Path,
+        edited_image_dir: str,
         evaluation_outputs: list[interfaces.EvaluationOutput],
     ) -> None:
         for evaluation_output in evaluation_outputs:
@@ -297,7 +297,7 @@ class EvaluationPipeline:
                 self.evaluation_dataset.loc[len(self.evaluation_dataset)] = {
                     "edit_id": edit.edit_id,
                     "edit_type": edit.edit_type,
-                    "model_id": str(edited_image_dir),
+                    "model_id": edited_image_dir,
                     "evaluation_success": evaluation_output.success,
                     "edit_specific_score": evaluation_output.edit_specific_score,  # noqa: E501
                 }
