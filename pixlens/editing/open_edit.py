@@ -1,3 +1,4 @@
+import logging
 import pickle
 from pathlib import Path
 
@@ -32,6 +33,11 @@ class OpenEdit(interfaces.PromptableImageEditingModel):
         self.device = device
 
         opt = Config()
+        if not Path.exists(opt.checkpoints_dir):
+            logging.info(
+                "Model not found in %s! Please download it first.",
+                opt.checkpoints_dir,
+            )
         opt.gpu = 0
         self.global_edit = True
         self.alpha = alpha

@@ -1,13 +1,15 @@
+from pixlens.utils import utils
+from pathlib import Path
 class Config:
     def __init__(self):
         # experiment specifics
         self.dist_url = 'tcp://127.0.0.1:10002'
         self.num_gpu = 8
         self.name = 'open-edit'
-        self.checkpoints_dir = './pixlens/editing/impl/open_edit/checkpoints'
-        self.vocab_path = './pixlens/editing/impl/open_edit/vocab/conceptual_vocab.pkl'
-        self.vse_enc_path = './pixlens/editing/impl/open_edit/checkpoints/conceptual_model_best.pth.tar'
-        self.edge_model_path = './pixlens/editing/impl/open_edit/checkpoints/bdcn_pretrained_on_bsds500.pth'
+        self.checkpoints_dir = Path(utils.get_cache_dir() + 'open_edit/checkpoints')
+        self.vocab_path = Path(utils.get_cache_dir() + 'open_edit/vocab/conceptual_vocab.pkl')
+        self.vse_enc_path = Path(utils.get_cache_dir() + 'open_edit/checkpoints/conceptual_model_best.pth.tar') 
+        self.edge_model_path = Path(utils.get_cache_dir() + 'open_edit/checkpoints/bdcn_pretrained_on_bsds500.pth')
         self.model = 'OpenEdit'
         self.norm_G = 'spectralsync_batch'
         self.norm_D = 'spectralinstance'
