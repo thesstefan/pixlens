@@ -38,7 +38,10 @@ from pixlens.evaluation.operations.subject_preservation import (
     SubjectPreservation,
 )
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
-from pixlens.evaluation.utils import HistogramComparisonMethod
+from pixlens.evaluation.utils import (
+    HistogramComparisonMethod,
+    prompt_to_filename,
+)
 from pixlens.utils.utils import get_cache_dir
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
@@ -142,6 +145,8 @@ def evaluate_edits(  # noqa: PLR0913
     )
 
     for edit in edits:
+        if edit.edit_id < 121:
+            continue
         edit_dir = evaluation_dir / str(edit.edit_id)
 
         if edit.edit_type not in operation_evaluators:
@@ -184,7 +189,9 @@ def evaluate_edits(  # noqa: PLR0913
             edit_dir / Path(edit.image_path).name,
         )
         evaluation_input.edited_image.save(
-            (edit_dir / evaluation_input.prompt).with_suffix(".png"),
+            (
+                edit_dir / prompt_to_filename(evaluation_input.prompt)
+            ).with_suffix(".png"),
         )
         evaluation_input.annotated_input_image.save(
             Path(
@@ -194,7 +201,10 @@ def evaluate_edits(  # noqa: PLR0913
             ).with_suffix(".png"),
         )
         evaluation_input.annotated_edited_image.save(
-            (edit_dir / ("ANNOTATED_" + evaluation_input.prompt)).with_suffix(
+            (
+                edit_dir
+                / ("ANNOTATED_" + prompt_to_filename(evaluation_input.prompt))
+            ).with_suffix(
                 ".png",
             ),
         )
@@ -279,8 +289,8 @@ def load_editing_models(
 
     if args.run_evaluation_pipeline:
         all_models = [
-            "model_cfgs/controlnet.yaml",
-            "model_cfgs/lcm.yaml",
+            # "model_cfgs/controlnet.yaml",
+            # "model_cfgs/lcm.yaml",
             "model_cfgs/instruct_pix2pix.yaml",
             # "model_cfgs/diffedit.yaml",
             # "model_cfgs/null_text_inversion.yaml",
@@ -328,7 +338,7 @@ def get_edit_dataset() -> EditDataset:
     # )
     return MagicBrushDataset(
         Path("./magicbrush_dev"),
-        Path("./magicbrush_dev/prompt_info.json"),
+        Path("./magicbrush_dev/pixlens.json"),
     )
 
 

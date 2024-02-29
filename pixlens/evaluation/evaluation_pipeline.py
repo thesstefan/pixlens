@@ -81,7 +81,9 @@ class EvaluationPipeline:
         image_path = Path(self.edit_dataset.get_edit(edit_id).image_path)
         image_extension = get_image_extension(image_path)
         if image_extension:
-            return Image.open(image_path.with_suffix(image_extension))
+            return Image.open(image_path.with_suffix(image_extension)).convert(
+                "RGB"
+            )
         raise FileNotFoundError
 
     def get_edited_image_from_edit(
@@ -100,7 +102,7 @@ class EvaluationPipeline:
 
         extension = get_image_extension(edit_path)
         if extension:
-            return Image.open(edit_path.with_suffix(extension))
+            return Image.open(edit_path.with_suffix(extension)).convert("RGB")
         raise FileNotFoundError
 
     def init_detection_model(
@@ -141,6 +143,13 @@ class EvaluationPipeline:
             prompt,
             edited_images_dir,
         )
+
+        if input_image.size != edited_image.size:
+            edited_image = edited_image.resize(
+                input_image.size,
+                Image.Resampling.LANCZOS,
+            )
+
         from_attribute = (
             None if pd.isna(edit.from_attribute) else edit.from_attribute
         )
