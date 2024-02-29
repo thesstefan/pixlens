@@ -7,6 +7,7 @@ from pixlens.editing.interfaces import (
     PromptableImageEditingModel,
 )
 from pixlens.evaluation.interfaces import Edit
+from pixlens.evaluation.utils import prompt_to_filename
 from pixlens.utils.utils import get_cache_dir
 
 
@@ -28,7 +29,7 @@ class PreprocessingPipeline:
             / editing_model.model_id
             / dataset_name
             / input_image_path.stem
-            / prompt
+            / prompt_to_filename(prompt)
         ).with_suffix(".png")
 
     def save_edited_image(
@@ -89,7 +90,10 @@ class PreprocessingPipeline:
                 logging.info("image_path: %s", edit.image_path)
 
                 self.save_edited_image(
-                    edit, prompt, self.edit_dataset.name, model
+                    edit,
+                    prompt,
+                    self.edit_dataset.name,
+                    model,
                 )
 
                 logging.info("")

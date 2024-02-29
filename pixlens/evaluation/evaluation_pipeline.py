@@ -21,7 +21,10 @@ from pixlens.evaluation.operations.background_preservation import (
 from pixlens.evaluation.operations.subject_preservation import (
     SubjectPreservationOutput,
 )
-from pixlens.evaluation.utils import get_clean_to_attribute_for_detection
+from pixlens.evaluation.utils import (
+    get_clean_to_attribute_for_detection,
+    prompt_to_filename,
+)
 from pixlens.utils.utils import get_cache_dir, get_image_extension
 from pixlens.visualization import annotation
 
@@ -92,7 +95,7 @@ class EvaluationPipeline:
             / edited_images_dir
             / self.edit_dataset.name
             / Path(edit.image_path).stem
-            / prompt
+            / prompt_to_filename(prompt)
         )
 
         extension = get_image_extension(edit_path)

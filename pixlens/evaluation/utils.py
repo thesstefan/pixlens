@@ -599,3 +599,7 @@ def compare_color_histograms(  # noqa: PLR0913
     )
 
     return score, figure_to_image(color_histogram_figure)
+
+
+def prompt_to_filename(prompt: str) -> str:
+    return prompt.replace("?", "QQ")
