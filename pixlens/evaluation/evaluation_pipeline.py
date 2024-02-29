@@ -85,11 +85,11 @@ class EvaluationPipeline:
         self,
         edit: interfaces.Edit,
         prompt: str,
-        model: PromptableImageEditingModel,
+        edited_images_dir: str,
     ) -> Image.Image:
         edit_path = (
             get_cache_dir()
-            / model.model_id
+            / edited_images_dir
             / self.edit_dataset.name
             / Path(edit.image_path).stem
             / prompt
@@ -129,18 +129,14 @@ class EvaluationPipeline:
     def get_all_inputs_for_edit(
         self,
         edit: interfaces.Edit,
-        editing_model: PromptableImageEditingModel,
+        prompt: str,
+        edited_images_dir: str,
     ) -> interfaces.EvaluationInput:
-        prompt = (
-            edit.instruction_prompt
-            if editing_model.prompt_type == ImageEditingPromptType.INSTRUCTION
-            else edit.description_prompt
-        )
         input_image = self.get_input_image_from_edit_id(edit.edit_id)
         edited_image = self.get_edited_image_from_edit(
             edit,
             prompt,
-            editing_model,
+            edited_images_dir,
         )
         from_attribute = (
             None if pd.isna(edit.from_attribute) else edit.from_attribute
@@ -148,7 +144,7 @@ class EvaluationPipeline:
         if not pd.isna(edit.to_attribute):
             edit.to_attribute = "".join(
                 char if char.isalpha() or char.isspace() else " "
-                for char in edit.to_attribute
+                for char in edit.to_attribute or ""
             )
             filtered_to_attribute = get_clean_to_attribute_for_detection(edit)
         else:
@@ -248,7 +244,7 @@ class EvaluationPipeline:
     def update_evaluation_dataset(
         self,
         edit: interfaces.Edit,
-        model_id: str,
+        edited_image_dir: str,
         evaluation_outputs: list[interfaces.EvaluationOutput],
     ) -> None:
         for evaluation_output in evaluation_outputs:
@@ -301,7 +297,7 @@ class EvaluationPipeline:
                 self.evaluation_dataset.loc[len(self.evaluation_dataset)] = {
                     "edit_id": edit.edit_id,
                     "edit_type": edit.edit_type,
-                    "model_id": model_id,
+                    "model_id": edited_image_dir,
                     "evaluation_success": evaluation_output.success,
                     "edit_specific_score": evaluation_output.edit_specific_score,  # noqa: E501
                 }
