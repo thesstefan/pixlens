@@ -138,6 +138,14 @@ class EvaluationPipeline:
             prompt,
             edited_images_dir,
         )
+
+        # Temporary fix for the case when the edited image is not the same size
+        if input_image.size != edited_image.size:
+            edited_image = edited_image.resize(
+                input_image.size,
+                Image.Resampling.LANCZOS,
+            )
+
         from_attribute = (
             None if pd.isna(edit.from_attribute) else edit.from_attribute
         )
