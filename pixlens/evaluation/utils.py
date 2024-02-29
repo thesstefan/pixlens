@@ -602,4 +602,4 @@ def compare_color_histograms(  # noqa: PLR0913
 
 
 def prompt_to_filename(prompt: str) -> str:
-    return prompt.replace("?", "QQ")
+    return prompt.replace("?", "QQ").replace('"', "_")
