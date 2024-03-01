@@ -131,6 +131,62 @@ class EvaluationPipeline:
             segmentation_output=segmentation_output,
         )
 
+    def get_detection_prompt_for_input_image(
+        self,
+        category: str,
+        from_attribute: str | None,
+        to_attribute: str | None,
+        edit_type: EditType,
+    ) -> str:
+        if edit_type in [
+            EditType.COLOR,
+            EditType.SIZE,
+            EditType.OBJECT_REMOVAL,
+            EditType.POSITION_REPLACEMENT,
+            EditType.POSITIONAL_ADDITION,
+            EditType.OBJECT_DUPLICATION,
+            EditType.TEXTURE,
+            EditType.ALTER_PARTS,
+        ]:
+            return category
+        if edit_type in [EditType.OBJECT_ADDITION]:
+            return to_attribute if to_attribute is not None else ""
+        if edit_type in [EditType.OBJECT_REPLACEMENT]:
+            return from_attribute if from_attribute is not None else ""
+        return ""
+
+    def get_detection_prompt_for_edited_image(
+        self,
+        category: str,
+        to_attribute: str | None,
+        edit_type: EditType,
+    ) -> str:
+        separator = get_separator(self.detection_model)
+        if edit_type in [
+            EditType.COLOR,
+            EditType.SIZE,
+            EditType.OBJECT_REMOVAL,
+            EditType.POSITION_REPLACEMENT,
+            EditType.OBJECT_DUPLICATION,
+            EditType.TEXTURE,
+        ]:
+            return category
+        if edit_type in [
+            EditType.OBJECT_ADDITION,
+            EditType.POSITIONAL_ADDITION,
+        ]:
+            elements_to_detect = [
+                elem for elem in [category, to_attribute] if elem is not None
+            ]
+            # remove duplicated elements if any
+            elements_to_detect = list(set(elements_to_detect))
+            return separator.join(elements_to_detect)
+
+        if edit_type in [EditType.OBJECT_REPLACEMENT, EditType.ALTER_PARTS]:
+            return to_attribute if to_attribute is not None else ""
+
+        return ""
+
     def get_all_inputs_for_edit(
         self,
         edit: interfaces.Edit,
@@ -166,38 +222,33 @@ class EvaluationPipeline:
             char if char.isalpha() or char.isspace() else " "
             for char in edit.category
         )
-        list_for_det_seg = [
-            item
-            for item in [category, from_attribute, filtered_to_attribute]
-            if item is not None
-        ]
 
-        list_for_det_seg = list(set(list_for_det_seg))
-        separator = get_separator(self.detection_model)
-        prompt_for_det_seg = separator.join(list_for_det_seg)
+        detection_prompt_input_image = (
+            self.get_detection_prompt_for_input_image(
+                category,
+                from_attribute,
+                filtered_to_attribute,
+                edit.edit_type,
+            )
+        )
+        detection_prompt_edited_image = (
+            self.get_detection_prompt_for_edited_image(
+                category,
+                filtered_to_attribute,
+                edit.edit_type,
+            )
+        )
 
         input_detection_segmentation_result = (
             self.do_detection_and_segmentation(
                 input_image,
-                prompt_for_det_seg,
+                detection_prompt_input_image,
             )
         )
-        if edit.edit_type == "alter_parts":
-            # if alter_parts, we need to do detection and segmentation
-            # on the edited image ONLY with the to_attribute
-            list_for_det_seg = [
-                filtered_to_attribute
-                if filtered_to_attribute is not None
-                else " ",
-            ]
-            list_for_det_seg = list(set(list_for_det_seg))
-            separator = get_separator(self.detection_model)
-            prompt_for_det_seg = separator.join(list_for_det_seg)
-
         edited_detection_segmentation_result = (
             self.do_detection_and_segmentation(
                 edited_image,
-                prompt_for_det_seg,
+                detection_prompt_edited_image,
             )
         )
 
