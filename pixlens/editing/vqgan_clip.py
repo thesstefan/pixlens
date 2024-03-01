@@ -125,9 +125,12 @@ class VqGANClip(interfaces.PromptableImageEditingModel):
         self,
         device: torch.device | None = None,
         seed: int | None = None,
+        max_iterations: int | None = None,
     ) -> None:
         self.prompts = None
-        self.max_iterations = 500
+        self.max_iterations = max_iterations
+        if self.max_iterations is None:
+            self.max_iterations = 500
         self.display_freq = 50
         self.size = [
             default_image_size,
@@ -159,16 +162,11 @@ class VqGANClip(interfaces.PromptableImageEditingModel):
         self.optimiser = "Adam"
         self.zoom_start = 0
         self.zoom_frequency = 10
-        self.zoom_scale = 0.99
-        self.zoom_shift_x = 0
-        self.zoom_shift_y = 0
         self.prompt_frequency = 0
         self.video_length = 10
         self.output_video_fps = 0
         self.input_video_fps = 15
-        self.cudnn_determinism = False
         self.augments = [["Af", "Pe", "Ji", "Er"]]
-        self.video_style_dir = None
         self.device = device
         self.replace_grad = ReplaceGrad.apply
         self.clamp_with_grad = ClampWithGrad.apply
@@ -183,7 +181,7 @@ class VqGANClip(interfaces.PromptableImageEditingModel):
         self.perceptor = (
             clip.load(self.clip_model, jit=jit)[0]
             .eval()
-            .requires_grad_(False)
+            .requires_grad_(False)  # noqa: FBT003
             .to(self.device)
         )
         self.cut_size = self.perceptor.visual.input_resolution
@@ -198,13 +196,13 @@ class VqGANClip(interfaces.PromptableImageEditingModel):
         self.sidex, self.sidey = toksx * self.f, toksy * self.f
         self.e_dim = self.model.quantize.e_dim
         self.n_toks = self.model.quantize.n_e
-        self.z_min = self.model.quantize.embedding.weight.min(dim=0).values[
+        self.z_min = self.model.quantize.embedding.weight.min(dim=0).values[  # noqa: PD011
             None,
             :,
             None,
             None,
         ]
-        self.z_max = self.model.quantize.embedding.weight.max(dim=0).values[
+        self.z_max = self.model.quantize.embedding.weight.max(dim=0).values[  # noqa: PD011
             None,
             :,
             None,
@@ -220,6 +218,7 @@ class VqGANClip(interfaces.PromptableImageEditingModel):
         return {
             "device": str(self.device),
             "seed": self.seed,
+            "max_iterations": self.max_iterations,
         }
 
     def split_prompt(self, prompt: str) -> tuple[str, float, float]:
