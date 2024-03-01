@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import kornia.augmentation as K
 import torch
 from PIL import Image
@@ -21,6 +23,7 @@ from pixlens.editing.utils import (
 )
 from pixlens.evaluation.interfaces import Edit
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
+from pixlens.utils.utils import get_cache_dir
 
 default_image_size = 512  # >8GB VRAM
 if not torch.cuda.is_available():
@@ -133,8 +136,14 @@ class VqGANClip(interfaces.PromptableImageEditingModel):
         self.init_noise = None
         self.init_weight = 0.0
         self.clip_model = "ViT-B/32"
-        self.vqgan_config = "./pixlens/editing/impl/vqgan_clip/checkpoints/vqgan_imagenet_f16_16384.yaml"
-        self.vqgan_checkpoint = "./pixlens/editing/impl/vqgan_clip/checkpoints/vqgan_imagenet_f16_16384.ckpt"
+        self.vqgan_config = Path(
+            get_cache_dir()
+            / "models--VqGANClip/checkpoints/vqgan_imagenet_f16_16384.yaml"
+        )
+        self.vqgan_checkpoint = Path(
+            get_cache_dir()
+            / "models--VqGANClip/checkpoints/vqgan_imagenet_f16_16384.ckpt"
+        )
         self.noise_prompt_seeds = []
         self.noise_prompt_weights = []
         self.step_size = 0.1
