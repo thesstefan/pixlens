@@ -27,6 +27,9 @@ from pixlens.evaluation.operations.background_preservation import (
 from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.object_removal import ObjectRemoval
+from pixlens.evaluation.operations.single_instance_removal import (
+    SingleInstanceRemoval,
+)
 from pixlens.evaluation.operations.object_replacement import ObjectReplacement
 from pixlens.evaluation.operations.position_replacement import (
     PositionReplacement,
@@ -280,9 +283,14 @@ def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
         EditType.OBJECT_ADDITION: [
             ObjectAddition(),
             background_preservation,
+            subject_preservation,
         ],
         EditType.OBJECT_REMOVAL: [
             ObjectRemoval(),
+            background_preservation,
+        ],
+        EditType.SINGLE_INSTANCE_REMOVAL: [
+            SingleInstanceRemoval(),
             background_preservation,
         ],
         EditType.OBJECT_REPLACEMENT: [
@@ -370,10 +378,10 @@ def postprocess_evaluation(
 
 
 def get_edit_dataset() -> EditDataset:
-    return EditValDataset(
-        Path("./pixlens/editval/object.json"),
-        Path("./editval_instances/"),
-    )
+    # return EditValDataset(
+    #     Path("./pixlens/editval/object.json"),
+    #     Path("./editval_instances/"),
+    # )
     return MagicBrushDataset(
         Path("./magicbrush_dev"),
         Path("./magicbrush_dev/pixlens.json"),

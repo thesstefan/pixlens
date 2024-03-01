@@ -57,8 +57,12 @@ def generate_description_based_prompt(
         ),
         EditType.OBJECT_REMOVAL: (
             # FIXME: this one is HARD!
+            f"A photo of {from_attribute} {category}s"
+            f"{PROMPT_SEP}A photo of no {category}s"
+        ),
+        EditType.SINGLE_INSTANCE_REMOVAL: (
             f"A photo of a {category}"
-            f"{PROMPT_SEP}A photo without a {category}"
+            f"{PROMPT_SEP}A photo of a {category} with one less {category}"
         ),
         EditType.OBJECT_REPLACEMENT: (
             f"A photo of a {from_attribute}"
@@ -157,6 +161,7 @@ def generate_instruction_based_prompt(
         EditType.OBJECT_ADDITION: f"Add a {to_attribute} to the image",
         EditType.POSITIONAL_ADDITION: f"Add a {to_attribute} of the {category}",
         EditType.OBJECT_REMOVAL: f"Remove the {category}",
+        EditType.SINGLE_INSTANCE_REMOVAL: f"Remove just one {category}",
         EditType.OBJECT_REPLACEMENT: (
             f"Replace the {from_attribute} with a {to_attribute}"
         ),
