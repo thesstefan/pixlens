@@ -1,13 +1,13 @@
 import logging
 from pathlib import Path
 
-import kornia.augmentation as K
+import kornia.augmentation as K  # noqa: N812
 import torch
 from PIL import Image
 from torch import nn, optim
 from torch.cuda import get_device_properties
 from torchvision import transforms
-from torchvision.transforms import functional as TF
+from torchvision.transforms import functional as TF  # noqa: N812
 
 from pixlens.editing import interfaces
 from pixlens.editing.impl.vqgan_clip.CLIP import clip
