@@ -144,9 +144,10 @@ def evaluate_edits(  # noqa: PLR0913
         get_cache_dir() / edited_images_dir / dataset_name / "evaluation"
     )
 
+    error_log = {}
+    error_log_path = evaluation_dir / "error_log.json"
+
     for edit in edits:
-        if edit.edit_id < 121:
-            continue
         edit_dir = evaluation_dir / str(edit.edit_id)
 
         if edit.edit_type not in operation_evaluators:
@@ -175,10 +176,24 @@ def evaluate_edits(  # noqa: PLR0913
             prompt,
             edited_images_dir,
         )
-        evaluation_outputs = [
-            evaluator.evaluate_edit(evaluation_input)
-            for evaluator in operation_evaluators[edit.edit_type]
-        ]
+
+        # try catch block to catch errors in the evaluation pipeline and
+        # log them to a json file with the error message and the edit
+        # id and the prompt and the edit type
+        try:
+            evaluation_outputs = [
+                evaluator.evaluate_edit(evaluation_input)
+                for evaluator in operation_evaluators[edit.edit_type]
+            ]
+        except Exception as e:
+            error_log[edit.edit_id] = {
+                "error": str(e),
+                "prompt": prompt,
+                "edit_type": edit.edit_type,
+            }
+            with error_log_path.open("w") as error_log_file:
+                json.dump(error_log, error_log_file, indent=4)
+            continue
 
         for output in evaluation_outputs:
             output.persist(edit_dir)
@@ -307,27 +322,51 @@ def load_editing_models(
 
 
 def postprocess_evaluation(
-    editing_models: list[PromptableImageEditingModel],
     evaluation_pipeline: EvaluationPipeline,
+    dataset_name: str,
+    editing_models: list[PromptableImageEditingModel] | None = None,
+    edited_images_dir: str | None = None,
 ) -> None:
     evaluation_pipeline.save_evaluation_dataset()
 
     results: dict[str, dict] = {}
 
     results["model_aggregation"] = {}
-    for editing_model in editing_models:
-        model_results = evaluation_pipeline.get_aggregated_scores_for_model(
-            editing_model.model_id,
+
+    if editing_models is not None:
+        for editing_model in editing_models:
+            model_results = evaluation_pipeline.get_aggregated_scores_for_model(
+                editing_model.model_id,
+            )
+            results["model_aggregation"][editing_model.model_id] = model_results
+    elif edited_images_dir is not None:
+        results["model_aggregation"][
+            edited_images_dir
+        ] = evaluation_pipeline.get_aggregated_scores_for_model(
+            edited_images_dir,
         )
-        results["model_aggregation"][editing_model.model_id] = model_results
 
     results[
         "edit_type_aggregation"
     ] = evaluation_pipeline.get_aggregated_scores_for_edit_type()
 
-    results_path = Path(get_cache_dir(), "evaluation_results.json")
-    results_path.parent.mkdir(parents=True, exist_ok=True)
-    with results_path.open("w") as results_file:
+    if editing_models is not None:
+        results_path = (
+            str(get_cache_dir())
+            + "/models_"
+            + dataset_name
+            + "_evaluation_results.json"
+        )
+    elif edited_images_dir is not None:
+        results_path = (
+            str(get_cache_dir())
+            + "/"
+            + edited_images_dir
+            + "_evaluation_results.json"
+        )
+
+    Path(results_path).parent.mkdir(parents=True, exist_ok=True)
+    with Path(results_path).open("w") as results_file:
         json.dump(results, results_file, indent=4)
 
 
@@ -366,6 +405,12 @@ def main() -> None:
             # Use Instruction prompt by default when using pre-edited images
             ImageEditingPromptType.INSTRUCTION,
         )
+        postprocess_evaluation(
+            evaluation_pipeline,
+            edit_dataset.name,
+            edited_images_dir=args.edited_images_dir,
+        )
+
     else:
         # Use images obtained the pre-processing pipeline
         preprocessing_pipe = PreprocessingPipeline(edit_dataset)
@@ -382,7 +427,11 @@ def main() -> None:
                 model.prompt_type,
             )
 
-        postprocess_evaluation(editing_models, evaluation_pipeline)
+        postprocess_evaluation(
+            evaluation_pipeline,
+            edit_dataset.name,
+            editing_models=editing_models,
+        )
 
 
 if __name__ == "__main__":

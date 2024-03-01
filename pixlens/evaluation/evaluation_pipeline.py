@@ -351,7 +351,7 @@ class EvaluationPipeline:
 
     def get_aggregated_scores_for_edit_type(
         self,
-    ) -> dict[str, dict[str, float]]:
+    ) -> dict[str, dict[str, dict[str, float]]]:
         edit_types = self.evaluation_dataset["edit_type"].unique()
         model_ids = self.evaluation_dataset["model_id"].unique()
 
