@@ -103,6 +103,7 @@ class EditValDataset(EditDataset):
         raw_df = pd.DataFrame(edit_records)
         raw_df = raw_df.replace({np.nan: None})
 
+        # TODO: remove the following code once the paper is submitted
         # reorder rows in raw_df so that all the object removal
         # edits are at the bottom
         object_removal_edits = raw_df[
