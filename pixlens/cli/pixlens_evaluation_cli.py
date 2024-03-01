@@ -3,9 +3,8 @@ import json
 import logging
 from pathlib import Path
 
-import torch
-
 from pixlens.dataset.edit_dataset import EditDataset
+from pixlens.dataset.editval import EditValDataset
 from pixlens.dataset.magicbrush import MagicBrushDataset
 from pixlens.detection import load_detect_segment_model_from_yaml
 from pixlens.editing import load_editing_model_from_yaml
@@ -371,10 +370,10 @@ def postprocess_evaluation(
 
 
 def get_edit_dataset() -> EditDataset:
-    # edit_dataset = EditValDataset(
-    #    Path("./pixlens/editval/object.json"),
-    #    Path("./editval_instances/"),
-    # )
+    return EditValDataset(
+        Path("./pixlens/editval/object.json"),
+        Path("./editval_instances/"),
+    )
     return MagicBrushDataset(
         Path("./magicbrush_dev"),
         Path("./magicbrush_dev/pixlens.json"),
