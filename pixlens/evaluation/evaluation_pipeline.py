@@ -147,13 +147,14 @@ class EvaluationPipeline:
             EditType.OBJECT_DUPLICATION,
             EditType.TEXTURE,
             EditType.ALTER_PARTS,
+            EditType.OBJECT_ADDITION,
         ]:
             return category
-        if edit_type in [EditType.OBJECT_ADDITION]:
-            return to_attribute if to_attribute is not None else ""
+
         if edit_type in [EditType.OBJECT_REPLACEMENT]:
             return from_attribute if from_attribute is not None else ""
-        return ""
+
+        return ""  # for unimplemented edit types
 
     def get_detection_prompt_for_edited_image(
         self,
@@ -171,6 +172,7 @@ class EvaluationPipeline:
             EditType.TEXTURE,
         ]:
             return category
+
         if edit_type in [
             EditType.OBJECT_ADDITION,
             EditType.POSITIONAL_ADDITION,
@@ -185,7 +187,7 @@ class EvaluationPipeline:
         if edit_type in [EditType.OBJECT_REPLACEMENT, EditType.ALTER_PARTS]:
             return to_attribute if to_attribute is not None else ""
 
-        return ""
+        return ""  # for unimplemented edit types
 
     def get_all_inputs_for_edit(
         self,
