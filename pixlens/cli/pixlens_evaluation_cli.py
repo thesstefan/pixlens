@@ -3,11 +3,11 @@ import json
 import logging
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import torch
 
 from pixlens.detection import load_detect_segment_model_from_yaml
 from pixlens.editing import load_editing_model_from_yaml
+from pixlens.editing.impl.open_edit.util.vocab import Vocabulary  # noqa: F401
 from pixlens.editing.interfaces import PromptableImageEditingModel
 from pixlens.evaluation.evaluation_pipeline import (
     EvaluationPipeline,
@@ -86,7 +86,11 @@ parser.add_argument(
 def check_args(args: argparse.Namespace) -> None:
     if args.run_evaluation_pipeline:
         return
-    if args.edit_id is None and args.edit_type is None:
+    if (
+        args.edit_id is None
+        and args.edit_type is None
+        and not args.do_all_edits
+    ):
         error_msg = "Either edit id or edit type must be provided"
         raise ValueError(error_msg) from None
     if args.edit_type is not None:
@@ -102,7 +106,7 @@ def get_edits(
     preprocessing_pipe: PreprocessingPipeline,
     evaluation_pipeline: EvaluationPipeline,
 ) -> list[Edit]:
-    if args.run_evaluation_pipeline:
+    if args.run_evaluation_pipeline or args.do_all_edits:
         all_edits = preprocessing_pipe.get_all_edits()
         edits = []
         for i in range(len(all_edits)):

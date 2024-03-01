@@ -168,12 +168,3 @@ class OpenEdit(interfaces.PromptableImageEditingModel):
 
     def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
         raise NotImplementedError
-
-
-if __name__ == "__main__":
-    model = OpenEdit(device=torch.device("cuda"), alpha=30, optimize_iter=10)
-    preprocessing_pipe = PreprocessingPipeline(
-        "./pixlens/editval/object.json",
-        "./editval_instances/",
-    )
-    preprocessing_pipe.execute_pipeline([model])

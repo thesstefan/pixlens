@@ -6,10 +6,10 @@ class Config:
         self.dist_url = 'tcp://127.0.0.1:10002'
         self.num_gpu = 8
         self.name = 'open-edit'
-        self.checkpoints_dir = Path(utils.get_cache_dir() + 'open_edit/checkpoints')
-        self.vocab_path = Path(utils.get_cache_dir() + 'open_edit/vocab/conceptual_vocab.pkl')
-        self.vse_enc_path = Path(utils.get_cache_dir() + 'open_edit/checkpoints/conceptual_model_best.pth.tar') 
-        self.edge_model_path = Path(utils.get_cache_dir() + 'open_edit/checkpoints/bdcn_pretrained_on_bsds500.pth')
+        self.checkpoints_dir = Path(utils.get_cache_dir() / 'models--openedit/checkpoints')
+        self.vocab_path = Path(utils.get_cache_dir() / 'models--openedit/vocab/conceptual_vocab.pkl')
+        self.vse_enc_path = Path(utils.get_cache_dir() / 'models--openedit/checkpoints/conceptual_model_best.pth.tar') 
+        self.edge_model_path = Path(utils.get_cache_dir() / 'models--openedit/checkpoints/bdcn_pretrained_on_bsds500.pth')
         self.model = 'OpenEdit'
         self.norm_G = 'spectralsync_batch'
         self.norm_D = 'spectralinstance'
@@ -21,7 +21,7 @@ class Config:
         self.output_nc = 3
         
         # for setting inputs
-        self.dataroot = './datasets/conceptual/'
+        self.dataroot = '/pixlens/editing/impl/open_edit/datasets/conceptual/'
         self.dataset_mode = 'conceptual'
         self.serial_batches = False
         self.nThreads = 4

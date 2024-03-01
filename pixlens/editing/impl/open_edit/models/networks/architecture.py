@@ -1,3 +1,4 @@
+from pathlib import Path
 import math
 import re
 import torch
@@ -14,12 +15,12 @@ from pixlens.editing.impl.open_edit.models.networks.normalization import (
     get_norm_layer,
 )
 from pixlens.editing.impl.open_edit.models.networks.normalization import SPADE
-
+from pixlens.utils import utils
 
 ## VGG architecter, used for the perceptual loss using a pretrained VGG network
 class VGG19(torch.nn.Module):
     def __init__(
-        self, requires_grad=False, local_pretrained_path="pixlens/editing/impl/open_edit/checkpoints/vgg19.pth"
+        self, requires_grad=False, local_pretrained_path=Path(utils.get_cache_dir() / "models--openedit/checkpoints/vgg19.pth")
     ):
         super().__init__()
         # if we have network access

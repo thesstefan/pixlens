@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import pixlens.editing.impl.open_edit.models.networks as networks
 import pixlens.editing.impl.open_edit.util.util as util
-#from pixlens.editing.impl.open_edit.util.vocab import Vocabulary
+from pixlens.editing.impl.open_edit.util.vocab import Vocabulary
 import pickle
 from pixlens.editing.impl.open_edit.models.networks.txt_enc import EncoderText
 from pixlens.editing.impl.open_edit.models.networks.perturbation import PerturbationNet
@@ -30,6 +30,7 @@ class OpenEditModel(torch.nn.Module):
             self.netP = PerturbationNet(opt)
             self.netP.cuda()
         if self.opt.manipulation:
+            self.vocab = Vocabulary()
             self.vocab = pickle.load(open(opt.vocab_path, 'rb'))
             self.txt_enc = EncoderText(len(self.vocab), 300, 1024, 1)
             self.txt_enc.load_state_dict(torch.load(opt.vse_enc_path, map_location='cpu')['model'][1])
