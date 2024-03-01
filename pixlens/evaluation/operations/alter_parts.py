@@ -168,6 +168,8 @@ class AlterParts(OperationEvaluation):
                 whole=category_mask,
                 part=tos_in_edited.segmentation_output.masks[closest_obj_index],
             )
-            intersection_ratios.append(intersection_ratio)
+            intersection_ratios.append(
+                intersection_ratio > 0.0
+            )  # 1 if True, 0 if False
 
         return float(np.mean(intersection_ratios))

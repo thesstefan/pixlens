@@ -279,6 +279,7 @@ def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
         ],
         EditType.OBJECT_ADDITION: [
             ObjectAddition(),
+            subject_preservation,
             background_preservation,
         ],
         EditType.OBJECT_REMOVAL: [
@@ -370,13 +371,13 @@ def postprocess_evaluation(
 
 
 def get_edit_dataset() -> EditDataset:
-    return EditValDataset(
-        Path("./pixlens/editval/object.json"),
-        Path("./editval_instances/"),
-    )
+    # return EditValDataset(
+    #     Path("./pixlens/editval/object.json"),
+    #     Path("./editval_instances/"),
+    # )
     return MagicBrushDataset(
         Path("./magicbrush_dev"),
-        Path("./magicbrush_dev/pixlens.json"),
+        Path("./magicbrush_dev/transformed_all.json"),
     )
 
 
