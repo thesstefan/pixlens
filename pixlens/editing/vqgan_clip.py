@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import kornia.augmentation as K
@@ -138,12 +139,16 @@ class VqGANClip(interfaces.PromptableImageEditingModel):
         self.clip_model = "ViT-B/32"
         self.vqgan_config = Path(
             get_cache_dir()
-            / "models--VqGANClip/checkpoints/vqgan_imagenet_f16_16384.yaml"
+            / "models--VqGANClip/checkpoints/vqgan_imagenet_f16_16384.yaml",
         )
         self.vqgan_checkpoint = Path(
             get_cache_dir()
-            / "models--VqGANClip/checkpoints/vqgan_imagenet_f16_16384.ckpt"
+            / "models--VqGANClip/checkpoints/vqgan_imagenet_f16_16384.ckpt",
         )
+        if not Path.exists(self.vqgan_config):
+            logging.info(
+                "Download VQGAN-CLIP model",
+            )
         self.noise_prompt_seeds = []
         self.noise_prompt_weights = []
         self.step_size = 0.1
@@ -277,9 +282,10 @@ class VqGANClip(interfaces.PromptableImageEditingModel):
         image_path: str,
         edit_info: Edit | None = None,
     ) -> Image.Image:
+        del edit_info
         self.pms = []
         self.z = self.prepare_image(image_path)
-        self.z.requires_grad_(True)
+        self.z.requires_grad_(True)  # noqa: FBT003
         txt, weight, stop = self.split_prompt(prompt)
         embed = self.perceptor.encode_text(
             clip.tokenize(txt).to(self.device),
@@ -298,7 +304,18 @@ class VqGANClip(interfaces.PromptableImageEditingModel):
         return generate_simplified_description_based_prompt(edit)
 
     def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
-        raise NotImplementedError
+        self.pms = []
+        self.z = self.prepare_image(image_path)
+        self.z.requires_grad_(True)  # noqa: FBT003
+        txt, weight, stop = self.split_prompt(prompt)
+        embed = self.perceptor.encode_text(
+            clip.tokenize(txt).to(self.device),
+        ).float()
+        self.pms.append(Prompt(embed, weight, stop).to(self.device))
+        self.opt = self.get_opt(self.z, self.optimiser, self.step_size)
+        for _ in range(self.max_iterations):
+            self.train()
+        return self.z
 
 
 if __name__ == "__main__":
