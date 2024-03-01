@@ -1,0 +1,4 @@
+class: VqGANClip 
+params:
+    device: cuda
+    seed: 42
