@@ -89,8 +89,8 @@ class MakeCutouts(nn.Module):
                 )
             self.augs = nn.Sequential(*augment_list)
 
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
-        sidey, sidex = input.shape[2:4]
+    def forward(self, input_tensor: torch.Tensor) -> torch.Tensor:
+        sidey, sidex = input_tensor.shape[2:4]
         max_size = min(sidex, sidey)
         min_size = min(sidex, sidey, self.cut_size)
         cutouts = []
@@ -101,7 +101,7 @@ class MakeCutouts(nn.Module):
             )
             offsetx = torch.randint(0, sidex - size + 1, ())
             offsety = torch.randint(0, sidey - size + 1, ())
-            cutout = input[
+            cutout = input_tensor[
                 :,
                 :,
                 offsety : offsety + size,
