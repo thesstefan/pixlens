@@ -20,6 +20,7 @@ def get_detection_segmentation_result_of_target(
         if target in phrase:
             target_undetected = False
             break
+    # TODO: edge case -> e.g. "apple" in "pineapple"
 
     if target_undetected:
         return interfaces.DetectionSegmentationResult(
