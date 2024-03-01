@@ -103,6 +103,26 @@ class EditValDataset(EditDataset):
         raw_df = pd.DataFrame(edit_records)
         raw_df = raw_df.replace({np.nan: None})
 
+        # TODO: remove the following code once the paper is submitted
+        # reorder rows in raw_df so that all the object removal
+        # edits are at the bottom
+        object_removal_edits = raw_df[
+            raw_df["edit_type"] == EditType.OBJECT_REMOVAL
+        ]
+
+        # object removal edits should be ordered alphabetically by category
+        object_removal_edits = object_removal_edits.sort_values(
+            by=["category", "image_id"],
+        )
+
+        non_object_removal_edits = raw_df[
+            raw_df["edit_type"] != EditType.OBJECT_REMOVAL
+        ]
+        raw_df = pd.concat([non_object_removal_edits, object_removal_edits])
+
+        # edit ids are not in order, so we reset them
+        raw_df["edit_id"] = range(len(raw_df))
+
         self.edits_df = EditSchema.validate(raw_df)  # type: ignore[assignment]
         self.edits_df.to_csv(edits_path, index=False)
 
