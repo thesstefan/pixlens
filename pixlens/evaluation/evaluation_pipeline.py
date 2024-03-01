@@ -135,7 +135,6 @@ class EvaluationPipeline:
         self,
         category: str,
         from_attribute: str | None,
-        to_attribute: str | None,
         edit_type: EditType,
     ) -> str:
         if edit_type in [
@@ -229,7 +228,6 @@ class EvaluationPipeline:
             self.get_detection_prompt_for_input_image(
                 category,
                 from_attribute,
-                filtered_to_attribute,
                 edit.edit_type,
             )
         )
