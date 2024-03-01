@@ -27,6 +27,7 @@ else:
         instruct_pix2pix,
         lcm,
         open_edit,
+        vqgan_clip,
     )
 
     NAME_TO_EDITING_MODEL = {
@@ -35,6 +36,7 @@ else:
         "DiffEdit": diffedit.DiffEdit,
         "LCM": lcm.LCM,
         "OpenEdit": open_edit.OpenEdit,
+        "VqGANClip": vqgan_clip.VqGANClip,
     }
 
 logging.basicConfig(
