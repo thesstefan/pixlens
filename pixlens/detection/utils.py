@@ -11,7 +11,17 @@ def get_detection_segmentation_result_of_target(
 ) -> interfaces.DetectionSegmentationResult:
     detection_output = detection_segmentation_result.detection_output
     segmentation_output = detection_segmentation_result.segmentation_output
-    if target not in detection_output.phrases:
+
+    # check that the target is in the phrases of detection output
+    # but allow for also substrings
+    # i.e. "dog" is in "dog running" and "dog sitting"
+    target_undetected = True
+    for phrase in detection_output.phrases:
+        if target in phrase:
+            target_undetected = False
+            break
+
+    if target_undetected:
         return interfaces.DetectionSegmentationResult(
             detection_output=interfaces.DetectionOutput(
                 logits=torch.tensor([]),
@@ -29,7 +39,7 @@ def get_detection_segmentation_result_of_target(
     target_idxs = [
         idx
         for idx, phrase in enumerate(detection_output.phrases)
-        if phrase == target
+        if target in phrase  # allow for substrings
     ]
 
     targeted_detection_output = interfaces.DetectionOutput(
