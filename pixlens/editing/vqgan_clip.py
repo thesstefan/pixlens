@@ -253,11 +253,14 @@ class VqGANClip(interfaces.PromptableImageEditingModel):
         )
         return z
 
-    def synth(self, z: torch.Tensor) -> torch.Tensor:
-        z_q = vector_quantize(
+    def synth_latent(self, z: torch.Tensor) -> torch.Tensor:
+        return vector_quantize(
             z.movedim(1, 3),
             self.model.quantize.embedding.weight,
         ).movedim(3, 1)
+
+    def synth(self, z: torch.Tensor) -> torch.Tensor:
+        z_q = self.synth_latent(z)
         return self.clamp_with_grad(self.model.decode(z_q).add(1).div(2), 0, 1)
 
     def ascend_txt(self) -> list[torch.Tensor]:
@@ -315,7 +318,7 @@ class VqGANClip(interfaces.PromptableImageEditingModel):
         self.opt = self.get_opt(self.z, self.optimiser, self.step_size)
         for _ in range(self.max_iterations):
             self.train()
-        return self.z
+        return self.synth_latent(self.z)
 
 
 if __name__ == "__main__":
