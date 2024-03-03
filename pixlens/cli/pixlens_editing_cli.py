@@ -3,6 +3,7 @@ from pathlib import Path
 
 from pixlens.editing import load_editing_model_from_yaml
 from pixlens.editing.interfaces import ImageEditingPromptType
+from pixlens.evaluation.interfaces import Edit, EditType
 from pixlens.utils import utils
 
 parser = argparse.ArgumentParser(
@@ -36,8 +37,8 @@ def main() -> None:
 
     model = load_editing_model_from_yaml(args.model_params_yaml)
 
-    # check if args.in defined
     in_path = "example_input.jpg"
+    edit_info = None
     if args.input is None:
         url = "https://raw.githubusercontent.com/timothybrooks/instruct-pix2pix/main/imgs/example.jpg"
         image = utils.download_image(url)
@@ -46,16 +47,26 @@ def main() -> None:
         type_to_prompt = {
             ImageEditingPromptType.INSTRUCTION: "turn him into a cyborg",
             ImageEditingPromptType.DESCRIPTION: (
-                "A photo of the sculpture of David[SEP]A photo of a cyborg"
+                "A photo of a humanoid sculpture[SEP]A photo of a humanoid cyborg"
             ),
         }
         prompt = type_to_prompt[model.prompt_type]
+        # Needed by NullTextInversion
+        edit_info = Edit(
+            0,
+            in_path,
+            0,
+            "",
+            EditType.OBJECT_REPLACEMENT,
+            "sculpture",
+            "cyborg",
+        )
 
     else:
         in_path = args.input
         prompt = args.prompt
 
-    output = model.edit(prompt, in_path)
+    output = model.edit(prompt, in_path, edit_info)
     if args.input is None:
         Path(in_path).unlink()
 

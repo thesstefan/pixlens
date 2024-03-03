@@ -1,5 +1,7 @@
 import dataclasses
 import enum
+import json
+import pathlib
 from typing import Protocol
 
 from PIL import Image
@@ -25,22 +27,51 @@ class EditType(enum.StrEnum):
     ALTER_PARTS = "alter_parts"
 
 
-@dataclasses.dataclass
-class EvaluationOutput:
-    edit_specific_score: float
+class Persistable(Protocol):
+    def persist(self, save_dir: pathlib.Path) -> None:
+        ...
+
+
+class EvaluationArtifacts(Persistable):
+    ...
+
+
+@dataclasses.dataclass(kw_only=True)
+class EvaluationOutput(Persistable):
     success: bool
-    ssim_score: float | None = None
+    edit_specific_score: float
+    artifacts: EvaluationArtifacts | None = None
+
+    def persist(self, save_dir: pathlib.Path) -> None:
+        edit_specific_summary = {
+            "success": self.success,
+            "edit_specific_score": self.edit_specific_score,
+        }
+
+        json_str = json.dumps(edit_specific_summary, indent=4)
+        score_json_path = save_dir / "edit_specific_scores.json"
+
+        # guarantee that the parent directory exists
+        score_json_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with score_json_path.open("w") as score_json:
+            score_json.write(json_str)
+
+        if self.artifacts:
+            self.artifacts.persist(save_dir)
 
 
 @dataclasses.dataclass
 class Edit:
     edit_id: int
     image_path: str
-    image_id: int
+    image_id: str
     category: str
     edit_type: EditType
-    from_attribute: str
-    to_attribute: str
+    from_attribute: str | None
+    to_attribute: str | None
+    instruction_prompt: str
+    description_prompt: str
 
 
 @dataclasses.dataclass

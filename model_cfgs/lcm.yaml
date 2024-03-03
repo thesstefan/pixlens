@@ -1,0 +1,9 @@
+class: LCM
+params:
+    lcm_type: "SimianLuo/LCM_Dreamshaper_v7"
+    num_inference_steps: 40
+    text_guidance_scale: 5
+    device: cuda
+    latent_guidance_scale: 50
+    image_guidance_scale: 1.0
+    seed: 0

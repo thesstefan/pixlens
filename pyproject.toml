@@ -27,6 +27,8 @@ where = ["."]
 pixlens-detect = "pixlens.cli.pixlens_detection_cli:main"
 pixlens-edit = "pixlens.cli.pixlens_editing_cli:main"
 pixlens-eval = "pixlens.cli.pixlens_evaluation_cli:main"
+pixlens-caption = "pixlens.cli.pixlens_caption_cli:main"
+pixlens-disentanglement = "pixlens.cli.pixlens_disentanglement_cli:main"
 
 [tool.ruff]
 line-length = 80
@@ -47,6 +49,7 @@ ignore = [
     "ANN101",
     "ANN102",
 ]
+exclude = ["pixlens/editing/impl/null_text_inversion"]
 
 [tool.mypy]
 plugins = "numpy.typing.mypy_plugin"
@@ -57,3 +60,4 @@ check_untyped_defs = true
 warn_return_any = true
 show_error_codes = true
 mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
+exclude = ["pixlens/editing/impl/null_text_inversion"]

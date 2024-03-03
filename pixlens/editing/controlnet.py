@@ -14,10 +14,6 @@ from PIL import Image
 
 from pixlens.editing import interfaces
 from pixlens.editing.stable_diffusion import StableDiffusionType
-from pixlens.editing.utils import (
-    generate_instruction_based_prompt,
-    log_model_if_not_in_cache,
-)
 from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
 
@@ -30,8 +26,8 @@ def load_controlnet(
     model_type: ControlNetType,
     device: torch.device | None = None,
 ) -> StableDiffusionControlNetPipeline:
-    path_to_cache = utils.get_cache_dir()
-    log_model_if_not_in_cache(model_type, path_to_cache)
+    cache_dir = utils.get_cache_dir()
+    utils.log_if_hugging_face_model_not_in_cache(model_type, cache_dir)
     controlnet = ControlNetModel.from_pretrained(
         model_type,
         torch_dtype=torch.float16,
@@ -41,7 +37,7 @@ def load_controlnet(
         controlnet=controlnet,
         torch_dtype=torch.float16,
         safety_checker=None,
-        cache_dir=path_to_cache,
+        cache_dir=cache_dir,
     )
 
     pipe.to(device)
@@ -53,6 +49,13 @@ def load_controlnet(
 
 
 class ControlNet(interfaces.PromptableImageEditingModel):
+    model: StableDiffusionControlNetPipeline
+    controlnet_type: ControlNetType
+    device: torch.device | None
+    num_inference_steps: int
+    image_guidance_scale: float
+    text_guidance_scale: float
+
     def __init__(  # noqa: PLR0913
         self,
         controlnet_type: ControlNetType = ControlNetType.CANNY,
@@ -60,12 +63,29 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         num_inference_steps: int = 100,
         image_guidance_scale: float = 1.0,
         text_guidance_scale: float = 7.0,
+        seed: int = 0,
+        latent_guidance_scale: float = 25,
     ) -> None:
-        self.device = device
         self.model = load_controlnet(controlnet_type, device)
+        self.device = device
+        self.controlnet_type = controlnet_type
         self.num_inference_steps = num_inference_steps
         self.image_guidance_scale = image_guidance_scale
         self.text_guidance_scale = text_guidance_scale
+        self.latent_guidance_scale = latent_guidance_scale
+        self.seed = seed
+
+    @property
+    def params_dict(self) -> dict[str, str | bool | int | float]:
+        return {
+            "device": str(self.device),
+            "controlnet_type": str(self.controlnet_type),
+            "num_inference_steps": self.num_inference_steps,
+            "image_guidance_scale": self.image_guidance_scale,
+            "text_guidance_scale": self.text_guidance_scale,
+            "latent_guidance_scale": self.latent_guidance_scale,
+            "seed": self.seed,
+        }
 
     def prepare_image(self, image_path: str) -> Image.Image:
         image = Image.open(image_path)
@@ -87,7 +107,6 @@ class ControlNet(interfaces.PromptableImageEditingModel):
         edit_info: Edit | None = None,
     ) -> Image.Image:
         del edit_info
-
         input_image = self.prepare_image(image_path)
         return self.model(  # type: ignore[no-any-return]
             prompt,
@@ -95,12 +114,21 @@ class ControlNet(interfaces.PromptableImageEditingModel):
             num_inference_steps=self.num_inference_steps,
             image_guidance_scale=self.image_guidance_scale,
             guidance_scale=self.text_guidance_scale,
-            generator=torch.manual_seed(0),
+            generator=torch.manual_seed(self.seed),
+        ).images[0]
+
+    def get_latent(self, prompt: str, image_path: str) -> torch.Tensor:
+        input_image = self.prepare_image(image_path)
+        return self.model(  # type: ignore[no-any-return]
+            prompt,
+            input_image,
+            num_inference_steps=100,
+            image_guidance_scale=1.0,
+            output_type="latent",
+            guidance_scale=self.latent_guidance_scale,
+            generator=torch.manual_seed(self.seed),
         ).images[0]
 
     @property
     def prompt_type(self) -> interfaces.ImageEditingPromptType:
         return interfaces.ImageEditingPromptType.INSTRUCTION
-
-    def generate_prompt(self, edit: Edit) -> str:
-        return generate_instruction_based_prompt(edit)

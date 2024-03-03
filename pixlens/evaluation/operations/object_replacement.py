@@ -41,21 +41,17 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
             to_attribute,
         )
 
-        if len(froms_in_input.detection_output.phrases) == 0:
+        if len(froms_in_input.detection_output.bounding_boxes) == 0:
             return evaluation_interfaces.EvaluationOutput(
                 edit_specific_score=0,
                 success=False,
             )
 
-        # For the moment we don't consider the following:
-        # froms_in_edited = get_detection_segmentation_result_of_target(
-        #     evaluation_input.edited_detection_segmentation_result,
-        #     from_attribute,
-        # )
-        # tos_in_input = get_detection_segmentation_result_of_target(
-        #     evaluation_input.input_detection_segmentation_result,
-        #     to_attribute,
-        # )
+        if len(tos_in_edited.detection_output.bounding_boxes) == 0:
+            return evaluation_interfaces.EvaluationOutput(
+                edit_specific_score=0,
+                success=True,
+            )
 
         used_tos_in_edited = set()
         true_positives = 0
@@ -88,6 +84,9 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
             # the {to} object covers the {from} object
 
             if max_iou_index != -1:
+                if max_iou_index in used_tos_in_edited:
+                    false_negatives += 1
+                    continue
                 # detected a corresponding to object that
                 # "covers" and replaces the from object
                 true_positives += 1
@@ -106,8 +105,11 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
 
         precision = true_positives / (true_positives + false_positives)
         recall = true_positives / (true_positives + false_negatives)
-
-        f1_score = 2 * (precision * recall) / (precision + recall)
+        tol = 1e-06
+        if precision + recall < tol:
+            f1_score = 0.0
+        else:
+            f1_score = 2 * (precision * recall) / (precision + recall)
         return evaluation_interfaces.EvaluationOutput(
             edit_specific_score=f1_score,
             success=True,

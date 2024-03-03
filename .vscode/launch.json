@@ -61,7 +61,7 @@
             ]
         },
         {
-            "name": "Pixlens Edit CLI - Pix2pix",
+            "name": "Pixlens Edit CLI - InstructPix2Pix",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_editing_cli.py",
@@ -74,6 +74,20 @@
                 "--model_params_yaml",
                 "model_cfgs/instruct_pix2pix.yaml",
             ]
+        },
+        {
+            "name": "Debug Edit CLI Null-Text-Inversion",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_editing_cli.py",
+            "args": [
+                "--model",
+                "NullTextInversion",
+                "--output",
+                "${workspaceFolder}/results/edit_output_null_text_inversion.png",
+                "--model_params_yaml",
+                "model_cfgs/null_text_inversion.yaml",
+            ],
         },
         {
             "name": "Pixlens Edit CLI - DiffEdit",
@@ -128,12 +142,45 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--edit-id",
-                "0", // Replace with the desired edit ID
+                "--edit-type",
+                "object_addition", // Replace with the desired edit ID / edit type
                 "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
+                "instructpix2pix", // Replace with the desired editing model name
                 "--detection-model",
-                "groundedsam" // Replace with the desired detection model name
+                "groundedsam", // Replace with the desired detection model name
+                "--do-all-edits", // Optional: If you want to run all edits for the given edit type 
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        },
+        {
+            "name": "Disentanglement Evaluation",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_disentanglement_cli.py",
+            "args": [
+                "--model_params_yaml",
+                "model_cfgs/diffedit.yaml" // Replace with the desired editing model name
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        },
+        {
+            "name": "Disentanglement Evaluation",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_disentanglement_cli.py",
+            "args": [
+                "--model_params_yaml",
+                "model_cfgs/diffedit.yaml" // Replace with the desired editing model name
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
@@ -148,12 +195,13 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
-                "--detection-model",
-                "groundedsam", // Replace with the desired detection model name
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
                 "--edit-type",
-                "color"
+                "color",
+                "--do-all-edits"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
@@ -168,12 +216,14 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
-                "--detection-model",
-                "groundedsam", // Replace with the desired detection model name
+                "--edit-id",
+                "535",
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
                 "--edit-type",
-                "size"
+                "size",
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
@@ -188,10 +238,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
-                "--detection-model",
-                "groundedsam", // Replace with the desired detection model name
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
                 "--edit-type",
                 "object_removal",
                 "--do-all-edits",
@@ -209,10 +259,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
             "args": [
-                "--editing-model",
-                "pix2pix", // Replace with the desired editing model name
-                "--detection-model",
-                "groundedsam", // Replace with the desired detection model name
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
                 "--edit-type",
                 "object_replacement",
                 "--do-all-edits",
@@ -224,5 +274,105 @@
             "jinja": false,
             "justMyCode": true
         },
+        {
+            "name": "Debug PixLens Evaluation Pipeline - Positional Addition",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
+            "args": [
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
+                "--edit-type",
+                "positional_addition",
+                "--do-all-edits",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        },
+        {
+            "name": "Debug PixLens Evaluation Pipeline - Position Replacement",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
+            "args": [
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
+                "--edit-type",
+                "position_replacement",
+                "--do-all-edits",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        },
+        {
+            "name": "Debug PixLens Evaluation Pipeline - Alter Parts",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
+            "args": [
+                "--editing-model-yaml",
+                "model_cfgs/instruct_pix2pix.yaml", // Replace with the desired editing model name
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
+                "--edit-type",
+                "alter_parts",
+                "--do-all-edits",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        },
+        // run entire evaluation pipeline
+        {
+            "name": "Run PixLens Evaluation Pipeline",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
+            "args": [
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
+                "--run-evaluation-pipeline",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        },
+        {
+            "name": "Run PixLens Evaluation over MagicBrush Ground Truth",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
+            "args": [
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
+                "--run-evaluation-pipeline",
+                "--edited-images-dir",
+                "MagicBrush-GroundTruth",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
+        }
     ]
 }

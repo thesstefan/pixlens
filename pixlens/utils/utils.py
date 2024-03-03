@@ -1,4 +1,5 @@
 import functools
+import hashlib
 import logging
 import pathlib
 import shutil
@@ -14,6 +15,14 @@ CACHE_DIR_NAME = "pixlens"
 REQUEST_TIMEOUT = 10
 
 T = typing.TypeVar("T")
+
+
+# TODO(thesstefan): I don't like this. Get rid of it sometime.
+class GotNoneError(ValueError):
+    """Use when required optional doesn't have a value."""
+
+    def __init__(self, msg: str) -> None:
+        super().__init__(f"{msg}. Got None.")
 
 
 def _request_file(url: str) -> requests.Response:
@@ -106,3 +115,12 @@ def get_image_extension(
         if image_path.with_suffix(ext).is_file():
             return ext
     return None
+
+
+def hash_primitive_list(
+    items: list[str | bool | int | float],
+    hash_length: int = 3,
+) -> str:
+    item_str = "".join(map(str, items))
+
+    return hashlib.shake_256(item_str.encode()).hexdigest(hash_length)

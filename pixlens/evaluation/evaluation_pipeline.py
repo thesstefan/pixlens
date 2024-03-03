@@ -1,59 +1,108 @@
-import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import torch
+import pandera as pa
+from pandera.typing import Series
 from PIL import Image
 
+from pixlens.dataset.edit_dataset import EditDataset
 from pixlens.detection import interfaces as detection_interfaces
 from pixlens.detection.utils import get_separator
-from pixlens.editing.interfaces import PromptableImageEditingModel
+from pixlens.editing.interfaces import (
+    ImageEditingPromptType,
+    PromptableImageEditingModel,
+)
 from pixlens.evaluation import interfaces
-from pixlens.evaluation.utils import get_updated_to
+from pixlens.evaluation.interfaces import EditType
+from pixlens.evaluation.operations.background_preservation import (
+    BackgroundPreservationOutput,
+)
+from pixlens.evaluation.operations.subject_preservation import (
+    SubjectPreservationOutput,
+)
+from pixlens.evaluation.utils import (
+    get_clean_to_attribute_for_detection,
+    prompt_to_filename,
+)
 from pixlens.utils.utils import get_cache_dir, get_image_extension
 from pixlens.visualization import annotation
 
 
-class EvaluationPipeline:
-    def __init__(self, device: torch.device) -> None:
-        self.device = "cpu"  # original was cuda
-        self.edit_dataset: pd.DataFrame
-        self.get_edit_dataset()
-        self.detection_model: detection_interfaces.PromptDetectAndBBoxSegmentModel  # noqa: E501
-        self.editing_model: PromptableImageEditingModel
+class EvaluationSchema(pa.DataFrameModel):
+    edit_id: Series[int] = pa.Field(ge=0)
+    edit_type: Series[str] = pa.Field(
+        isin=[edit_type.value for edit_type in EditType],
+    )
+    model_id: Series[str]
+    evaluation_success: Series[bool]
+    edit_specific_score: Series[float]
+    subject_preservation_success: Series[float]
+    subject_sift_score: Series[float]
+    subject_color_score: Series[float]
+    subject_position_score: Series[float]
+    subject_ssim_score: Series[float]
+    subject_aligned_iou: Series[float]
+    background_preservation_success: Series[bool]
+    background_score: Series[float]
 
-    def get_edit_dataset(self) -> None:
-        pandas_path = Path(get_cache_dir(), "edit_dataset.csv")
-        if pandas_path.exists():
-            self.edit_dataset = pd.read_csv(pandas_path)
-        else:
-            logging.error(f"Edit dataset ({pandas_path}) not cached")  # noqa: G004
-            raise FileNotFoundError
+
+class EvaluationPipeline:
+    def __init__(
+        self,
+        edit_dataset: EditDataset,
+    ) -> None:
+        self.edit_dataset = edit_dataset
+        self.detection_model: detection_interfaces.PromptDetectAndBBoxSegmentModel  # noqa: E501
+        self.editing_models: list[PromptableImageEditingModel]
+        self.evaluation_dataset: pa.typing.DataFrame[EvaluationSchema]
+        self.initialize_evaluation_dataset()
+
+    def initialize_evaluation_dataset(self) -> None:
+        self.evaluation_dataset = pd.DataFrame(
+            columns=[
+                "edit_id",
+                "edit_type",
+                "model_id",
+                "evaluation_success",
+                "edit_specific_score",
+                "subject_preservation_success",
+                "subject_sift_score",
+                "subject_color_score",
+                "subject_position_score",
+                "subject_ssim_score",
+                "subject_aligned_iou",
+                "background_preservation_success",
+                "background_score",
+            ],
+        )
 
     def get_input_image_from_edit_id(self, edit_id: int) -> Image.Image:
-        image_path = self.edit_dataset.iloc[edit_id]["input_image_path"]
-        image_path = Path(image_path)
+        image_path = Path(self.edit_dataset.get_edit(edit_id).image_path)
         image_extension = get_image_extension(image_path)
         if image_extension:
-            return Image.open(image_path.with_suffix(image_extension))
+            return Image.open(image_path.with_suffix(image_extension)).convert(
+                "RGB"
+            )
         raise FileNotFoundError
 
     def get_edited_image_from_edit(
         self,
         edit: interfaces.Edit,
-        model: PromptableImageEditingModel,
+        prompt: str,
+        edited_images_dir: str,
     ) -> Image.Image:
-        prompt = model.generate_prompt(edit)
-        edit_path = Path(
-            get_cache_dir(),
-            "models--" + model.get_model_name(),
-            f"000000{edit.image_id!s:>06}",
-            prompt,
+        edit_path = (
+            get_cache_dir()
+            / edited_images_dir
+            / self.edit_dataset.name
+            / Path(edit.image_path).stem
+            / prompt_to_filename(prompt)
         )
+
         extension = get_image_extension(edit_path)
         if extension:
-            return Image.open(edit_path.with_suffix(extension))
+            return Image.open(edit_path.with_suffix(extension)).convert("RGB")
         raise FileNotFoundError
 
     def init_detection_model(
@@ -62,8 +111,11 @@ class EvaluationPipeline:
     ) -> None:
         self.detection_model = model
 
-    def init_editing_model(self, model: PromptableImageEditingModel) -> None:
-        self.editing_model = model
+    def init_editing_models(
+        self,
+        model_list: list[PromptableImageEditingModel],
+    ) -> None:
+        self.editing_models = model_list
 
     def do_detection_and_segmentation(
         self,
@@ -79,42 +131,124 @@ class EvaluationPipeline:
             segmentation_output=segmentation_output,
         )
 
+    def get_detection_prompt_for_input_image(
+        self,
+        category: str,
+        from_attribute: str | None,
+        edit_type: EditType,
+    ) -> str:
+        if edit_type in [
+            EditType.COLOR,
+            EditType.SIZE,
+            EditType.OBJECT_REMOVAL,
+            EditType.POSITION_REPLACEMENT,
+            EditType.POSITIONAL_ADDITION,
+            EditType.OBJECT_DUPLICATION,
+            EditType.TEXTURE,
+            EditType.ALTER_PARTS,
+            EditType.OBJECT_ADDITION,
+        ]:
+            return category
+
+        if edit_type in [EditType.OBJECT_REPLACEMENT]:
+            return from_attribute if from_attribute is not None else ""
+
+        return ""  # for unimplemented edit types
+
+    def get_detection_prompt_for_edited_image(
+        self,
+        category: str,
+        to_attribute: str | None,
+        edit_type: EditType,
+    ) -> str:
+        separator = get_separator(self.detection_model)
+        if edit_type in [
+            EditType.COLOR,
+            EditType.SIZE,
+            EditType.OBJECT_REMOVAL,
+            EditType.POSITION_REPLACEMENT,
+            EditType.OBJECT_DUPLICATION,
+            EditType.TEXTURE,
+        ]:
+            return category
+
+        if edit_type in [
+            EditType.OBJECT_ADDITION,
+            EditType.POSITIONAL_ADDITION,
+        ]:
+            elements_to_detect = [
+                elem for elem in [category, to_attribute] if elem is not None
+            ]
+            # remove duplicated elements if any
+            elements_to_detect = list(set(elements_to_detect))
+            return separator.join(elements_to_detect)
+
+        if edit_type in [EditType.OBJECT_REPLACEMENT, EditType.ALTER_PARTS]:
+            return to_attribute if to_attribute is not None else ""
+
+        return ""  # for unimplemented edit types
+
     def get_all_inputs_for_edit(
         self,
         edit: interfaces.Edit,
+        prompt: str,
+        edited_images_dir: str,
     ) -> interfaces.EvaluationInput:
         input_image = self.get_input_image_from_edit_id(edit.edit_id)
-        edited_image = self.get_edited_image_from_edit(edit, self.editing_model)
-        prompt = self.editing_model.generate_prompt(edit)
+        edited_image = self.get_edited_image_from_edit(
+            edit,
+            prompt,
+            edited_images_dir,
+        )
+
+        if input_image.size != edited_image.size:
+            edited_image = edited_image.resize(
+                input_image.size,
+                Image.Resampling.LANCZOS,
+            )
+
         from_attribute = (
             None if pd.isna(edit.from_attribute) else edit.from_attribute
         )
-        to_attribute = get_updated_to(edit)
+        if not pd.isna(edit.to_attribute):
+            edit.to_attribute = "".join(
+                char if char.isalpha() or char.isspace() else " "
+                for char in edit.to_attribute or ""
+            )
+            filtered_to_attribute = get_clean_to_attribute_for_detection(edit)
+        else:
+            edit.to_attribute = None
+            filtered_to_attribute = None
         category = "".join(
             char if char.isalpha() or char.isspace() else " "
             for char in edit.category
         )
-        list_for_det_seg = [
-            item
-            for item in [category, from_attribute, to_attribute]
-            if item is not None
-        ]
 
-        list_for_det_seg = list(set(list_for_det_seg))
-
-        separator = get_separator(self.detection_model)
-        prompt_for_det_seg = separator.join(list_for_det_seg)
+        detection_prompt_input_image = (
+            self.get_detection_prompt_for_input_image(
+                category,
+                from_attribute,
+                edit.edit_type,
+            )
+        )
+        detection_prompt_edited_image = (
+            self.get_detection_prompt_for_edited_image(
+                category,
+                filtered_to_attribute,
+                edit.edit_type,
+            )
+        )
 
         input_detection_segmentation_result = (
             self.do_detection_and_segmentation(
                 input_image,
-                prompt_for_det_seg,
+                detection_prompt_input_image,
             )
         )
         edited_detection_segmentation_result = (
             self.do_detection_and_segmentation(
                 edited_image,
-                prompt_for_det_seg,
+                detection_prompt_edited_image,
             )
         )
 
@@ -166,31 +300,288 @@ class EvaluationPipeline:
             updated_strings=interfaces.UpdatedStrings(
                 category=category,
                 from_attribute=from_attribute,
-                to_attribute=to_attribute,
+                to_attribute=filtered_to_attribute,
             ),
         )
 
-    def get_all_scores_for_edit(
+    def update_evaluation_dataset(
         self,
         edit: interfaces.Edit,
-    ) -> dict[str, float]:
-        evaluation_input = self.get_all_inputs_for_edit(edit)
-        edit_type_dependent_scores = self.get_edit_dependent_scores_for_edit(
-            evaluation_input,
-        )
-        edit_type_indpendent_scores = self.get_edit_independent_scores_for_edit(
-            evaluation_input,
-        )
-        return {**edit_type_dependent_scores, **edit_type_indpendent_scores}
+        edited_image_dir: str,
+        evaluation_outputs: list[interfaces.EvaluationOutput],
+    ) -> None:
+        for evaluation_output in evaluation_outputs:
+            if isinstance(
+                evaluation_output,
+                SubjectPreservationOutput,
+            ):
+                last_row_index = self.evaluation_dataset.index[-1]
+                self.evaluation_dataset.loc[
+                    last_row_index,
+                    "subject_preservation_success",
+                ] = evaluation_output.success
+                self.evaluation_dataset.loc[
+                    last_row_index,
+                    "subject_sift_score",
+                ] = evaluation_output.sift_score
+                self.evaluation_dataset.loc[
+                    last_row_index,
+                    "subject_color_score",
+                ] = evaluation_output.color_score
+                self.evaluation_dataset.loc[
+                    last_row_index,
+                    "subject_position_score",
+                ] = evaluation_output.position_score
+                self.evaluation_dataset.loc[
+                    last_row_index,
+                    "subject_ssim_score",
+                ] = evaluation_output.ssim_score
+                self.evaluation_dataset.loc[
+                    last_row_index,
+                    "subject_aligned_iou",
+                ] = evaluation_output.aligned_iou
+            elif isinstance(
+                evaluation_output,
+                BackgroundPreservationOutput,
+            ):
+                last_row_index = self.evaluation_dataset.index[-1]
+                self.evaluation_dataset.loc[
+                    last_row_index,
+                    "background_preservation_success",
+                ] = evaluation_output.success
+                self.evaluation_dataset.loc[
+                    last_row_index,
+                    "background_score",
+                ] = evaluation_output.background_score
+            elif isinstance(evaluation_output, interfaces.EvaluationOutput):
+                # order of IF statements matters, because EvaluationOutput
+                # is a superclass of SubjectPreservationOutput and
+                # BackgroundPreservationOutput
+                self.evaluation_dataset.loc[len(self.evaluation_dataset)] = {
+                    "edit_id": edit.edit_id,
+                    "edit_type": edit.edit_type,
+                    "model_id": edited_image_dir,
+                    "evaluation_success": evaluation_output.success,
+                    "edit_specific_score": evaluation_output.edit_specific_score,  # noqa: E501
+                }
+            else:
+                raise NotImplementedError
 
-    def get_edit_dependent_scores_for_edit(
-        self,
-        evaluation_input: interfaces.EvaluationInput,
-    ) -> dict[str, float]:
-        raise NotImplementedError
+    def save_evaluation_dataset(self) -> None:
+        self.evaluation_dataset.to_csv(
+            Path(get_cache_dir(), "evaluation_results.csv"),
+            index=False,
+        )
 
-    def get_edit_independent_scores_for_edit(
+    def load_evaluation_dataset(self) -> None:
+        self.evaluation_dataset = EvaluationSchema.validate(
+            pd.read_csv(get_cache_dir() / "evaluation_results.csv"),
+        )
+
+    def get_aggregated_scores_for_model(
         self,
-        evaluation_input: interfaces.EvaluationInput,
+        model_id: str,
+    ) -> dict[str, dict[str, float]]:
+        # extract all possible edit types
+        edit_types = self.evaluation_dataset["edit_type"].unique()
+
+        # initialize a dictionary to store the aggregated scores
+        aggregated_scores = {}
+        for edit_type in edit_types:
+            aggregated_scores[
+                edit_type
+            ] = self.get_aggregated_scores_for_model_and_edit_type(
+                model_id,
+                edit_type,
+            )
+        aggregated_scores["overall_mean"] = self.get_mean_scores_for_model(
+            model_id,
+        )
+
+        return aggregated_scores
+
+    def get_aggregated_scores_for_edit_type(
+        self,
+    ) -> dict[str, dict[str, dict[str, float]]]:
+        edit_types = self.evaluation_dataset["edit_type"].unique()
+        model_ids = self.evaluation_dataset["model_id"].unique()
+
+        results = {}
+        for edit_type in edit_types:
+            aggregated_scores = {}
+            for model_id in model_ids:
+                aggregated_scores[
+                    model_id
+                ] = self.get_aggregated_scores_for_model_and_edit_type(
+                    model_id,
+                    edit_type,
+                )
+            aggregated_scores[
+                "overall_mean"
+            ] = self.get_mean_scores_for_edit_type(
+                edit_type,
+            )
+            results[edit_type] = aggregated_scores
+        return results
+
+    def get_aggregated_scores_for_model_and_edit_type(
+        self,
+        model_id: str,
+        edit_type: str,
     ) -> dict[str, float]:
-        raise NotImplementedError
+        filtered_evaluation_dataset = self.evaluation_dataset[
+            (self.evaluation_dataset["model_id"] == model_id)
+            & (self.evaluation_dataset["edit_type"] == edit_type)
+            & (self.evaluation_dataset["evaluation_success"])
+        ]
+        edit_specific_score = filtered_evaluation_dataset[
+            "edit_specific_score"
+        ].mean()
+
+        filtered_evaluation_dataset = self.evaluation_dataset[
+            (self.evaluation_dataset["model_id"] == model_id)
+            & (self.evaluation_dataset["edit_type"] == edit_type)
+            & (self.evaluation_dataset["subject_preservation_success"])
+        ]
+        sift_score = filtered_evaluation_dataset["subject_sift_score"].mean()
+        color_score = filtered_evaluation_dataset["subject_color_score"].mean()
+        position_score = filtered_evaluation_dataset[
+            "subject_position_score"
+        ].mean()
+        aligned_iou = filtered_evaluation_dataset["subject_aligned_iou"].mean()
+
+        filtered_evaluation_dataset = self.evaluation_dataset[
+            (self.evaluation_dataset["model_id"] == model_id)
+            & (self.evaluation_dataset["edit_type"] == edit_type)
+            & (self.evaluation_dataset["background_preservation_success"])
+        ]
+        background_score = filtered_evaluation_dataset[
+            "background_score"
+        ].mean()
+
+        results = {
+            "edit_specific_score": edit_specific_score,
+            "subject_sift_score": sift_score,
+            "subject_color_score": color_score,
+            "subject_position_score": position_score,
+            "subject_aligned_iou": aligned_iou,
+            "background_score": background_score,
+        }
+
+        for key, value in results.items():
+            if pd.isna(value):
+                results[key] = None
+        return results
+
+    def get_mean_scores_for_model(
+        self,
+        model_id: str,
+    ) -> dict[str, float]:
+        filtered_evaluation_dataset = self.evaluation_dataset[
+            (self.evaluation_dataset["model_id"] == model_id)
+            & (self.evaluation_dataset["evaluation_success"])
+        ]
+        edit_specific_score = filtered_evaluation_dataset[
+            "edit_specific_score"
+        ].mean()
+
+        filtered_evaluation_dataset = self.evaluation_dataset[
+            (self.evaluation_dataset["model_id"] == model_id)
+            & (self.evaluation_dataset["subject_preservation_success"])
+        ]
+        sift_score = filtered_evaluation_dataset["subject_sift_score"].mean()
+
+        # before computing the color mean score,
+        # filter out the rows with edit_type == "color"
+        color_filtered_evaluation_dataset = filtered_evaluation_dataset[
+            filtered_evaluation_dataset["edit_type"] != EditType.COLOR
+        ]
+        color_score = color_filtered_evaluation_dataset[
+            "subject_color_score"
+        ].mean()
+
+        # before computing the position mean score,
+        # filter out the rows with edit_type == "position_replacement"
+        position_filtered_evaluation_dataset = filtered_evaluation_dataset[
+            filtered_evaluation_dataset["edit_type"]
+            != EditType.POSITION_REPLACEMENT
+        ]
+        position_score = position_filtered_evaluation_dataset[
+            "subject_position_score"
+        ].mean()
+
+        # before computing the aligned_iou mean score,
+        # filter out the rows with edit_type == "size"
+        aligned_iou_filtered_evaluation_dataset = filtered_evaluation_dataset[
+            filtered_evaluation_dataset["edit_type"] != EditType.SIZE
+        ]
+        aligned_iou = aligned_iou_filtered_evaluation_dataset[
+            "subject_aligned_iou"
+        ].mean()
+
+        filtered_evaluation_dataset = self.evaluation_dataset[
+            (self.evaluation_dataset["model_id"] == model_id)
+            & (self.evaluation_dataset["background_preservation_success"])
+        ]
+        background_score = filtered_evaluation_dataset[
+            "background_score"
+        ].mean()
+
+        results = {
+            "edit_specific_score": edit_specific_score,
+            "subject_sift_score": sift_score,
+            "subject_color_score": color_score,
+            "subject_position_score": position_score,
+            "subject_aligned_iou": aligned_iou,
+            "background_score": background_score,
+        }
+
+        for key, value in results.items():
+            if pd.isna(value):
+                results[key] = None
+        return results
+
+    def get_mean_scores_for_edit_type(
+        self,
+        edit_type: str,
+    ) -> dict[str, float]:
+        filtered_evaluation_dataset = self.evaluation_dataset[
+            (self.evaluation_dataset["edit_type"] == edit_type)
+            & (self.evaluation_dataset["evaluation_success"])
+        ]
+        edit_specific_score = filtered_evaluation_dataset[
+            "edit_specific_score"
+        ].mean()
+
+        filtered_evaluation_dataset = self.evaluation_dataset[
+            (self.evaluation_dataset["edit_type"] == edit_type)
+            & (self.evaluation_dataset["subject_preservation_success"])
+        ]
+        sift_score = filtered_evaluation_dataset["subject_sift_score"].mean()
+        color_score = filtered_evaluation_dataset["subject_color_score"].mean()
+        position_score = filtered_evaluation_dataset[
+            "subject_position_score"
+        ].mean()
+        aligned_iou = filtered_evaluation_dataset["subject_aligned_iou"].mean()
+
+        filtered_evaluation_dataset = self.evaluation_dataset[
+            (self.evaluation_dataset["edit_type"] == edit_type)
+            & (self.evaluation_dataset["background_preservation_success"])
+        ]
+        background_score = filtered_evaluation_dataset[
+            "background_score"
+        ].mean()
+
+        results = {
+            "edit_specific_score": edit_specific_score,
+            "subject_sift_score": sift_score,
+            "subject_color_score": color_score,
+            "subject_position_score": position_score,
+            "subject_aligned_iou": aligned_iou,
+            "background_score": background_score,
+        }
+
+        for key, value in results.items():
+            if pd.isna(value):
+                results[key] = None
+        return results

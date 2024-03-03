@@ -1,6 +1,5 @@
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
 from pixlens.evaluation import interfaces as evaluation_interfaces
-from pixlens.evaluation.utils import compute_ssim
 
 
 class ObjectRemoval(evaluation_interfaces.OperationEvaluation):
@@ -16,13 +15,11 @@ class ObjectRemoval(evaluation_interfaces.OperationEvaluation):
         evaluation_output_error = evaluation_interfaces.EvaluationOutput(
             success=False,
             edit_specific_score=0,
-            ssim_score=None,
         )
         if object_in_input and object_not_in_output:
             return evaluation_interfaces.EvaluationOutput(
                 success=True,
                 edit_specific_score=1,
-                ssim_score=compute_ssim(evaluation_input),
             )
         if not object_in_input:
             return evaluation_output_error
@@ -30,7 +27,6 @@ class ObjectRemoval(evaluation_interfaces.OperationEvaluation):
         return evaluation_interfaces.EvaluationOutput(
             success=True,
             edit_specific_score=0,
-            ssim_score=compute_ssim(evaluation_input),
         )
 
     def is_object_in_input_and_not_in_output(
