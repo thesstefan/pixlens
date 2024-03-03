@@ -15,6 +15,7 @@ class EditType(enum.StrEnum):
     OBJECT_ADDITION = "object_addition"
     POSITIONAL_ADDITION = "positional_addition"
     OBJECT_REMOVAL = "object_removal"
+    SINGLE_INSTANCE_REMOVAL = "single_instance_removal"
     OBJECT_REPLACEMENT = "object_replacement"
     POSITION_REPLACEMENT = "position_replacement"
     OBJECT_DUPLICATION = "object_duplication"
