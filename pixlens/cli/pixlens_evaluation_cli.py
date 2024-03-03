@@ -147,6 +147,8 @@ def evaluate_edits(  # noqa: PLR0913
     error_log_path = evaluation_dir / "error_log.json"
 
     for edit in edits:
+        if edit.edit_id != 53:
+            continue
         edit_dir = evaluation_dir / str(edit.edit_id)
 
         if edit.edit_type not in operation_evaluators:

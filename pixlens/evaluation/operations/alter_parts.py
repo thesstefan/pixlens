@@ -9,10 +9,19 @@ from pixlens.evaluation.interfaces import (
     EvaluationOutput,
     OperationEvaluation,
 )
-from pixlens.evaluation.utils import center_of_mass, compute_mask_intersection
+from pixlens.evaluation.multiplicity_resolver import (
+    MultiplicityResolution,
+    select_one_2d,
+)
+from pixlens.evaluation.utils import compute_mask_intersection
 
 
 class AlterParts(OperationEvaluation):
+    def __init__(self) -> None:
+        self.to_edited_resolution: MultiplicityResolution = (
+            MultiplicityResolution.CLOSEST
+        )
+
     def evaluate_edit(
         self,
         evaluation_input: EvaluationInput,
@@ -142,34 +151,21 @@ class AlterParts(OperationEvaluation):
     ) -> float:
         intersection_ratios = []
 
-        parts_centers_of_mass = [
-            center_of_mass(mask)
-            for mask in tos_in_edited.segmentation_output.masks
-        ]
-
         for category_mask in category.segmentation_output.masks:
-            category_center_of_mass = center_of_mass(
-                category_mask,
-            )
-
-            closest_obj_index = int(
-                np.argmin(
-                    [
-                        np.linalg.norm(
-                            np.array(category_center_of_mass)
-                            - np.array(part_center_of_mass),
-                        )
-                        for part_center_of_mass in parts_centers_of_mass
-                    ],
-                ),
+            closest_to_object_in_edited_idx = select_one_2d(
+                tos_in_edited.segmentation_output.masks.cpu().numpy(),
+                self.to_edited_resolution,
+                relative_mask=np.squeeze(category_mask).cpu().numpy(),
             )
 
             intersection_ratio = compute_mask_intersection(
                 whole=category_mask,
-                part=tos_in_edited.segmentation_output.masks[closest_obj_index],
+                part=tos_in_edited.segmentation_output.masks[
+                    closest_to_object_in_edited_idx
+                ],
             )
             intersection_ratios.append(
-                intersection_ratio > 0.0
+                intersection_ratio > 0.0,
             )  # 1 if True, 0 if False
 
         return float(np.mean(intersection_ratios))
