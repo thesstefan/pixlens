@@ -48,7 +48,7 @@ class NullTextInversion(interfaces.PromptableImageEditingModel):
         self,
         sd_type: StableDiffusionType = StableDiffusionType.V15,
         num_inner_steps: int = 10,
-        num_steps: int = 10,
+        num_steps: int = 50,
         guidance_scale: float = 7.5,
         early_stop_epsilon: float = 1e-5,
         device: torch.device | None = None,
