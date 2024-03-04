@@ -47,7 +47,7 @@ class RealismEvaluation(OperationEvaluation):
         evaluation_input: EvaluationInput,
     ) -> RealismEvaluationOutput:
         reward = self.reward_model.score(
-            prompt=evaluation_input.prompt,
+            prompt=evaluation_input.edit.category,
             image=evaluation_input.edited_image,
         )
         return RealismEvaluationOutput(
