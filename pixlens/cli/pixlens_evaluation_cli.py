@@ -27,14 +27,15 @@ from pixlens.evaluation.operations.background_preservation import (
 from pixlens.evaluation.operations.color import ColorEdit
 from pixlens.evaluation.operations.object_addition import ObjectAddition
 from pixlens.evaluation.operations.object_removal import ObjectRemoval
-from pixlens.evaluation.operations.single_instance_removal import (
-    SingleInstanceRemoval,
-)
 from pixlens.evaluation.operations.object_replacement import ObjectReplacement
 from pixlens.evaluation.operations.position_replacement import (
     PositionReplacement,
 )
 from pixlens.evaluation.operations.positional_addition import PositionalAddition
+from pixlens.evaluation.operations.realism_evaluation import RealismEvaluation
+from pixlens.evaluation.operations.single_instance_removal import (
+    SingleInstanceRemoval,
+)
 from pixlens.evaluation.operations.size import SizeEdit
 from pixlens.evaluation.operations.subject_preservation import (
     SubjectPreservation,
@@ -255,6 +256,7 @@ def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
         color_smoothing_sigma=color_smoothing_sigma,
     )
     background_preservation = BackgroundPreservation()
+    realism_evaluation = RealismEvaluation()
     return {
         EditType.COLOR: [
             ColorEdit(
@@ -265,42 +267,50 @@ def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
             ),
             subject_preservation,
             background_preservation,
+            realism_evaluation,
         ],
         EditType.SIZE: [
             SizeEdit(),
             subject_preservation,
             background_preservation,
+            realism_evaluation,
         ],
         EditType.POSITION_REPLACEMENT: [
             PositionReplacement(),
             subject_preservation,
             background_preservation,
+            realism_evaluation,
         ],
         EditType.POSITIONAL_ADDITION: [
             PositionalAddition(),
             background_preservation,
+            realism_evaluation,
         ],
         EditType.OBJECT_ADDITION: [
             ObjectAddition(),
             subject_preservation,
             background_preservation,
-            subject_preservation,
+            realism_evaluation,
         ],
         EditType.OBJECT_REMOVAL: [
             ObjectRemoval(),
             background_preservation,
+            realism_evaluation,
         ],
         EditType.SINGLE_INSTANCE_REMOVAL: [
             SingleInstanceRemoval(),
             background_preservation,
+            realism_evaluation,
         ],
         EditType.OBJECT_REPLACEMENT: [
             ObjectReplacement(),
             background_preservation,
+            realism_evaluation,
         ],
         EditType.ALTER_PARTS: [
             AlterParts(),
             background_preservation,
+            realism_evaluation,
         ],
     }
 

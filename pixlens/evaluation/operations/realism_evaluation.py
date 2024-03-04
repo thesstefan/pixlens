@@ -36,7 +36,10 @@ class RealismEvaluationOutput(EvaluationOutput):
 
 
 class RealismEvaluation(OperationEvaluation):
-    def __init__(self, reward_model: RealismModelType) -> None:
+    def __init__(
+        self,
+        reward_model: RealismModelType = RealismModelType.BASE,
+    ) -> None:
         self.reward_model = RM.load(reward_model)
 
     def evaluate_edit(
@@ -44,7 +47,8 @@ class RealismEvaluation(OperationEvaluation):
         evaluation_input: EvaluationInput,
     ) -> RealismEvaluationOutput:
         reward = self.reward_model.score(
-            prompt=evaluation_input.prompt, image=evaluation_input.edited_image
+            prompt=evaluation_input.prompt,
+            image=evaluation_input.edited_image,
         )
         return RealismEvaluationOutput(
             success=True,
