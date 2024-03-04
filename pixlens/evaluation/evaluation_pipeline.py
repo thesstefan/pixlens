@@ -462,12 +462,12 @@ class EvaluationPipeline:
         ].mean()
 
         results = {
-            "edit_specific_score": edit_specific_score,
-            "subject_sift_score": sift_score,
-            "subject_color_score": color_score,
-            "subject_position_score": position_score,
-            "subject_aligned_iou": aligned_iou,
-            "background_score": background_score,
+            "Edit specific Score (Avg. Score)": edit_specific_score,
+            "Subject SIFT Score (Avg. Score)": sift_score,
+            "Subject Color Score (Avg. Score)": color_score,
+            "Subject Position Score (Avg. Score)": position_score,
+            "Subject Aligned IoU (Avg. Score)": aligned_iou,
+            "Background Score (Avg. Score)": background_score,
         }
 
         for key, value in results.items():
@@ -594,9 +594,9 @@ class EvaluationPipeline:
             "Subject Position Score (Avg. Score)": position_score,
             "Subject Aligned IoU (Avg. Score)": aligned_iou,
             "Background Score (Avg. Score)": background_score,
-            "# Successful Edits": success_count,
+            "# Successful Evaluations": success_count,
             "# Total Edits": total_count,
-            "Success Rate": success_count / total_count + 1e-6,
+            "Evaluation Success Rate": success_count / total_count + 1e-6,
         }
 
         for key, value in results.items():
