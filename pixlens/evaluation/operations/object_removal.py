@@ -7,43 +7,32 @@ class ObjectRemoval(evaluation_interfaces.OperationEvaluation):
         self,
         evaluation_input: evaluation_interfaces.EvaluationInput,
     ) -> evaluation_interfaces.EvaluationOutput:
-        (
-            object_in_input,
-            object_not_in_output,
-        ) = self.is_object_in_input_and_not_in_output(evaluation_input)
-
-        evaluation_output_error = evaluation_interfaces.EvaluationOutput(
-            success=False,
-            edit_specific_score=0,
+        category_in_input = get_detection_segmentation_result_of_target(
+            evaluation_input.input_detection_segmentation_result,
+            evaluation_input.updated_strings.category,
         )
-        if object_in_input and object_not_in_output:
-            return evaluation_interfaces.EvaluationOutput(
-                success=True,
-                edit_specific_score=1,
-            )
-        if not object_in_input:
-            return evaluation_output_error
 
+        if len(category_in_input.detection_output.logits) == 0:
+            return evaluation_interfaces.EvaluationOutput(
+                success=False,
+                edit_specific_score=0,
+            )
+
+        category_in_edited = get_detection_segmentation_result_of_target(
+            evaluation_input.edited_detection_segmentation_result,
+            evaluation_input.updated_strings.category,
+        )
+
+        num_categories_in_input = len(category_in_input.detection_output.logits)
+        num_categories_in_edited = len(
+            category_in_edited.detection_output.logits,
+        )
+
+        # return proportion of categories removed
         return evaluation_interfaces.EvaluationOutput(
             success=True,
-            edit_specific_score=0,
+            edit_specific_score=max(
+                1 - (num_categories_in_edited / num_categories_in_input),
+                0,
+            ),
         )
-
-    def is_object_in_input_and_not_in_output(
-        self,
-        evaluation_input: evaluation_interfaces.EvaluationInput,
-    ) -> tuple[bool, bool]:
-        is_category_in_edited = bool(
-            get_detection_segmentation_result_of_target(
-                evaluation_input.edited_detection_segmentation_result,
-                evaluation_input.updated_strings.category,
-            ).detection_output.logits.any(),
-        )
-
-        is_category_in_input = bool(
-            get_detection_segmentation_result_of_target(
-                evaluation_input.input_detection_segmentation_result,
-                evaluation_input.updated_strings.category,
-            ).detection_output.logits.any(),
-        )
-        return (is_category_in_input, not is_category_in_edited)
