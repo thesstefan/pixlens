@@ -9,6 +9,7 @@ from pixlens.dataset.edit_dataset import EditDataset, EditSchema
 from pixlens.dataset.prompt_utils import (
     generate_description_based_prompt,
     generate_instruction_based_prompt,
+    generate_simplified_description_based_prompt,
 )
 from pixlens.evaluation.interfaces import EditType
 
@@ -48,7 +49,13 @@ class EditValDataset(EditDataset):
                 to_attribute,
                 category,
             ),
-            "description_prompt": generate_description_based_prompt(
+            # "description_prompt": generate_description_based_prompt(
+            #     edit_type,
+            #     from_attribute,
+            #     to_attribute,
+            #     category,
+            # ),
+            "description_prompt": generate_simplified_description_based_prompt(
                 edit_type,
                 from_attribute,
                 to_attribute,

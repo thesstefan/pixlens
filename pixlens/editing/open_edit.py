@@ -6,6 +6,10 @@ import torch
 from PIL import Image
 from torchvision import transforms
 
+from pixlens.dataset.prompt_utils import (
+    generate_original_description,
+    generate_simplified_description_based_prompt,
+)
 from pixlens.editing import interfaces
 from pixlens.editing.impl.open_edit.options.opt import Config
 from pixlens.editing.impl.open_edit.trainers.OpenEdit_optimizer import (
@@ -13,12 +17,9 @@ from pixlens.editing.impl.open_edit.trainers.OpenEdit_optimizer import (
 )
 from pixlens.editing.impl.open_edit.util.visualizer import Visualizer
 from pixlens.editing.impl.open_edit.util.vocab import Vocabulary  # noqa: F401
-from pixlens.editing.utils import (
-    generate_original_description,
-    generate_simplified_description_based_prompt,
-)
 from pixlens.evaluation.interfaces import Edit
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
+from pixlens.utils.utils import get_cache_dir
 
 
 class OpenEdit(interfaces.PromptableImageEditingModel):
@@ -88,7 +89,8 @@ class OpenEdit(interfaces.PromptableImageEditingModel):
         new_cap = new_cap_str.split()
         vocab = pickle.load(  # noqa: S301
             Path.open(
-                self.str_path_to_impl
+                str(get_cache_dir())
+                + "/models--openedit/"
                 + "vocab/"
                 + self.opt.dataset_mode
                 + "_vocab.pkl",

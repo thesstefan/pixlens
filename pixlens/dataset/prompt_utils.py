@@ -133,27 +133,26 @@ def generate_description_based_prompt(
     raise ValueError(error_msg)
 
 
-def generate_simplified_description_based_prompt(edit: Edit) -> str:
-    edit_type = edit.edit_type
-    from_attribute = edit.from_attribute
-    to_attribute = edit.to_attribute
-    category = edit.category
-
+def generate_simplified_description_based_prompt(
+    edit_type: EditType,
+    from_attribute: str | None,
+    to_attribute: str | None,
+    category: str,
+) -> str:
     category = "".join(
-        char if char.isalpha() or char.isspace() else " "
-        for char in edit.category
+        char if char.isalpha() or char.isspace() else " " for char in category
     )
 
-    if not pd.isna(edit.to_attribute):
+    if not pd.isna(to_attribute):
         to_attribute = "".join(
             char if char.isalpha() or char.isspace() else " "
-            for char in edit.to_attribute
+            for char in to_attribute
         )
 
-    if not pd.isna(edit.from_attribute):
+    if not pd.isna(from_attribute):
         from_attribute = "".join(
             char if char.isalpha() or char.isspace() else " "
-            for char in edit.from_attribute
+            for char in from_attribute
         )
 
     prompt_templates: dict[EditType, str] = {
@@ -216,12 +215,12 @@ def generate_original_description(edit: Edit) -> str:
     return category
 
 
-def generate_instruction_based_prompt(edit: Edit) -> str:
-    edit_type = edit.edit_type
-    from_attribute = edit.from_attribute
-    to_attribute = edit.to_attribute
-    category = edit.category
-
+def generate_instruction_based_prompt(
+    edit_type: EditType,
+    from_attribute: str | None,
+    to_attribute: str | None,
+    category: str,
+) -> str:
     category = "".join(
         char if char.isalpha() or char.isspace() else " " for char in category
     )

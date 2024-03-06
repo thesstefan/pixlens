@@ -19,7 +19,7 @@ from pixlens.editing.impl.vqgan_clip.helper_generate import (
     resample,
     vector_quantize,
 )
-from pixlens.editing.utils import (
+from pixlens.dataset.prompt_utils import (
     generate_simplified_description_based_prompt,
 )
 from pixlens.evaluation.interfaces import Edit

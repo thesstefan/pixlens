@@ -8,6 +8,7 @@ from pixlens.dataset.editval import EditValDataset
 from pixlens.dataset.magicbrush import MagicBrushDataset
 from pixlens.detection import load_detect_segment_model_from_yaml
 from pixlens.editing import load_editing_model_from_yaml
+from pixlens.editing.impl.open_edit.util.vocab import Vocabulary
 from pixlens.editing.interfaces import (
     ImageEditingPromptType,
     PromptableImageEditingModel,
@@ -122,7 +123,7 @@ def get_edits(
     args: argparse.Namespace,
     edit_dataset: EditDataset,
 ) -> list[Edit]:
-    if args.run_evaluation_pipeline:
+    if args.run_evaluation_pipeline or args.do_all_edits:
         return edit_dataset.get_all_edits()
 
     if args.edit_id is None:
@@ -393,14 +394,14 @@ def postprocess_evaluation(
 
 
 def get_edit_dataset() -> EditDataset:
-    # return EditValDataset(
-    #     Path("./pixlens/editval/object.json"),
-    #     Path("./editval_instances/"),
-    # )
-    return MagicBrushDataset(
-        Path("./magicbrush_dev"),
-        Path("./magicbrush_dev/final_pixlens.json"),
+    return EditValDataset(
+        Path("./pixlens/editval/object.json"),
+        Path("./editval_instances/"),
     )
+    # return MagicBrushDataset(
+    #     Path("./magicbrush_dev"),
+    #     Path("./magicbrush_dev/final_pixlens.json"),
+    # )
 
 
 def main() -> None:

@@ -78,7 +78,7 @@ in PixLens's cache directory (`~/.cache/pixlens` on UNIX, `C:\Users\{USER}\AppDa
 
 ###  Scripts
 
-To run the whole evaluation pipeline (for InstructPix2Pix, ControlNet and LCM), run 
+To run the whole evaluation pipeline (for InstructPix2Pix, ControlNet, LCM, OpenEdit and VQGAN+clip), run 
 ```shell
 pixlens-eval --detection-model-yaml ${DETECTION_MODEL_YAML} --run-evaluation-pipeline
 ```

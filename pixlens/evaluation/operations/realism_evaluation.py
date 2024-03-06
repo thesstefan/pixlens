@@ -12,7 +12,7 @@ from pixlens.evaluation.interfaces import (
 )
 
 
-class RealismModelType(enum.Enum):
+class RealismModelType(enum.StrEnum):
     BASE = "ImageReward-v1.0"
 
 
@@ -40,7 +40,7 @@ class RealismEvaluation(OperationEvaluation):
         self,
         reward_model: RealismModelType = RealismModelType.BASE,
     ) -> None:
-        self.reward_model = RM.load(reward_model)
+        self.reward_model = RM.load(str(reward_model))
 
     def evaluate_edit(
         self,
