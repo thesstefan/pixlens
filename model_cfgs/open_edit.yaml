@@ -1,0 +1,5 @@
+class: OpenEdit 
+params:
+    device: cuda
+    alpha: 30
+    optimize_iter: 10

@@ -103,7 +103,11 @@ parser.add_argument(
 def check_args(args: argparse.Namespace) -> None:
     if args.run_evaluation_pipeline:
         return
-    if args.edit_id is None and args.edit_type is None:
+    if (
+        args.edit_id is None
+        and args.edit_type is None
+        and not args.do_all_edits
+    ):
         error_msg = "Either edit id or edit type must be provided"
         raise ValueError(error_msg) from None
     if args.edit_type is not None:

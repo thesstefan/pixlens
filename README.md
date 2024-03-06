@@ -114,7 +114,7 @@ Similarly, there are other CLI scripts provided for debugging intermediary steps
 To execute the disentanglement pipeline, use the following command:
 
 ```shell
-pixlens-disentanglement --model-params-yaml ${EDITING_MODEL_YAML}
+
 ```
 Upon completion of the pipeline, a folder titled `disentanglement` will be created within the model's cache directory. This folder contains critical outputs of the evaluation:
 
@@ -140,3 +140,4 @@ the other models ([GroundingDino](https://arxiv.org/abs/2303.05499), [OwlViT](ht
 [DiffEdit](https://arxiv.org/abs/2210.11427)) are provided through their own packages (`sam`, `groundingdino`) or HuggingFace.
 
 PixLens aims to build onto [EditVal](https://github.com/deep-ml-research/editval_code), so some inspiration is taken from it.
+pixlens-disentanglement --model-params-yaml ${EDITING_MODEL_YAML}

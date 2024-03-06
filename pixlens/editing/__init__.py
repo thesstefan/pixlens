@@ -21,13 +21,22 @@ if USE_OLD_DIFFUSERS_VERSION:
         "NullTextInversion": null_text_inversion.NullTextInversion,
     }
 else:
-    from pixlens.editing import controlnet, diffedit, instruct_pix2pix, lcm
+    from pixlens.editing import (
+        controlnet,
+        diffedit,
+        instruct_pix2pix,
+        lcm,
+        open_edit,
+        vqgan_clip,
+    )
 
     NAME_TO_EDITING_MODEL = {
         "ControlNet": controlnet.ControlNet,
         "InstructPix2Pix": instruct_pix2pix.InstructPix2Pix,
         "DiffEdit": diffedit.DiffEdit,
         "LCM": lcm.LCM,
+        "OpenEdit": open_edit.OpenEdit,
+        "VqGANClip": vqgan_clip.VqGANClip,
     }
 
 logging.basicConfig(
