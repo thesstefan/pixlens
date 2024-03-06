@@ -235,3 +235,6 @@ magicbrush_dev/
 
 #checkpoints
 pixlens/editing/impl/open_edit/checkpoints
+
+#taming
+taming/

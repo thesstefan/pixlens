@@ -193,11 +193,10 @@ class Disentanglement:
                 self.generate_all_latents_for_image(image_file)
             else:
                 with self.obj_dataset_path.open("rb") as file:
-                    self.object_dataset = joblib.load(file)
+                    self.obj_dataset = joblib.load(file)
 
                 with self.att_dataset_path.open("rb") as file:
                     self.att_dataset = joblib.load(file)
-
             self.generate_final_dataset()
         self.dataset["z_end"] = self.dataset["z_end"].apply(
             lambda x: torch.tensor(x),  # type: ignore[arg-type, return-value]
@@ -334,22 +333,22 @@ class Disentanglement:
                         self.att_dataset["attribute"] == a1
                     ]["z"].to_numpy()[0]  # This is a tensor
                     z_start = (
-                        z_start_tensor.cpu().numpy()
+                        z_start_tensor.cpu().detach().numpy()
                         if z_start_tensor.is_cuda
                         else z_start_tensor.numpy()
                     )
                     z_end = (
-                        z_end_tensor.cpu().numpy()
+                        z_end_tensor.cpu().detach().numpy()
                         if z_end_tensor.is_cuda
                         else z_end_tensor.numpy()
                     )
                     z_positive_attribute = (
-                        z_positive_attribute_tensor.cpu().numpy()
+                        z_positive_attribute_tensor.cpu().detach().numpy()
                         if z_positive_attribute_tensor.is_cuda
                         else z_positive_attribute_tensor.numpy()
                     )
                     z_negative_attribute = (
-                        z_negative_attribute_tensor.cpu().numpy()
+                        z_negative_attribute_tensor.cpu().detach().numpy()
                         if z_negative_attribute_tensor.is_cuda
                         else z_negative_attribute_tensor.numpy()
                     )
@@ -382,6 +381,7 @@ class Disentanglement:
         norms_per_attribute_type, all_norms = utils.compute_norms(
             self.dataset,
             self.data_attributes,
+            normalize=True,
         )
         avg_norms_per_attribute_type: dict[str, float] = {
             attr_type: float(np.mean(norms))

@@ -1,0 +1,3 @@
+[submodule "vqgan_clip"]
+    path = pixlens/editing/impl/vqgan_clip
+    url = https://github.com/nerdyrodent/VQGAN-CLIP.git

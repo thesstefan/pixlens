@@ -1,0 +1,5 @@
+class: VqGANClip 
+params:
+    device: cuda
+    seed: 42
+    max_iterations: 250

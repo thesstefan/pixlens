@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -62,6 +63,7 @@ def crop_image_to_min_dimensions(
 def compute_norms(
     dataset: pd.DataFrame,
     data_attributes: dict,
+    normalize: bool | None,
 ) -> tuple[dict[str, list[float]], list]:
     norms_per_attribute_type: dict[str, list[float]] = {
         attr_type: [] for attr_type in data_attributes
@@ -76,7 +78,10 @@ def compute_norms(
                 - row["z_start"]
             ),
         )
+        if normalize:
+            norm /= torch.norm(row["z_end"])
         row["norm"] = norm.item()
+
         norms_per_attribute_type[row["attribute_type"]].append(norm.item())
         all_norms.append(norm.item())
     return norms_per_attribute_type, all_norms
