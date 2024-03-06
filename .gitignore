@@ -230,6 +230,8 @@ cython_debug/
 #For now
 pixlens/editing/impl/diffedit
 pixlens/editing/impl/kandinsky
+pixlens/editval/
+magicbrush_dev/
 
 #checkpoints
 pixlens/editing/impl/open_edit/checkpoints

@@ -354,6 +354,25 @@
             "stopOnEntry": false,
             "jinja": false,
             "justMyCode": true
+        },
+        {
+            "name": "Run PixLens Evaluation over MagicBrush Ground Truth",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixlens/cli/pixlens_evaluation_cli.py",
+            "args": [
+                "--detection-model-yaml",
+                "model_cfgs/grounded_sam.yaml", // Replace with the desired detection model name
+                "--run-evaluation-pipeline",
+                "--edited-images-dir",
+                "MagicBrush-GroundTruth",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "jinja": false,
+            "justMyCode": true
         }
     ]
 }

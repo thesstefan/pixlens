@@ -85,16 +85,26 @@ class PromptDetectAndBBoxSegmentModel(BaseModel, PromptableSegmentationModel):
 
         return detection_output
 
+    def empty_detection_output(self) -> DetectionOutput:
+        return DetectionOutput(
+            bounding_boxes=torch.tensor([]),
+            logits=torch.tensor([]),
+            phrases=[],
+        )
+
     def detect_and_segment(
         self,
         prompt: str,
         image: Image.Image,
     ) -> tuple[SegmentationOutput, DetectionOutput]:
-        detection_output = self.promptable_detection_model.detect(
-            prompt,
-            image,
-        )
-        detection_output = self.filter_detection_output(detection_output)
+        if prompt:
+            detection_output = self.promptable_detection_model.detect(
+                prompt,
+                image,
+            )
+            detection_output = self.filter_detection_output(detection_output)
+        else:
+            detection_output = self.empty_detection_output()
 
         if detection_output.bounding_boxes.shape[0] == 0:
             logging.warning("No objects detected")

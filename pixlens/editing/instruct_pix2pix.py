@@ -8,10 +8,6 @@ from diffusers import (
 from PIL import Image
 
 from pixlens.editing import interfaces
-from pixlens.editing.utils import (
-    generate_instruction_based_prompt,
-    log_model_if_not_in_cache,
-)
 from pixlens.evaluation.interfaces import Edit
 from pixlens.utils import utils
 
@@ -24,13 +20,16 @@ def load_instruct_pix2pix(
     model_type: InstructPix2PixType,
     device: torch.device | None = None,
 ) -> StableDiffusionInstructPix2PixPipeline:
-    path_to_cache = utils.get_cache_dir()
-    log_model_if_not_in_cache(model_type, path_to_cache)
+    cache_dir = utils.get_cache_dir()
+    utils.log_if_hugging_face_model_not_in_cache(
+        model_type,
+        cache_dir,
+    )
     pipe = StableDiffusionInstructPix2PixPipeline.from_pretrained(
         model_type,
         torch_dtype=torch.float16,
         safety_checker=None,
-        cache_dir=path_to_cache,
+        cache_dir=cache_dir,
     )
 
     pipe.to(device)
@@ -116,6 +115,3 @@ class InstructPix2Pix(interfaces.PromptableImageEditingModel):
     @property
     def prompt_type(self) -> interfaces.ImageEditingPromptType:
         return interfaces.ImageEditingPromptType.INSTRUCTION
-
-    def generate_prompt(self, edit: Edit) -> str:
-        return generate_instruction_based_prompt(edit)

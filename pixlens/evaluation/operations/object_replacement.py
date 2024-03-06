@@ -1,12 +1,25 @@
 import logging
 
+import numpy as np
 from torchvision.ops import box_iou
 
 from pixlens.detection.utils import get_detection_segmentation_result_of_target
 from pixlens.evaluation import interfaces as evaluation_interfaces
+from pixlens.evaluation.multiplicity_resolver import (
+    MultiplicityResolution,
+    select_one_2d,
+)
 
 
 class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
+    def __init__(self) -> None:
+        self.from_input_resolution: MultiplicityResolution = (
+            MultiplicityResolution.LARGEST
+        )
+        self.to_edited_resolution: MultiplicityResolution = (
+            MultiplicityResolution.CLOSEST
+        )
+
     def evaluate_edit(
         self,
         evaluation_input: evaluation_interfaces.EvaluationInput,
@@ -53,64 +66,40 @@ class ObjectReplacement(evaluation_interfaces.OperationEvaluation):
                 success=True,
             )
 
-        used_tos_in_edited = set()
-        true_positives = 0
-        false_negatives = 0
-
-        # for each from object in input image, check for a corresponding to object with the highest IoU in edited image  # noqa: E501
-        # that is not used yet
-        for from_object_index, _ in enumerate(
-            froms_in_input.detection_output.bounding_boxes,
-        ):
-            from_object_bbox = froms_in_input.detection_output.bounding_boxes[
-                from_object_index
-            ]
-            max_iou = 0.0
-            max_iou_index = -1
-
-            iou = box_iou(
-                from_object_bbox.unsqueeze(0),
-                tos_in_edited.detection_output.bounding_boxes,
-            )[0]
-
-            if iou.max() > max_iou:
-                max_iou = iou.max().item()
-                max_iou_index = iou.argmax().item()
-
-            # we could compare here iou with a threshold to make
-            # it more robust but for the moment as max_iou
-            # is initialized with 0.0, it will work kind of as
-            # an implicit threshold, by checking that at least
-            # the {to} object covers the {from} object
-
-            if max_iou_index != -1:
-                if max_iou_index in used_tos_in_edited:
-                    false_negatives += 1
-                    continue
-                # detected a corresponding to object that
-                # "covers" and replaces the from object
-                true_positives += 1
-                used_tos_in_edited.add(max_iou_index)
-            else:
-                # no corresponding to object found
-                false_negatives += 1
-
-        # compute the number of to objects that are not used
-        # in the edited image
-        false_positives = len(
-            tos_in_edited.detection_output.bounding_boxes,
-        ) - len(
-            used_tos_in_edited,
+        selected_from_idx_in_input = select_one_2d(
+            froms_in_input.segmentation_output.masks.cpu().numpy(),
+            self.from_input_resolution,
+        )
+        from_mask_input = np.squeeze(
+            (
+                froms_in_input.segmentation_output.masks[
+                    selected_from_idx_in_input
+                ]
+            )
+            .cpu()
+            .numpy(),
         )
 
-        precision = true_positives / (true_positives + false_positives)
-        recall = true_positives / (true_positives + false_negatives)
-        tol = 1e-06
-        if precision + recall < tol:
-            f1_score = 0.0
-        else:
-            f1_score = 2 * (precision * recall) / (precision + recall)
+        selected_to_idx_in_edited = select_one_2d(
+            tos_in_edited.segmentation_output.masks.cpu().numpy(),
+            self.to_edited_resolution,
+            relative_mask=from_mask_input,
+        )
+        to_mask_edited = np.squeeze(
+            (tos_in_edited.segmentation_output.masks[selected_to_idx_in_edited])
+            .cpu()
+            .numpy(),
+        )
+
+        # if at least minimal intersection between the from and to masks
+        # then the operation is successful
+        intersection = np.logical_and(from_mask_input, to_mask_edited)
+        if np.count_nonzero(intersection) > 0:
+            return evaluation_interfaces.EvaluationOutput(
+                edit_specific_score=1,
+                success=True,
+            )
         return evaluation_interfaces.EvaluationOutput(
-            edit_specific_score=f1_score,
+            edit_specific_score=0,
             success=True,
         )

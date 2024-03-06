@@ -3,12 +3,15 @@ import json
 import logging
 from pathlib import Path
 
-import torch
-
+from pixlens.dataset.edit_dataset import EditDataset
+from pixlens.dataset.editval import EditValDataset
+from pixlens.dataset.magicbrush import MagicBrushDataset
 from pixlens.detection import load_detect_segment_model_from_yaml
 from pixlens.editing import load_editing_model_from_yaml
-from pixlens.editing.impl.open_edit.util.vocab import Vocabulary  # noqa: F401
-from pixlens.editing.interfaces import PromptableImageEditingModel
+from pixlens.editing.interfaces import (
+    ImageEditingPromptType,
+    PromptableImageEditingModel,
+)
 from pixlens.evaluation.evaluation_pipeline import (
     EvaluationPipeline,
 )
@@ -29,12 +32,19 @@ from pixlens.evaluation.operations.position_replacement import (
     PositionReplacement,
 )
 from pixlens.evaluation.operations.positional_addition import PositionalAddition
+from pixlens.evaluation.operations.realism_evaluation import RealismEvaluation
+from pixlens.evaluation.operations.single_instance_removal import (
+    SingleInstanceRemoval,
+)
 from pixlens.evaluation.operations.size import SizeEdit
 from pixlens.evaluation.operations.subject_preservation import (
     SubjectPreservation,
 )
 from pixlens.evaluation.preprocessing_pipeline import PreprocessingPipeline
-from pixlens.evaluation.utils import HistogramComparisonMethod
+from pixlens.evaluation.utils import (
+    HistogramComparisonMethod,
+    prompt_to_filename,
+)
 from pixlens.utils.utils import get_cache_dir
 
 parser = argparse.ArgumentParser(description="Evaluate PixLens Editing Model")
@@ -77,6 +87,13 @@ parser.add_argument(
     required=False,
 )
 
+parser.add_argument(
+    "--edited-images-dir",
+    type=str,
+    required=False,
+    help="Path to directory where some pre-edited images are located for evaluation only",
+)
+
 
 # check arguments function. Check that either edit type or edit id is provided
 # and that the edit type is valid by importing the edit type class from
@@ -103,131 +120,132 @@ def check_args(args: argparse.Namespace) -> None:
 
 def get_edits(
     args: argparse.Namespace,
-    preprocessing_pipe: PreprocessingPipeline,
-    evaluation_pipeline: EvaluationPipeline,
+    edit_dataset: EditDataset,
 ) -> list[Edit]:
-    if args.run_evaluation_pipeline or args.do_all_edits:
-        all_edits = preprocessing_pipe.get_all_edits()
-        edits = []
-        for i in range(len(all_edits)):
-            random_edit_record = all_edits.iloc[[i]]
-            edit = preprocessing_pipe.get_edit(
-                random_edit_record["edit_id"].astype(int).to_numpy()[0],
-                evaluation_pipeline.edit_dataset,
-            )
-            edits.append(edit)
-    elif args.edit_id is None:
+    if args.run_evaluation_pipeline:
+        return edit_dataset.get_all_edits()
+
+    if args.edit_id is None:
         if args.edit_type is None:
             error_msg = "Either edit id or edit type must be provided"
             raise ValueError(error_msg)
-        all_edits_by_type = preprocessing_pipe.get_all_edits_edit_type(
+
+        edits_with_type = edit_dataset.get_all_edits_with_type(
             args.edit_type,
         )
-        if not args.do_all_edits:
-            random_edit_record = all_edits_by_type.iloc[[1]]
-            edit = preprocessing_pipe.get_edit(
-                random_edit_record["edit_id"].astype(int).to_numpy()[0],
-                evaluation_pipeline.edit_dataset,
-            )
-            edits = [edit]
-        else:
-            edits = []
-            for i in range(len(all_edits_by_type)):
-                random_edit_record = all_edits_by_type.iloc[[i]]
-                edit = preprocessing_pipe.get_edit(
-                    random_edit_record["edit_id"].astype(int).to_numpy()[0],
-                    evaluation_pipeline.edit_dataset,
-                )
-                edits.append(edit)
-    else:
-        edit = preprocessing_pipe.get_edit(
-            args.edit_id,
-            evaluation_pipeline.edit_dataset,
-        )
-        edits = [edit]
-    return edits
+
+        return edits_with_type if args.do_all_edits else [edits_with_type[0]]
+
+    return [edit_dataset.get_edit(args.edit_id)]
 
 
-def evaluate_edits(
+def evaluate_edits(  # noqa: PLR0913
     edits: list[Edit],
-    editing_models: list[PromptableImageEditingModel],
     operation_evaluators: dict[EditType, list[OperationEvaluation]],
     evaluation_pipeline: EvaluationPipeline,
+    dataset_name: str,
+    edited_images_dir: str,
+    prompt_type: ImageEditingPromptType,
 ) -> None:
-    for editing_model in editing_models:
-        model_evaluation_dir = (
-            get_cache_dir() / editing_model.model_id / "evaluation"
-        )
-        logging.info("Evaluating model: %s", editing_model.model_id)
-        for edit in edits:
-            edit_dir = model_evaluation_dir / str(edit.edit_id)
+    evaluation_dir = (
+        get_cache_dir() / edited_images_dir / dataset_name / "evaluation"
+    )
 
-            if edit.edit_type not in operation_evaluators:
-                logging.warning(
-                    "No operation evaluator implemented for edit type: %s",
-                    edit.edit_type,
-                )
-                continue
+    error_log = {}
+    error_log_path = evaluation_dir / "error_log.json"
 
-            logging.info("Evaluating edit: %s", edit.edit_id)
-            logging.info("Edit type: %s", edit.edit_type)
-            logging.info("Image path: %s", edit.image_path)
-            logging.info("Category: %s", edit.category)
-            logging.info("From attribute: %s", edit.from_attribute)
-            logging.info("To attribute: %s", edit.to_attribute)
-            logging.info("Prompt: %s", editing_model.generate_prompt(edit))
+    for edit in edits:
+        edit_dir = evaluation_dir / str(edit.edit_id)
 
-            evaluation_input = evaluation_pipeline.get_all_inputs_for_edit(
-                edit,
-                editing_model,
+        if edit.edit_type not in operation_evaluators:
+            logging.warning(
+                "No operation evaluator implemented for edit type: %s",
+                edit.edit_type,
             )
+            continue
+
+        prompt = (
+            edit.instruction_prompt
+            if prompt_type == ImageEditingPromptType.INSTRUCTION
+            else edit.description_prompt
+        )
+
+        logging.info("Evaluating edit: %s", edit.edit_id)
+        logging.info("Edit type: %s", edit.edit_type)
+        logging.info("Image path: %s", edit.image_path)
+        logging.info("Category: %s", edit.category)
+        logging.info("From attribute: %s", edit.from_attribute)
+        logging.info("To attribute: %s", edit.to_attribute)
+        logging.info("Prompt: %s", prompt)
+
+        evaluation_input = evaluation_pipeline.get_all_inputs_for_edit(
+            edit,
+            prompt,
+            edited_images_dir,
+        )
+
+        # try catch block to catch errors in the evaluation pipeline and
+        # log them to a json file with the error message and the edit
+        # id and the prompt and the edit type
+        try:
             evaluation_outputs = [
                 evaluator.evaluate_edit(evaluation_input)
                 for evaluator in operation_evaluators[edit.edit_type]
             ]
+        except Exception as e:
+            error_log[edit.edit_id] = {
+                "error": str(e),
+                "prompt": prompt,
+                "edit_type": edit.edit_type,
+            }
+            with error_log_path.open("w") as error_log_file:
+                json.dump(error_log, error_log_file, indent=4)
+            continue
 
-            for output in evaluation_outputs:
-                output.persist(edit_dir)
+        for output in evaluation_outputs:
+            output.persist(edit_dir)
 
-            # TODO: Remove these. It's just for convenience so that we
-            # can see all items in one place.
-            evaluation_input.input_image.save(
-                edit_dir / Path(edit.image_path).name,
-            )
-            evaluation_input.edited_image.save(
-                (edit_dir / evaluation_input.prompt).with_suffix(".png"),
-            )
-            evaluation_input.annotated_input_image.save(
-                Path(
-                    (
-                        edit_dir / ("ANNOTATED_" + Path(edit.image_path).name)
-                    ).with_suffix(""),
-                ).with_suffix(".png"),
-            )
-            evaluation_input.annotated_edited_image.save(
+        # TODO: Remove these. It's just for convenience so that we
+        # can see all items in one place.
+        evaluation_input.input_image.save(
+            edit_dir / Path(edit.image_path).name,
+        )
+        evaluation_input.edited_image.save(
+            (
+                edit_dir / prompt_to_filename(evaluation_input.prompt)
+            ).with_suffix(".png"),
+        )
+        evaluation_input.annotated_input_image.save(
+            Path(
                 (
-                    edit_dir / ("ANNOTATED_" + evaluation_input.prompt)
-                ).with_suffix(
-                    ".png",
-                ),
-            )
+                    edit_dir / ("ANNOTATED_" + Path(edit.image_path).name)
+                ).with_suffix(""),
+            ).with_suffix(".png"),
+        )
+        evaluation_input.annotated_edited_image.save(
+            (
+                edit_dir
+                / ("ANNOTATED_" + prompt_to_filename(evaluation_input.prompt))
+            ).with_suffix(
+                ".png",
+            ),
+        )
 
-            # Save results in dataset
-            evaluation_pipeline.update_evaluation_dataset(
-                edit,
-                editing_model.model_id,
-                evaluation_outputs,
-            )
+        # Save results in dataset
+        evaluation_pipeline.update_evaluation_dataset(
+            edit,
+            edited_images_dir,
+            evaluation_outputs,
+        )
 
-            if all(output.success for output in evaluation_outputs):
-                logging.info("Evaluation was successful")
-            else:
-                logging.info("Evaluation failed")
+        if all(output.success for output in evaluation_outputs):
+            logging.info("Evaluation was successful")
+        else:
+            logging.info("Evaluation failed")
 
-            logging.info("")
+        logging.info("")
 
-        # save CSV after each model, just in case
-        evaluation_pipeline.save_evaluation_dataset()
+    evaluation_pipeline.save_evaluation_dataset()
 
 
 def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
@@ -242,6 +260,7 @@ def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
         color_smoothing_sigma=color_smoothing_sigma,
     )
     background_preservation = BackgroundPreservation()
+    realism_evaluation = RealismEvaluation()
     return {
         EditType.COLOR: [
             ColorEdit(
@@ -252,36 +271,50 @@ def init_operation_evaluations() -> dict[EditType, list[OperationEvaluation]]:
             ),
             subject_preservation,
             background_preservation,
+            realism_evaluation,
         ],
         EditType.SIZE: [
             SizeEdit(),
             subject_preservation,
             background_preservation,
+            realism_evaluation,
         ],
         EditType.POSITION_REPLACEMENT: [
             PositionReplacement(),
             subject_preservation,
             background_preservation,
+            realism_evaluation,
         ],
         EditType.POSITIONAL_ADDITION: [
             PositionalAddition(),
             background_preservation,
+            realism_evaluation,
         ],
         EditType.OBJECT_ADDITION: [
             ObjectAddition(),
+            subject_preservation,
             background_preservation,
+            realism_evaluation,
         ],
         EditType.OBJECT_REMOVAL: [
             ObjectRemoval(),
             background_preservation,
+            realism_evaluation,
+        ],
+        EditType.SINGLE_INSTANCE_REMOVAL: [
+            SingleInstanceRemoval(),
+            background_preservation,
+            realism_evaluation,
         ],
         EditType.OBJECT_REPLACEMENT: [
             ObjectReplacement(),
             background_preservation,
+            realism_evaluation,
         ],
         EditType.ALTER_PARTS: [
             AlterParts(),
             background_preservation,
+            realism_evaluation,
         ],
     }
 
@@ -293,8 +326,8 @@ def load_editing_models(
 
     if args.run_evaluation_pipeline:
         all_models = [
-            "model_cfgs/controlnet.yaml",
-            "model_cfgs/lcm.yaml",
+            # "model_cfgs/controlnet.yaml",
+            # "model_cfgs/lcm.yaml",
             "model_cfgs/instruct_pix2pix.yaml",
             # "model_cfgs/diffedit.yaml",
             # "model_cfgs/null_text_inversion.yaml",
@@ -311,62 +344,116 @@ def load_editing_models(
 
 
 def postprocess_evaluation(
-    editing_models: list[PromptableImageEditingModel],
     evaluation_pipeline: EvaluationPipeline,
+    dataset_name: str,
+    editing_models: list[PromptableImageEditingModel] | None = None,
+    edited_images_dir: str | None = None,
 ) -> None:
     evaluation_pipeline.save_evaluation_dataset()
 
     results: dict[str, dict] = {}
 
     results["model_aggregation"] = {}
-    for editing_model in editing_models:
-        model_results = evaluation_pipeline.get_aggregated_scores_for_model(
-            editing_model.model_id,
+
+    if editing_models is not None:
+        for editing_model in editing_models:
+            model_results = evaluation_pipeline.get_aggregated_scores_for_model(
+                editing_model.model_id,
+            )
+            results["model_aggregation"][editing_model.model_id] = model_results
+    elif edited_images_dir is not None:
+        results["model_aggregation"][
+            edited_images_dir
+        ] = evaluation_pipeline.get_aggregated_scores_for_model(
+            edited_images_dir,
         )
-        results["model_aggregation"][editing_model.model_id] = model_results
 
     results[
         "edit_type_aggregation"
     ] = evaluation_pipeline.get_aggregated_scores_for_edit_type()
 
-    results_path = Path(get_cache_dir(), "evaluation_results.json")
-    results_path.parent.mkdir(parents=True, exist_ok=True)
-    with results_path.open("w") as results_file:
+    if editing_models is not None:
+        results_path = (
+            str(get_cache_dir())
+            + "/models_"
+            + dataset_name
+            + "_evaluation_results.json"
+        )
+    elif edited_images_dir is not None:
+        results_path = (
+            str(get_cache_dir())
+            + "/"
+            + edited_images_dir
+            + "_evaluation_results.json"
+        )
+
+    Path(results_path).parent.mkdir(parents=True, exist_ok=True)
+    with Path(results_path).open("w") as results_file:
         json.dump(results, results_file, indent=4)
+
+
+def get_edit_dataset() -> EditDataset:
+    # return EditValDataset(
+    #     Path("./pixlens/editval/object.json"),
+    #     Path("./editval_instances/"),
+    # )
+    return MagicBrushDataset(
+        Path("./magicbrush_dev"),
+        Path("./magicbrush_dev/final_pixlens.json"),
+    )
 
 
 def main() -> None:
     args = parser.parse_args()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     check_args(args)
-    preprocessing_pipe = PreprocessingPipeline(
-        "./pixlens/editval/object.json",
-        "./editval_instances/",
-    )
-    editing_models = load_editing_models(args)
+    edit_dataset = get_edit_dataset()
 
-    preprocessing_pipe.execute_pipeline(models=editing_models)
-
-    evaluation_pipeline = EvaluationPipeline(device=device)
+    evaluation_pipeline = EvaluationPipeline(edit_dataset)
     detection_model = load_detect_segment_model_from_yaml(
         args.detection_model_yaml,
     )
-    evaluation_pipeline.init_editing_models(editing_models)
     evaluation_pipeline.init_detection_model(detection_model)
-
-    edits = get_edits(args, preprocessing_pipe, evaluation_pipeline)
+    edits = get_edits(args, edit_dataset)
     operation_evaluations = init_operation_evaluations()
 
-    evaluate_edits(
-        edits,
-        editing_models,
-        operation_evaluations,
-        evaluation_pipeline,
-    )
+    if args.edited_images_dir:
+        evaluate_edits(
+            edits,
+            operation_evaluations,
+            evaluation_pipeline,
+            edit_dataset.name,
+            args.edited_images_dir,
+            # Use Instruction prompt by default when using pre-edited images
+            ImageEditingPromptType.INSTRUCTION,
+        )
+        postprocess_evaluation(
+            evaluation_pipeline,
+            edit_dataset.name,
+            edited_images_dir=args.edited_images_dir,
+        )
 
-    # evaluation_pipeline.load_evaluation_dataset()
-    postprocess_evaluation(editing_models, evaluation_pipeline)
+    else:
+        # Use images obtained the pre-processing pipeline
+        preprocessing_pipe = PreprocessingPipeline(edit_dataset)
+        editing_models = load_editing_models(args)
+        preprocessing_pipe.execute_pipeline(models=editing_models)
+
+        for model in editing_models:
+            evaluate_edits(
+                edits,
+                operation_evaluations,
+                evaluation_pipeline,
+                edit_dataset.name,
+                model.model_id,
+                model.prompt_type,
+            )
+
+        postprocess_evaluation(
+            evaluation_pipeline,
+            edit_dataset.name,
+            editing_models=editing_models,
+        )
 
 
 if __name__ == "__main__":
