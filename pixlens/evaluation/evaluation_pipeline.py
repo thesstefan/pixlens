@@ -1,14 +1,18 @@
-import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import torch
+import pandera as pa
+from pandera.typing import Series
 from PIL import Image
 
+from pixlens.dataset.edit_dataset import EditDataset
 from pixlens.detection import interfaces as detection_interfaces
 from pixlens.detection.utils import get_separator
-from pixlens.editing.interfaces import PromptableImageEditingModel
+from pixlens.editing.interfaces import (
+    ImageEditingPromptType,
+    PromptableImageEditingModel,
+)
 from pixlens.evaluation import interfaces
 from pixlens.evaluation.interfaces import EditType
 from pixlens.evaluation.operations.background_preservation import (
@@ -17,28 +21,42 @@ from pixlens.evaluation.operations.background_preservation import (
 from pixlens.evaluation.operations.subject_preservation import (
     SubjectPreservationOutput,
 )
-from pixlens.evaluation.utils import get_clean_to_attribute_for_detection
+from pixlens.evaluation.utils import (
+    get_clean_to_attribute_for_detection,
+    prompt_to_filename,
+)
 from pixlens.utils.utils import get_cache_dir, get_image_extension
 from pixlens.visualization import annotation
 
 
+class EvaluationSchema(pa.DataFrameModel):
+    edit_id: Series[int] = pa.Field(ge=0)
+    edit_type: Series[str] = pa.Field(
+        isin=[edit_type.value for edit_type in EditType],
+    )
+    model_id: Series[str]
+    evaluation_success: Series[bool]
+    edit_specific_score: Series[float]
+    subject_preservation_success: Series[float]
+    subject_sift_score: Series[float]
+    subject_color_score: Series[float]
+    subject_position_score: Series[float]
+    subject_ssim_score: Series[float]
+    subject_aligned_iou: Series[float]
+    background_preservation_success: Series[bool]
+    background_score: Series[float]
+
+
 class EvaluationPipeline:
-    def __init__(self, device: torch.device) -> None:
-        self.device = "cpu"  # original was cuda
-        self.edit_dataset: pd.DataFrame
-        self.get_edit_dataset()
+    def __init__(
+        self,
+        edit_dataset: EditDataset,
+    ) -> None:
+        self.edit_dataset = edit_dataset
         self.detection_model: detection_interfaces.PromptDetectAndBBoxSegmentModel  # noqa: E501
         self.editing_models: list[PromptableImageEditingModel]
-        self.evaluation_dataset: pd.DataFrame
+        self.evaluation_dataset: pa.typing.DataFrame[EvaluationSchema]
         self.initialize_evaluation_dataset()
-
-    def get_edit_dataset(self) -> None:
-        pandas_path = Path(get_cache_dir(), "edit_dataset.csv")
-        if pandas_path.exists():
-            self.edit_dataset = pd.read_csv(pandas_path)
-        else:
-            logging.error(f"Edit dataset ({pandas_path}) not cached")  # noqa: G004
-            raise FileNotFoundError
 
     def initialize_evaluation_dataset(self) -> None:
         self.evaluation_dataset = pd.DataFrame(
@@ -60,28 +78,31 @@ class EvaluationPipeline:
         )
 
     def get_input_image_from_edit_id(self, edit_id: int) -> Image.Image:
-        image_path = self.edit_dataset.iloc[edit_id]["input_image_path"]
-        image_path = Path(image_path)
+        image_path = Path(self.edit_dataset.get_edit(edit_id).image_path)
         image_extension = get_image_extension(image_path)
         if image_extension:
-            return Image.open(image_path.with_suffix(image_extension))
+            return Image.open(image_path.with_suffix(image_extension)).convert(
+                "RGB"
+            )
         raise FileNotFoundError
 
     def get_edited_image_from_edit(
         self,
         edit: interfaces.Edit,
-        model: PromptableImageEditingModel,
+        prompt: str,
+        edited_images_dir: str,
     ) -> Image.Image:
-        prompt = model.generate_prompt(edit)
-        edit_path = Path(
-            get_cache_dir(),
-            model.model_id,
-            f"000000{edit.image_id!s:>06}",
-            prompt,
+        edit_path = (
+            get_cache_dir()
+            / edited_images_dir
+            / self.edit_dataset.name
+            / Path(edit.image_path).stem
+            / prompt_to_filename(prompt)
         )
+
         extension = get_image_extension(edit_path)
         if extension:
-            return Image.open(edit_path.with_suffix(extension))
+            return Image.open(edit_path.with_suffix(extension)).convert("RGB")
         raise FileNotFoundError
 
     def init_detection_model(
@@ -110,21 +131,91 @@ class EvaluationPipeline:
             segmentation_output=segmentation_output,
         )
 
+    def get_detection_prompt_for_input_image(
+        self,
+        category: str,
+        from_attribute: str | None,
+        edit_type: EditType,
+    ) -> str:
+        if edit_type in [
+            EditType.COLOR,
+            EditType.SIZE,
+            EditType.OBJECT_REMOVAL,
+            EditType.SINGLE_INSTANCE_REMOVAL,
+            EditType.POSITION_REPLACEMENT,
+            EditType.POSITIONAL_ADDITION,
+            EditType.OBJECT_DUPLICATION,
+            EditType.TEXTURE,
+            EditType.ALTER_PARTS,
+            EditType.OBJECT_ADDITION,
+        ]:
+            return category
+
+        if edit_type in [EditType.OBJECT_REPLACEMENT]:
+            return from_attribute if from_attribute is not None else ""
+
+        return ""  # for unimplemented edit types
+
+    def get_detection_prompt_for_edited_image(
+        self,
+        category: str,
+        to_attribute: str | None,
+        edit_type: EditType,
+    ) -> str:
+        separator = get_separator(self.detection_model)
+        if edit_type in [
+            EditType.COLOR,
+            EditType.SIZE,
+            EditType.OBJECT_REMOVAL,
+            EditType.SINGLE_INSTANCE_REMOVAL,
+            EditType.POSITION_REPLACEMENT,
+            EditType.OBJECT_DUPLICATION,
+            EditType.TEXTURE,
+        ]:
+            return category
+
+        if edit_type in [
+            EditType.OBJECT_ADDITION,
+            EditType.POSITIONAL_ADDITION,
+        ]:
+            elements_to_detect = [
+                elem for elem in [category, to_attribute] if elem is not None
+            ]
+            # remove duplicated elements if any
+            elements_to_detect = list(set(elements_to_detect))
+            return separator.join(elements_to_detect)
+
+        if edit_type in [EditType.OBJECT_REPLACEMENT, EditType.ALTER_PARTS]:
+            return to_attribute if to_attribute is not None else ""
+
+        return ""  # for unimplemented edit types
+
     def get_all_inputs_for_edit(
         self,
         edit: interfaces.Edit,
-        editing_model: PromptableImageEditingModel,
+        prompt: str,
+        edited_images_dir: str,
     ) -> interfaces.EvaluationInput:
         input_image = self.get_input_image_from_edit_id(edit.edit_id)
-        edited_image = self.get_edited_image_from_edit(edit, editing_model)
-        prompt = editing_model.generate_prompt(edit)
+        edited_image = self.get_edited_image_from_edit(
+            edit,
+            prompt,
+            edited_images_dir,
+        )
+
+        if input_image.size != edited_image.size:
+            edited_image = edited_image.resize(
+                input_image.size,
+                Image.Resampling.LANCZOS,
+            )
+
         from_attribute = (
             None if pd.isna(edit.from_attribute) else edit.from_attribute
         )
         if not pd.isna(edit.to_attribute):
             edit.to_attribute = "".join(
                 char if char.isalpha() or char.isspace() else " "
-                for char in edit.to_attribute
+                for char in edit.to_attribute or ""
             )
             filtered_to_attribute = get_clean_to_attribute_for_detection(edit)
         else:
@@ -134,38 +225,32 @@ class EvaluationPipeline:
             char if char.isalpha() or char.isspace() else " "
             for char in edit.category
         )
-        list_for_det_seg = [
-            item
-            for item in [category, from_attribute, filtered_to_attribute]
-            if item is not None
-        ]
 
-        list_for_det_seg = list(set(list_for_det_seg))
-        separator = get_separator(self.detection_model)
-        prompt_for_det_seg = separator.join(list_for_det_seg)
+        detection_prompt_input_image = (
+            self.get_detection_prompt_for_input_image(
+                category,
+                from_attribute,
+                edit.edit_type,
+            )
+        )
+        detection_prompt_edited_image = (
+            self.get_detection_prompt_for_edited_image(
+                category,
+                filtered_to_attribute,
+                edit.edit_type,
+            )
+        )
 
         input_detection_segmentation_result = (
             self.do_detection_and_segmentation(
                 input_image,
-                prompt_for_det_seg,
+                detection_prompt_input_image,
             )
         )
-        if edit.edit_type == "alter_parts":
-            # if alter_parts, we need to do detection and segmentation
-            # on the edited image ONLY with the to_attribute
-            list_for_det_seg = [
-                filtered_to_attribute
-                if filtered_to_attribute is not None
-                else " ",
-            ]
-            list_for_det_seg = list(set(list_for_det_seg))
-            separator = get_separator(self.detection_model)
-            prompt_for_det_seg = separator.join(list_for_det_seg)
-
         edited_detection_segmentation_result = (
             self.do_detection_and_segmentation(
                 edited_image,
-                prompt_for_det_seg,
+                detection_prompt_edited_image,
             )
         )
 
@@ -224,7 +309,7 @@ class EvaluationPipeline:
     def update_evaluation_dataset(
         self,
         edit: interfaces.Edit,
-        model_id: str,
+        edited_image_dir: str,
         evaluation_outputs: list[interfaces.EvaluationOutput],
     ) -> None:
         for evaluation_output in evaluation_outputs:
@@ -277,7 +362,7 @@ class EvaluationPipeline:
                 self.evaluation_dataset.loc[len(self.evaluation_dataset)] = {
                     "edit_id": edit.edit_id,
                     "edit_type": edit.edit_type,
-                    "model_id": model_id,
+                    "model_id": edited_image_dir,
                     "evaluation_success": evaluation_output.success,
                     "edit_specific_score": evaluation_output.edit_specific_score,  # noqa: E501
                 }
@@ -291,8 +376,8 @@ class EvaluationPipeline:
         )
 
     def load_evaluation_dataset(self) -> None:
-        self.evaluation_dataset = pd.read_csv(
-            Path(get_cache_dir(), "evaluation_results.csv"),
+        self.evaluation_dataset = EvaluationSchema.validate(
+            pd.read_csv(get_cache_dir() / "evaluation_results.csv"),
         )
 
     def get_aggregated_scores_for_model(
@@ -311,7 +396,7 @@ class EvaluationPipeline:
                 model_id,
                 edit_type,
             )
-        aggregated_scores["overall_mean"] = self.get_mean_scores_for_model(
+        aggregated_scores["General Overview"] = self.get_mean_scores_for_model(
             model_id,
         )
 
@@ -319,7 +404,7 @@ class EvaluationPipeline:
 
     def get_aggregated_scores_for_edit_type(
         self,
-    ) -> dict[str, dict[str, float]]:
+    ) -> dict[str, dict[str, dict[str, float]]]:
         edit_types = self.evaluation_dataset["edit_type"].unique()
         model_ids = self.evaluation_dataset["model_id"].unique()
 
@@ -334,7 +419,7 @@ class EvaluationPipeline:
                     edit_type,
                 )
             aggregated_scores[
-                "overall_mean"
+                "General Overview"
             ] = self.get_mean_scores_for_edit_type(
                 edit_type,
             )
@@ -377,12 +462,12 @@ class EvaluationPipeline:
         ].mean()
 
         results = {
-            "edit_specific_score": edit_specific_score,
-            "subject_sift_score": sift_score,
-            "subject_color_score": color_score,
-            "subject_position_score": position_score,
-            "subject_aligned_iou": aligned_iou,
-            "background_score": background_score,
+            "Edit specific Score (Avg. Score)": edit_specific_score,
+            "Subject SIFT Score (Avg. Score)": sift_score,
+            "Subject Color Score (Avg. Score)": color_score,
+            "Subject Position Score (Avg. Score)": position_score,
+            "Subject Aligned IoU (Avg. Score)": aligned_iou,
+            "Background Score (Avg. Score)": background_score,
         }
 
         for key, value in results.items():
@@ -445,12 +530,12 @@ class EvaluationPipeline:
         ].mean()
 
         results = {
-            "edit_specific_score": edit_specific_score,
-            "subject_sift_score": sift_score,
-            "subject_color_score": color_score,
-            "subject_position_score": position_score,
-            "subject_aligned_iou": aligned_iou,
-            "background_score": background_score,
+            "Edit specific Score (Avg. Score)": edit_specific_score,
+            "Subject SIFT Score (Avg. Score)": sift_score,
+            "Subject Color Score (Avg. Score)": color_score,
+            "Subject Position Score (Avg. Score)": position_score,
+            "Subject Aligned IoU (Avg. Score)": aligned_iou,
+            "Background Score (Avg. Score)": background_score,
         }
 
         for key, value in results.items():
@@ -489,13 +574,29 @@ class EvaluationPipeline:
             "background_score"
         ].mean()
 
+        total_count = len(
+            self.evaluation_dataset[
+                self.evaluation_dataset["edit_type"] == edit_type
+            ],
+        )
+
+        success_count = len(
+            self.evaluation_dataset[
+                (self.evaluation_dataset["edit_type"] == edit_type)
+                & (self.evaluation_dataset["evaluation_success"])
+            ],
+        )
+
         results = {
-            "edit_specific_score": edit_specific_score,
-            "subject_sift_score": sift_score,
-            "subject_color_score": color_score,
-            "subject_position_score": position_score,
-            "subject_aligned_iou": aligned_iou,
-            "background_score": background_score,
+            "Edit specific Score (Avg. Score)": edit_specific_score,
+            "Subject SIFT Score (Avg. Score)": sift_score,
+            "Subject Color Score (Avg. Score)": color_score,
+            "Subject Position Score (Avg. Score)": position_score,
+            "Subject Aligned IoU (Avg. Score)": aligned_iou,
+            "Background Score (Avg. Score)": background_score,
+            "# Successful Evaluations": success_count,
+            "# Total Edits": total_count,
+            "Evaluation Success Rate": success_count / total_count + 1e-6,
         }
 
         for key, value in results.items():

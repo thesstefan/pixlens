@@ -20,10 +20,6 @@ class PromptableImageEditingModel(BaseModel):
         ...
 
     @abstractmethod
-    def generate_prompt(self, edit: Edit) -> str:
-        ...
-
-    @abstractmethod
     def edit_image(
         self,
         prompt: str,

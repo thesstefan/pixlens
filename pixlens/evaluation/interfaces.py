@@ -15,6 +15,7 @@ class EditType(enum.StrEnum):
     OBJECT_ADDITION = "object_addition"
     POSITIONAL_ADDITION = "positional_addition"
     OBJECT_REMOVAL = "object_removal"
+    SINGLE_INSTANCE_REMOVAL = "single_instance_removal"
     OBJECT_REPLACEMENT = "object_replacement"
     POSITION_REPLACEMENT = "position_replacement"
     OBJECT_DUPLICATION = "object_duplication"
@@ -65,11 +66,13 @@ class EvaluationOutput(Persistable):
 class Edit:
     edit_id: int
     image_path: str
-    image_id: int
+    image_id: str
     category: str
     edit_type: EditType
-    from_attribute: str
-    to_attribute: str
+    from_attribute: str | None
+    to_attribute: str | None
+    instruction_prompt: str
+    description_prompt: str
 
 
 @dataclasses.dataclass
