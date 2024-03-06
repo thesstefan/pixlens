@@ -21,6 +21,9 @@ from pixlens.evaluation.operations.background_preservation import (
 from pixlens.evaluation.operations.subject_preservation import (
     SubjectPreservationOutput,
 )
+from pixlens.evaluation.operations.realism_evaluation import (
+    RealismEvaluationOutput,
+)
 from pixlens.evaluation.utils import (
     get_clean_to_attribute_for_detection,
     prompt_to_filename,
@@ -314,6 +317,15 @@ class EvaluationPipeline:
     ) -> None:
         for evaluation_output in evaluation_outputs:
             if isinstance(
+                evaluation_output,
+                RealismEvaluationOutput,
+            ):
+                last_row_index = self.evaluation_dataset.index[-1]
+                self.evaluation_dataset.loc[
+                    last_row_index,
+                    "realism_score",
+                ] = evaluation_output.realism_score
+            elif isinstance(
                 evaluation_output,
                 SubjectPreservationOutput,
             ):
