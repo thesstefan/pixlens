@@ -32,7 +32,7 @@ pip install xformers==0.0.23~
 pip install image-reward
 
 # With the usage of vqgan+clip, one has to follow the instructions in the repo we are based on (https://github.com/nerdyrodent/VQGAN-CLIP), but essentially one can download:
-pip install kornia==0.5.4 
+pip install kornia==0.7.2
 pip install taming-transformers
 pip install $ pip install git+https://github.com/openai/CLIP.git #Clip
 
