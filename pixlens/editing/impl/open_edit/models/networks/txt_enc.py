@@ -41,6 +41,7 @@ class EncoderText(nn.Module):
         """Handles variable size captions
         """
         # Embed word ids to vectors
+        x = x.to('cuda')
         x = self.embed(x)
         packed = pack_padded_sequence(x, lengths, batch_first=True)
 
