@@ -329,9 +329,9 @@ def load_editing_models(
         all_models = [
             # "model_cfgs/controlnet.yaml",
             # "model_cfgs/lcm.yaml",
-            "model_cfgs/instruct_pix2pix.yaml",
-            # "model_cfgs/diffedit.yaml",
-            # "model_cfgs/null_text_inversion.yaml",
+            # "model_cfgs/instruct_pix2pix.yaml",
+            # "model_cfgs/open_edit.yaml",
+            "model_cfgs/vqgan_clip.yaml"
         ]
 
         for model_yaml in all_models:
