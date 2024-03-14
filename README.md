@@ -24,9 +24,9 @@ conda install --name $ENVNAME --freeze-installed --file requirements-dev.txt
 # Activate environment
 conda activate $ENVNAME
 
-# Install xformers==0.0.23
+# Install xformers==0.0.23.post1
 # No available conda package [issue](https://github.com/facebookresearch/xformers/issues/749)
-pip install xformers==0.0.23
+pip install xformers==0.0.23.post1
 
 # Install Image Reward
 pip install image-reward
