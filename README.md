@@ -32,9 +32,7 @@ pip install xformers==0.0.23~
 pip install image-reward
 
 # With the usage of vqgan+clip, one has to follow the instructions in the repo we are based on (https://github.com/nerdyrodent/VQGAN-CLIP), but essentially one can download:
-pip install kornia==0.7.2
-pip install taming-transformers
-pip install $ pip install git+https://github.com/openai/CLIP.git #Clip
+pip install kornia==0.7.2 taming-transformers git+https://github.com/openai/CLIP.git
 
 #When doing so, please change 'pytorch_lightning.utilities.distributed' for 'pytorch_lightning.utilities.rank_zero' in taming/main.py as indicated in the [issue](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/11458#issuecomment-1609900319)
 
