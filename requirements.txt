@@ -22,4 +22,3 @@ omegaconf==2.3.0
 #pip install taming-transformers
 #pip install clip
 #pip install image-reward
-# https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/11458#issuecomment-1609900319
