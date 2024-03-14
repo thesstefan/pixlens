@@ -86,7 +86,9 @@ Along these, subject & background preservation is evaluated for each edit.
 Generally, you can expect to find some artifacts (edited images, segmentation results, explanatory visualization, scores) 
 in PixLens's cache directory (`~/.cache/pixlens` on UNIX, `C:\Users\{USER}\AppData\Local\pixlens\pixlens/Cache` on Windows).
 
-If the model VQGAN+CLIP is used, please download their checkpoints folder and place it in the PixLens's cache directory under the folder models--VqGANClip (in the end the folder Cache/models--VqGANClip/checkpoints should be there)
+If the model VQGAN+CLIP is used, please download their checkpoints folder and place it in the PixLens's cache directory under the folder models--VqGANClip (in the end the folder Cache/models--VqGANClip/checkpoints should be there)-
+
+If the model OpenEdit is used, also download their checkpoints and vocab folders, as indicated in the [repo](https://github.com/xh-liu/Open-Edit) and again place them under the folder models--openedit (in the end the folder Cache/models--openedit/vocab and .../checkpoints should be there).
 
 ###  Scripts
 
