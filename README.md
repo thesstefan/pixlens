@@ -152,4 +152,3 @@ the other models ([GroundingDino](https://arxiv.org/abs/2303.05499), [OwlViT](ht
 [DiffEdit](https://arxiv.org/abs/2210.11427)) are provided through their own packages (`sam`, `groundingdino`) or HuggingFace.
 
 PixLens aims to build onto [EditVal](https://github.com/deep-ml-research/editval_code), so some inspiration is taken from it.
-pixlens-disentanglement --model-params-yaml ${EDITING_MODEL_YAML}
