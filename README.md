@@ -26,7 +26,17 @@ conda activate $ENVNAME
 
 # Install xformers==0.0.23
 # No available conda package [issue](https://github.com/facebookresearch/xformers/issues/749)
-pip install xformers==0.0.23
+pip install xformers==0.0.23~
+
+# Install Image Reward
+pip install image-reward
+
+# With the usage of vqgan+clip, one has to follow the instructions in the repo we are based on (https://github.com/nerdyrodent/VQGAN-CLIP), but essentially one can download:
+pip install kornia==0.5.4 
+pip install taming-transformers
+pip install clip
+
+#When doing so, please change 'pytorch_lightning.utilities.distributed' for 'pytorch_lightning.utilities.rank_zero' in taming/main.py as indicated in the [issue](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/11458#issuecomment-1609900319)
 
 # Install pixlens in editable mode
 pip install --no-build-isolation --no-deps -e .
@@ -75,6 +85,8 @@ Along these, subject & background preservation is evaluated for each edit.
 
 Generally, you can expect to find some artifacts (edited images, segmentation results, explanatory visualization, scores) 
 in PixLens's cache directory (`~/.cache/pixlens` on UNIX, `C:\Users\{USER}\AppData\Local\pixlens\pixlens/Cache` on Windows).
+
+If the model VQGAN+CLIP is used, please download their checkpoints folder and place it in the PixLens's cache directory under the folder models--VqGANClip (in the end the folder Cache/models--VqGANClip/checkpoints should be there)
 
 ###  Scripts
 

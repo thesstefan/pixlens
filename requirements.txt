@@ -16,10 +16,10 @@ pyyaml==6.0.1
 sentencepiece==0.1.99
 dominate==2.9.1
 dacite==1.8.1
-#image-reward==0.92 pip install
-#kornia==0.5.4 pip install
 ftfy==6.1.3
 omegaconf==2.3.0
+#pip install kornia==0.5.4 
 #pip install taming-transformers
 #pip install clip
+#pip install image-reward
 # https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/11458#issuecomment-1609900319
