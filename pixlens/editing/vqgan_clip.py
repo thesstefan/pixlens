@@ -10,8 +10,8 @@ from torchvision import transforms
 from torchvision.transforms import functional as TF  # noqa: N812
 
 from pixlens.editing import interfaces
-from pixlens.editing.impl.vqgan_clip.CLIP import clip
-from pixlens.editing.impl.vqgan_clip.helper_generate import (
+import clip
+from pixlens.editing.impl.helper_generate import (
     ClampWithGrad,
     Prompt,
     ReplaceGrad,
