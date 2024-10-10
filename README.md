@@ -1,4 +1,4 @@
-# PixLens
+# PixLens 🔎 [[Paper]](https://arxiv.org/abs/2410.05710)
 
 Evaluate & understand image editing models!
 
