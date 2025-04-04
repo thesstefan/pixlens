@@ -1,28 +1,42 @@
-# PixLens 🔎 [[Paper]](https://arxiv.org/abs/2410.05710)
+# PixLens 🔍 — A Benchmarking Pipeline for Prompt-Guided Image Editing  
+[![ArXiv](https://img.shields.io/badge/arXiv-2410.05710-b31b1b.svg)](https://arxiv.org/abs/2410.05710)
 
-Evaluate & understand image editing models!
+Evaluate & understand the behavior of prompt-based image editing models — down to each pixel and object 🎯.
 
-## Installation
+---
 
-To set up the required Python 3.11 conda environment, run the following commands:
+
+## 🖼️ Overview
+
+PixLens is a comprehensive evaluation framework for **prompt-based image editing models**. It allows fine-grained analysis of edit success and consistency by breaking down the edited scene into **subject**, **background**, and **edit-specific effects**.
+
+<p align="center">
+  <img src="images/pipeline.png" alt="PixLens Pipeline" width="600"/>
+</p>
+
+
+> **Fig. 1**: PixLens Edit Evaluation Pipeline. Example for the `SIZE` operation (`"Make the stop sign larger"`).
+
+---
+
+## ⚙️ Installation
+
+Set up the environment (Python 3.11) with the following steps:
 
 ```shell
-# Clone repository & cd into it
+# Clone the repository
 git clone https://github.com/thesstefan/pixlens && cd pixlens
 
-# Download EditVal selected images and unzip them in "editval_instances"
-# You can do this manually or by running gdown:
+# Download sample EditVal images
 wget --no-check-certificate -r "https://drive.google.com/uc?export=download&id=1q_V2oxtGUCPE2vkQi88NvnGurg2Swf9N" -O editval_instances.zip
 unzip editval_instances.zip && rm editval_instances.zip
 
-# Create conda env
+# Create and activate conda environment
 conda create -n $ENVNAME "python>=3.11" --file requirements.txt -c pytorch -c nvidia -c conda-forge
+conda activate $ENVNAME
 
 # Install dev packages if needed
 conda install --name $ENVNAME --freeze-installed --file requirements-dev.txt
-
-# Activate environment
-conda activate $ENVNAME
 
 # Install xformers==0.0.23.post1
 # No available conda package [issue](https://github.com/facebookresearch/xformers/issues/749)
@@ -34,15 +48,20 @@ pip install image-reward
 # With the usage of vqgan+clip, one has to follow the instructions in the repo we are based on (https://github.com/nerdyrodent/VQGAN-CLIP), but essentially one can download:
 pip install kornia==0.7.2 taming-transformers git+https://github.com/openai/CLIP.git
 
-# When doing so, please change 'pytorch_lightning.utilities.distributed' for 'pytorch_lightning.utilities.rank_zero' in taming/main.py as indicated in the [issue](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/11458#issuecomment-1609900319)
+# ⚠️ When doing so, required manual fix for taming-transformers
+# Change 'pytorch_lightning.utilities.distributed' to 'rank_zero' in taming/main.py as indicated in the [issue](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/11458#issuecomment-1609900319)
 
-# Install pixlens in editable mode
+# Install PixLens in editable mode
 pip install --no-build-isolation --no-deps -e .
 ```
 
-The `editval_instances.zip` can also be downloaded from [here](https://drive.google.com/uc?export=download&id=1q_V2oxtGUCPE2vkQi88NvnGurg2Swf9N).
+📦 Alternatively, download EditVal instances manually [here](https://drive.google.com/uc?export=download&id=1q_V2oxtGUCPE2vkQi88NvnGurg2Swf9N).
 
-> **NOTICE 1**: The NullTextInversion model is available only when `diffusers=10.0.0` due to 
+---
+
+## ⚠️ Notices & Fixes
+
+> 💡 **NOTICE 1**: The NullTextInversion model is available only when `diffusers=10.0.0` due to 
 > issues when using newer versions ([#1](https://github.com/google/prompt-to-prompt/issues/57), 
 > [#2](https://github.com/google/prompt-to-prompt/issues/72), [#3](https://github.com/google/prompt-to-prompt/issues/37)).
 > Therefore, use the [`requirements-null-text-inv.txt`](https://github.com/thesstefan/pixlens/blob/main/requirements-null-text-inv.txt) 
@@ -58,44 +77,72 @@ The `editval_instances.zip` can also be downloaded from [here](https://drive.goo
 > apt-get install libgl1
 >```
 
-## Evaluation
+---
 
-The models that are already implemented are InstructPix2Pix, ControlNet, LCM, DiffEdit & NullTextInversion. 
+## 📊 Evaluation Pipeline
+
+Available **editing models**:
+- InstructPix2Pix
+- ControlNet
+- LCM
+- VQGAN+CLIP
+- OpenEdit
+- NullTextInversion (optional)
+- DiffEdit (optional)
+
 Due to some issues, DiffEdit and NullTextInversion are left out the full benchmark by default. 
 
-The models that are available for detection & segmentation are GroundedSAM (SAM on top of GroundingDino) and 
-Owl-ViTSAM (SAM on top of Owl-ViT).
+Available **detection & segmentation models**:
+- GroundedSAM (GroundingDINO + SAM)
+- OwlViT-SAM (OwlViT + SAM)
 
 All models can be loaded by specifying their corresponding YAML configurations 
 from [`model_cfgs`](https://github.com/thesstefan/pixlens/tree/main/model_cfgs).
 
-Edit operations that can currently be evaluated include:
-- Object Addition
-- Object Replacement
-- Object Removal
-- Part Alteration
-- Moving Objects
-- Positional Object Addition
-- Size Change
-- Color Change
+Supported **edit operations**:
+- `object_addition`
+- `object_removal`
+- `object_replacement`
+- `alter_parts`
+- `move_object`
+- `positional_addition`
+- `size`
+- `color`
 
-Along these, subject & background preservation is evaluated for each edit.
+Additionally, PixLens evaluates **subject** and **background** preservation per edit.
 
 Generally, you can expect to find some artifacts (edited images, segmentation results, explanatory visualization, scores) 
 in PixLens's cache directory (`~/.cache/pixlens` on UNIX, `C:\Users\{USER}\AppData\Local\pixlens\pixlens/Cache` on Windows).
 
+### 🧠 Caching Models
+For models like `VQGAN+CLIP` or [`OpenEdit`](https://github.com/xh-liu/Open-Edit), place downloaded checkpoints in:
+
+```
+~/.cache/pixlens/models--VqGANClip/checkpoints
+~/.cache/pixlens/models--openedit/vocab
+~/.cache/pixlens/models--openedit/checkpoints
+```
+<!-- 
 If the model VQGAN+CLIP is used, please download their checkpoints folder and place it in the PixLens's cache directory under the folder models--VqGANClip (in the end the folder Cache/models--VqGANClip/checkpoints should be there)-
 
-If the model OpenEdit is used, also download their checkpoints and vocab folders, as indicated in the [repo](https://github.com/xh-liu/Open-Edit) and again place them under the folder models--openedit (in the end the folder Cache/models--openedit/vocab and .../checkpoints should be there).
+If the model OpenEdit is used, also download their checkpoints and vocab folders, as indicated in the [repo](https://github.com/xh-liu/Open-Edit) and again place them under the folder models--openedit (in the end the folder Cache/models--openedit/vocab and .../checkpoints should be there). -->
 
-###  Scripts
+---
 
-To run the whole evaluation pipeline (for InstructPix2Pix, ControlNet, LCM, OpenEdit and VQGAN+clip), run 
+## 🚀 Running PixLens
+
+### 🧪 Full Evaluation Pipeline
+
+To run the whole evaluation pipeline (for InstructPix2Pix, ControlNet, LCM, OpenEdit and VQGAN+clip), run:
+
 ```shell
 pixlens-eval --detection-model-yaml ${DETECTION_MODEL_YAML} --run-evaluation-pipeline
 ```
 
-To run a more specific evaluation (for one specific model & operation type), run
+### 🔧 Specific Evaluation (custom model + edit)
+
+To run a more specific evaluation (for one specific model & operation type), run:
+
 ```shell
 pixlens-eval --detection-model-yaml ${DETECTION_MODEL_YAML} 
              --editing-model-yaml ${EDITING_MODEL_YAML}
@@ -103,8 +150,9 @@ pixlens-eval --detection-model-yaml ${DETECTION_MODEL_YAML}
              --do-all
 ```
 
-The results will be available in the mentioned cache directory under `evaluation_results.json` (aggregated) and
-`evaluation_results.csv` (individual edits).
+🗂️ Results will be saved to:
+- `~/.cache/pixlens/evaluation_results.json` (aggregated)
+- `evaluation_results.csv` (per-edit)
 
 >Currently, here are the possible parameterizations:
 >- `EDITING_MODEL_YAML` values: 
@@ -121,34 +169,53 @@ The results will be available in the mentioned cache directory under `evaluation
 Similarly, there are other CLI scripts provided for debugging intermediary steps, like [`pixlens_editing`](https://github.com/thesstefan/pixlens/blob/main/pixlens/cli/pixlens_editing_cli.py),
 [`pixlens_detection`](https://github.com/thesstefan/pixlens/blob/main/pixlens/cli/pixlens_detection_cli.py), or [`pixlens_caption`](https://github.com/thesstefan/pixlens/blob/main/pixlens/cli/pixlens_caption_cli.py).
 
-## Disentanglement Pipeline
+## 🔍 Disentanglement Pipeline
 
 To execute the disentanglement pipeline, use the following command:
 
 ```shell
 pixlens-disentanglement --model-params-yaml ${MODEL_PARAMS_YAML}
 ```
-Upon completion of the pipeline, a folder titled `disentanglement` will be created within the model's cache directory. This folder contains critical outputs of the evaluation:
+Outputs will be saved under:
+```
+~/.cache/pixlens/models--<your_model>/disentanglement/
+```
+
+This folder contains critical outputs of the evaluation, including:
 
 - `results.json`: A file that details the most significant findings of the evaluation.
-- **Confusion Matrix Plot**: A visual representation to help understand the performance of the model.
 
-In case you prefer not to rerun the entire process, you have the option to delete the `.pkl` files. These files store essential data required for the evaluation.
+- **Confusion Matrix Plot** 📉: A visual representation to help understand the performance of the model.
+
+> In case you prefer not to rerun the entire process, you have the option to delete the `.pkl` files. These files store essential data required for the evaluation.
 
 
-### Benchmarking Custom Models
+---
 
-You can also benchmark your own model by defining an adapter class similar to the ones in [`editing`](https://github.com/thesstefan/pixlens/tree/main/pixlens/editing), implementing
-the [`PrompatbleImageEditingModel`](https://github.com/thesstefan/pixlens/blob/main/pixlens/editing/interfaces.py#L16) protocol.
+## 🧩 Benchmark Your Own Model
 
-Afterwards, define a YAML configuration file similar to the ones in [`model_cfgs`](https://github.com/thesstefan/pixlens/tree/main/model_cfgs) and use this file as the
-parameter for the `--editing_model_yaml` flag of `pixlens-eval` and `pixlens-disentanglement`.
+To add your custom model:
+1. Implement a class following [`PromptableImageEditingModel`](https://github.com/thesstefan/pixlens/blob/main/pixlens/editing/interfaces.py#L16)
+2. Add it under [`pixlens/editing`](https://github.com/thesstefan/pixlens/tree/main/pixlens/editing)
+3. Create a YAML file like the ones in [`model_cfgs`](https://github.com/thesstefan/pixlens/tree/main/model_cfgs) and use this file as the parameter for the `--editing_model_yaml` flag of `pixlens-eval` and `pixlens-disentanglement`.
 
-# Acknowledgements
+---
 
-The [NullTextInversion](https://arxiv.org/abs/2211.09794) implementation is from [google/prompt-to-prompt](https://github.com/google/prompt-to-prompt). Otherwise,
-the other models ([GroundingDino](https://arxiv.org/abs/2303.05499), [OwlViT](https://arxiv.org/abs/2205.06230),  ([SAM](https://arxiv.org/abs/2304.02643),
-[InstructPix2Pix](https://arxiv.org/abs/2211.09800), [LCM](https://arxiv.org/abs/2310.04378), [ControlNet](https://arxiv.org/abs/2302.05543),
-[DiffEdit](https://arxiv.org/abs/2210.11427)) are provided through their own packages (`sam`, `groundingdino`) or HuggingFace.
+## 🙏 Acknowledgements
 
-PixLens aims to build onto [EditVal](https://github.com/deep-ml-research/editval_code), so some inspiration is taken from it.
+PixLens builds on top of [EditVal](https://github.com/deep-ml-research/editval_code), and incorporates work from:
+
+- [Prompt-to-Prompt / NullTextInversion](https://github.com/google/prompt-to-prompt)
+- [GroundingDINO](https://arxiv.org/abs/2303.05499)
+- [OwlViT](https://arxiv.org/abs/2205.06230)
+- [SAM](https://arxiv.org/abs/2304.02643)
+- [InstructPix2Pix](https://arxiv.org/abs/2211.09800)
+- [LCM](https://arxiv.org/abs/2310.04378)
+- [ControlNet](https://arxiv.org/abs/2302.05543)
+- [DiffEdit](https://arxiv.org/abs/2210.11427)
+
+---
+
+📫 Feedback, issues, or improvements? Feel free to open an [Issue](https://github.com/thesstefan/pixlens/issues) or a Pull Request!
+
+---

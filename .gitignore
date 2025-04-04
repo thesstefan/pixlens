@@ -195,6 +195,9 @@ cython_debug/
 # Portable Network Graphics
 *.png
 
+# Except those under images/
+!images/*.png
+
 # Animated Portable Network Graphics
 *.apng
 
