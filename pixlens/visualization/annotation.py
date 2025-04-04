@@ -38,6 +38,9 @@ def annotate_mask(
     *,
     color_mask: npt.NDArray[Any] | None = None,
 ) -> Image.Image:
+    if len(masks.shape) < 2:  # noqa: PLR2004
+        return image.convert("RGBA")
+
     height, width = masks.shape[-2:]
 
     mask_image = torch.zeros(height, width, 1)
