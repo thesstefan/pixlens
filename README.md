@@ -67,7 +67,7 @@ pip install --no-build-isolation --no-deps -e .
 > Therefore, use the [`requirements-null-text-inv.txt`](https://github.com/thesstefan/pixlens/blob/main/requirements-null-text-inv.txt) 
 > dependencies instead when dealing with NullTextInversion.
 >
-> **NOTICE 2**: On some bare-bones systems (like containers), it may be required to provide the `libgl1.so` dependency for OpenCV. The
+> 🛠️ **NOTICE 2**: On some bare-bones systems (like containers), it may be required to provide the `libgl1.so` dependency for OpenCV. The
 > following error is raised be `pixlens` if the dependency is not available:
 >```python
 > ImportError: libGL.so.1: cannot open shared object file: No such file or directory
